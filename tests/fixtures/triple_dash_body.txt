@@ -1,0 +1,7 @@
+---
+title = "Test with triple dashes"
+---
+
+This is content with --- triple dashes in the body.
+
+Another line with --- more dashes.

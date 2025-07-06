@@ -1,0 +1,53 @@
+# GitHub Pages configuration for TextPrompts documentation
+
+# Site settings
+title: TextPrompts
+description: A minimal, zero-dependency prompt loader for Python
+url: "https://svilupp.github.io/textprompts"
+baseurl: "/textprompts"
+
+# Theme
+theme: minima
+
+# Markdown settings
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Navigation
+navigation:
+  - title: Home
+    url: /
+  - title: Getting Started
+    url: /getting-started
+  - title: File Format
+    url: /file-format
+  - title: API Reference
+    url: /api-reference
+  - title: Examples
+    url: /examples
+  - title: Integrations
+    url: /integrations
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Exclude from processing
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
+# Include
+include:
+  - _pages

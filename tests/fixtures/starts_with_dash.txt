@@ -1,0 +1,3 @@
+---
+This is not metadata, just content that starts with dashes.
+Regular text content that happens to start with ---.

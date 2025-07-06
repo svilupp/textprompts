@@ -1,0 +1,6 @@
+---
+title = "Bad Example"
+version = "invalid-version"
+---
+
+This has invalid metadata.

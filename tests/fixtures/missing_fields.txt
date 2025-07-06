@@ -1,0 +1,5 @@
+---
+title = "Missing Fields"
+---
+
+This metadata is missing required fields.

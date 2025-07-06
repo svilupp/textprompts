@@ -1,0 +1,10 @@
+---
+title = "Example"
+version = "1.0.0"
+author = "Test Author"
+description = "A test prompt"
+---
+
+Hello, {name}!
+
+This is a sample prompt with metadata.
