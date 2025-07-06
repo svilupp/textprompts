@@ -46,7 +46,7 @@ class SafeString(str):
         Raises:
             ValueError: If skip_validation=False and any placeholder is missing
         """
-        skip_validation = kwargs.pop('skip_validation', False)
+        skip_validation = kwargs.pop("skip_validation", False)
         if skip_validation:
             # Partial formatting - replace only available placeholders
             return self._partial_format(*args, **kwargs)

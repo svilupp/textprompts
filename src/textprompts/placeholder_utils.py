@@ -53,7 +53,10 @@ def extract_placeholders(text: str) -> Set[str]:
 
 
 def validate_format_args(
-    placeholders: Set[str], args: Tuple[Any, ...], kwargs: Dict[str, Any], skip_validation: bool = False
+    placeholders: Set[str],
+    args: Tuple[Any, ...],
+    kwargs: Dict[str, Any],
+    skip_validation: bool = False,
 ) -> None:
     """
     Validate that format arguments match the placeholders in the template.
