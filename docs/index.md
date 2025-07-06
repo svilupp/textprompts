@@ -38,6 +38,9 @@ Best regards,
 ```python
 from textprompts import load_prompt
 
+# Optionally, you can look for TOML metadata in the header of the file
+textprompts.set_metadata("allow") # optional! 
+
 prompt = load_prompt("prompt.txt")
 response = prompt.body.format(
     customer_name="Alice",
