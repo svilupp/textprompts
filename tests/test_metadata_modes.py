@@ -450,7 +450,7 @@ Content 1"""
         # Add null checks for all prompts
         for p in prompts:
             assert p.meta is not None
-        
+
         # Find prompts with explicit null checks
         prompt1 = None
         prompt2 = None
@@ -460,7 +460,7 @@ Content 1"""
                 prompt1 = p
             elif p.meta.title == "prompt2":
                 prompt2 = p
-        
+
         assert prompt1 is not None
         assert prompt2 is not None
 

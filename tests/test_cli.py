@@ -13,7 +13,10 @@ class TestCLIParser:
     def test_parser_creation(self) -> None:
         """Test that argument parser is created correctly."""
         parser = _make_parser()
-        assert parser.description is not None and "Show prompt metadata/body" in parser.description
+        assert (
+            parser.description is not None
+            and "Show prompt metadata/body" in parser.description
+        )
 
     def test_parser_file_argument(self) -> None:
         """Test that file argument is parsed correctly."""
