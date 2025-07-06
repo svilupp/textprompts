@@ -184,7 +184,7 @@ response = openai.chat.completions.create(
 
 ### Function Calling (Tool Definitions)
 
-Yes, you can version control your function schemas too:
+Yes, you can version control your whole tool schemas too:
 
 ```python
 # tools/search_products.txt

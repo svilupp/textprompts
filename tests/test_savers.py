@@ -1,4 +1,5 @@
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -8,7 +9,7 @@ from textprompts.safe_string import SafeString
 from textprompts.savers import save_prompt
 
 
-def test_save_prompt_string(tmp_path):
+def test_save_prompt_string(tmp_path: Path) -> None:
     """Test saving a string prompt creates proper template"""
     file_path = tmp_path / "test.txt"
     content = "You are a helpful assistant."
@@ -25,11 +26,12 @@ def test_save_prompt_string(tmp_path):
 
     # Verify it can be loaded back
     prompt = load_prompt(file_path)
+    assert prompt.meta is not None
     assert prompt.meta.title == "test"  # Uses filename
     assert content in str(prompt.body)
 
 
-def test_save_prompt_object(tmp_path):
+def test_save_prompt_object(tmp_path: Path) -> None:
     """Test saving a Prompt object preserves metadata"""
     file_path = tmp_path / "test_prompt.txt"
 
@@ -49,6 +51,7 @@ def test_save_prompt_object(tmp_path):
 
     # Read back and verify
     loaded_prompt = load_prompt(file_path, meta="allow")
+    assert loaded_prompt.meta is not None
     assert loaded_prompt.meta.title == "Test Prompt"
     assert loaded_prompt.meta.description == "A test prompt"
     assert loaded_prompt.meta.version == "1.0.0"
@@ -57,7 +60,7 @@ def test_save_prompt_object(tmp_path):
     assert "You are a helpful assistant." in str(loaded_prompt.body)
 
 
-def test_save_prompt_object_minimal_meta(tmp_path):
+def test_save_prompt_object_minimal_meta(tmp_path: Path) -> None:
     """Test saving a Prompt object with minimal metadata"""
     file_path = tmp_path / "minimal.txt"
 
@@ -68,14 +71,15 @@ def test_save_prompt_object_minimal_meta(tmp_path):
 
     # Read back and verify
     loaded_prompt = load_prompt(file_path, meta="allow")
+    assert loaded_prompt.meta is not None
     assert loaded_prompt.meta.title == "Minimal"
     assert loaded_prompt.meta.description == ""
     assert loaded_prompt.meta.version == ""
 
 
-def test_save_prompt_invalid_type(tmp_path):
+def test_save_prompt_invalid_type(tmp_path: Path) -> None:
     """Test that invalid content type raises TypeError"""
     file_path = tmp_path / "invalid.txt"
 
     with pytest.raises(TypeError, match="content must be str or Prompt"):
-        save_prompt(file_path, 123)
+        save_prompt(file_path, 123)  # type: ignore[arg-type]

@@ -50,13 +50,13 @@ class TestMetadataModes:
             set_metadata("invalid")
 
         with pytest.raises(ValueError, match="Mode must be MetadataMode"):
-            set_metadata(123)
+            set_metadata(123)  # type: ignore[arg-type]
 
 
 class TestStrictMode:
     """Test STRICT metadata mode"""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Reset global config before each test"""
         set_metadata(MetadataMode.IGNORE)  # Reset to default
 
@@ -76,6 +76,7 @@ Test content here."""
         # Test with global config
         set_metadata(MetadataMode.STRICT)
         prompt = load_prompt(file_path)
+        assert prompt.meta is not None
         assert prompt.meta.title == "Test Title"
         assert prompt.meta.description == "Test Description"
         assert prompt.meta.version == "1.0.0"
@@ -83,10 +84,12 @@ Test content here."""
         # Test with parameter override
         set_metadata(MetadataMode.IGNORE)
         prompt = load_prompt(file_path, meta=MetadataMode.STRICT)
+        assert prompt.meta is not None
         assert prompt.meta.title == "Test Title"
 
         # Test with string parameter
         prompt = load_prompt(file_path, meta="strict")
+        assert prompt.meta is not None
         assert prompt.meta.title == "Test Title"
 
     def test_strict_mode_missing_metadata(self, tmp_path: Path) -> None:
@@ -174,6 +177,7 @@ Test content here."""
         # Test with global config
         set_metadata(MetadataMode.ALLOW)
         prompt = load_prompt(file_path)
+        assert prompt.meta is not None
         assert prompt.meta.title == "Test Title"
         assert prompt.meta.description == "Test Description"
         assert prompt.meta.version == "1.0.0"
@@ -182,6 +186,7 @@ Test content here."""
         # Test with parameter override
         set_metadata(MetadataMode.IGNORE)
         prompt = load_prompt(file_path, meta=MetadataMode.ALLOW)
+        assert prompt.meta is not None
         assert prompt.meta.title == "Test Title"
 
     def test_allow_mode_with_partial_metadata(self, tmp_path: Path) -> None:
@@ -198,6 +203,7 @@ Test content here."""
 
         set_metadata(MetadataMode.ALLOW)
         prompt = load_prompt(file_path)
+        assert prompt.meta is not None
         assert prompt.meta.title == "Test Title"
         assert prompt.meta.description is None
         assert prompt.meta.version is None
@@ -217,6 +223,7 @@ Test content here."""
 
         set_metadata(MetadataMode.ALLOW)
         prompt = load_prompt(file_path)
+        assert prompt.meta is not None
         assert prompt.meta.title == ""
         assert prompt.meta.description == ""
         assert prompt.meta.version == ""
@@ -230,6 +237,7 @@ Test content here."""
 
         set_metadata(MetadataMode.ALLOW)
         prompt = load_prompt(file_path)
+        assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
         assert prompt.meta.description is None
         assert prompt.meta.version is None
@@ -274,6 +282,7 @@ Test content here."""
 
         # Test with global config (default)
         prompt = load_prompt(file_path)
+        assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
         assert prompt.meta.description is None
         assert prompt.meta.version is None
@@ -284,6 +293,7 @@ Test content here."""
         # Test with parameter override
         set_metadata(MetadataMode.STRICT)
         prompt = load_prompt(file_path, meta=MetadataMode.IGNORE)
+        assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
 
     def test_ignore_mode_without_metadata(self, tmp_path: Path) -> None:
@@ -295,6 +305,7 @@ Test content here."""
 
         # Test with global config (default)
         prompt = load_prompt(file_path)
+        assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
         assert prompt.meta.description is None
         assert prompt.meta.version is None
@@ -314,6 +325,7 @@ Test content here."""
 
         # Should not raise error in IGNORE mode
         prompt = load_prompt(file_path)
+        assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
         assert 'title = "Test Title' in prompt.body
 
@@ -341,6 +353,7 @@ Test content here."""
         # Global is IGNORE, but meta parameter is STRICT
         set_metadata(MetadataMode.IGNORE)
         prompt = load_prompt(file_path, meta=MetadataMode.STRICT)
+        assert prompt.meta is not None
         assert prompt.meta.title == "Test Title"  # Metadata was parsed
         assert prompt.meta.description == "Test Description"
         assert prompt.meta.version == "1.0.0"
@@ -361,6 +374,7 @@ Test content here."""
         # Global is STRICT, no meta parameter provided
         set_metadata(MetadataMode.STRICT)
         prompt = load_prompt(file_path)
+        assert prompt.meta is not None
         assert prompt.meta.title == "Test Title"  # Metadata was parsed
         assert prompt.meta.description == "Test Description"
         assert prompt.meta.version == "1.0.0"
@@ -368,6 +382,7 @@ Test content here."""
         # Global is IGNORE, no meta parameter provided
         set_metadata(MetadataMode.IGNORE)
         prompt = load_prompt(file_path)
+        assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename, metadata ignored
         assert 'title = "Test Title"' in prompt.body
 
@@ -405,6 +420,8 @@ Content 2"""
         set_metadata(MetadataMode.STRICT)
         prompts = load_prompts(tmp_path)
         assert len(prompts) == 2
+        assert prompts[0].meta is not None
+        assert prompts[1].meta is not None
         assert prompts[0].meta.title in ["Prompt 1", "Prompt 2"]
         assert prompts[1].meta.title in ["Prompt 1", "Prompt 2"]
 
@@ -430,8 +447,24 @@ Content 1"""
         assert len(prompts) == 2
 
         # Find the prompts by their expected titles
-        prompt1 = next(p for p in prompts if p.meta.title == "Prompt 1")
-        prompt2 = next(p for p in prompts if p.meta.title == "prompt2")
+        # Add null checks for all prompts
+        for p in prompts:
+            assert p.meta is not None
 
+        # Find prompts with explicit null checks
+        prompt1 = None
+        prompt2 = None
+        for p in prompts:
+            assert p.meta is not None  # Additional null check in loop
+            if p.meta.title == "Prompt 1":
+                prompt1 = p
+            elif p.meta.title == "prompt2":
+                prompt2 = p
+
+        assert prompt1 is not None
+        assert prompt2 is not None
+
+        assert prompt1.meta is not None
+        assert prompt2.meta is not None
         assert prompt1.meta.description == "First prompt"
         assert prompt2.meta.description is None  # No metadata for second file

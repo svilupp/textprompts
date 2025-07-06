@@ -60,7 +60,9 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
     # Handle IGNORE mode - treat entire file as body
     if metadata_mode == MetadataMode.IGNORE:
         ignore_meta = PromptMeta(title=path.stem)
-        return Prompt(path=path, meta=ignore_meta, body=SafeString(textwrap.dedent(raw)))
+        return Prompt(
+            path=path, meta=ignore_meta, body=SafeString(textwrap.dedent(raw))
+        )
 
     # For STRICT and ALLOW modes, try to parse front matter
     try:
