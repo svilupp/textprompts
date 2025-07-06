@@ -14,6 +14,7 @@ from textprompts.models import Prompt, PromptMeta
 
 def test_good_prompt(fixtures: Path) -> None:
     prompt = load_prompt(fixtures / "good.txt", meta="allow")
+    assert prompt.meta is not None
     assert prompt.meta.title == "Example"
     assert re.search(r"Hello, \{name}", prompt.body)
 
@@ -84,6 +85,7 @@ def test_load_prompts_directory_processing(tmp_path: Path) -> None:
     # Test with custom glob pattern
     prompts = load_prompts(tmp_path, glob="*.md", meta="ignore")
     assert len(prompts) == 1
+    assert prompts[0].meta is not None
     assert prompts[0].meta.title == "other"
 
 
@@ -99,12 +101,21 @@ def test_load_prompts_recursive_processing(tmp_path: Path) -> None:
     # Test without recursive
     prompts = load_prompts(tmp_path, recursive=False, meta="ignore")
     assert len(prompts) == 1
-    assert "root" in [p.meta.title for p in prompts]
+    # Add null checks for all prompts and extract titles
+    titles = []
+    for p in prompts:
+        assert p.meta is not None
+        titles.append(p.meta.title)
+    assert "root" in titles
 
     # Test with recursive
     prompts = load_prompts(tmp_path, recursive=True, meta="ignore")
     assert len(prompts) == 2
-    titles = [p.meta.title for p in prompts]
+    # Add null checks for all prompts and extract titles
+    titles = []
+    for p in prompts:
+        assert p.meta is not None
+        titles.append(p.meta.title)
     assert "root" in titles
     assert "nested" in titles
 
@@ -122,7 +133,11 @@ def test_load_prompts_mixed_files_and_directories(tmp_path: Path) -> None:
     # Load both file and directory
     prompts = load_prompts(file1, subdir, meta="ignore")
     assert len(prompts) == 2
-    titles = [p.meta.title for p in prompts]
+    # Add null checks for all prompts and extract titles
+    titles = []
+    for p in prompts:
+        assert p.meta is not None
+        titles.append(p.meta.title)
     assert "file1" in titles
     assert "file2" in titles
 
@@ -135,6 +150,7 @@ def test_prompt_model_validation_edge_cases(tmp_path: Path) -> None:
 
     prompt = load_prompt(test_file, meta="ignore")
     assert isinstance(prompt.meta, PromptMeta)
+    assert prompt.meta is not None
     assert prompt.meta.title == "minimal"
     assert prompt.meta.version is None
     assert prompt.meta.author is None
@@ -156,6 +172,7 @@ version = "1.0"
 Content here""")
 
     prompt = load_prompt(test_file, meta="allow")
+    assert prompt.meta is not None
     repr_str = repr(prompt)
     assert "Test Title" in repr_str
     assert "1.0" in repr_str

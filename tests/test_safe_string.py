@@ -3,7 +3,7 @@ import pytest
 from textprompts.safe_string import SafeString
 
 
-def test_safe_string_basic_functionality():
+def test_safe_string_basic_functionality() -> None:
     """Test SafeString behaves like a regular string."""
     s = SafeString("Hello world")
     assert str(s) == "Hello world"
@@ -13,28 +13,28 @@ def test_safe_string_basic_functionality():
     assert "world" in s
 
 
-def test_safe_string_format_success():
+def test_safe_string_format_success() -> None:
     """Test successful formatting with all variables provided."""
     s = SafeString("Hello {name}, you are {age} years old")
     result = s.format(name="Alice", age=30)
     assert result == "Hello Alice, you are 30 years old"
 
 
-def test_safe_string_format_positional_args():
+def test_safe_string_format_positional_args() -> None:
     """Test formatting with positional arguments."""
     s = SafeString("Hello {0}, you are {1} years old")
     result = s.format("Bob", 25)
     assert result == "Hello Bob, you are 25 years old"
 
 
-def test_safe_string_format_mixed_args():
+def test_safe_string_format_mixed_args() -> None:
     """Test formatting with mixed positional and keyword arguments."""
     s = SafeString("Hello {0}, you are {age} years old")
     result = s.format("Charlie", age=35)
     assert result == "Hello Charlie, you are 35 years old"
 
 
-def test_safe_string_format_missing_variables():
+def test_safe_string_format_missing_variables() -> None:
     """Test that missing variables raise ValueError by default."""
     s = SafeString("Hello {name}, you are {age} years old")
 
@@ -51,21 +51,21 @@ def test_safe_string_format_missing_variables():
     assert result == "Hello Alice, you are {age} years old"
 
 
-def test_safe_string_format_extra_variables():
+def test_safe_string_format_extra_variables() -> None:
     """Test that extra variables are allowed."""
     s = SafeString("Hello {name}")
     result = s.format(name="Alice", extra="unused")
     assert result == "Hello Alice"
 
 
-def test_safe_string_no_placeholders():
+def test_safe_string_no_placeholders() -> None:
     """Test formatting string with no placeholders."""
     s = SafeString("Hello world")
     result = s.format(unused="value")
     assert result == "Hello world"
 
 
-def test_safe_string_repr():
+def test_safe_string_repr() -> None:
     """Test string representation for debugging."""
     s = SafeString("test")
     assert repr(s) == "SafeString('test', placeholders=set())"
@@ -76,21 +76,21 @@ def test_safe_string_repr():
     )
 
 
-def test_safe_string_empty():
+def test_safe_string_empty() -> None:
     """Test empty SafeString."""
     s = SafeString("")
     assert str(s) == ""
     assert len(s) == 0
 
 
-def test_safe_string_complex_placeholders():
+def test_safe_string_complex_placeholders() -> None:
     """Test complex placeholder patterns."""
     s = SafeString("User: {user_name}, Score: {score}, Status: {status}")
     result = s.format(user_name="test_user", score=100, status="active")
     assert result == "User: test_user, Score: 100, Status: active"
 
 
-def test_safe_string_inheritance():
+def test_safe_string_inheritance() -> None:
     """Test that SafeString is properly a string subclass."""
     s = SafeString("test")
     assert isinstance(s, str)
@@ -100,7 +100,7 @@ def test_safe_string_inheritance():
 # New tests for enhanced SafeString functionality
 
 
-def test_safe_string_placeholders_attribute():
+def test_safe_string_placeholders_attribute() -> None:
     """Test that placeholders are extracted and stored correctly."""
     s = SafeString("Hello {name}, you are {age} years old")
     assert s.placeholders == {"name", "age"}
@@ -115,7 +115,7 @@ def test_safe_string_placeholders_attribute():
     assert s_no_placeholders.placeholders == set()
 
 
-def test_safe_string_format_with_skip_validation():
+def test_safe_string_format_with_skip_validation() -> None:
     """Test formatting with skip_validation parameter."""
     s = SafeString("Hello {name}, you are {age} years old")
 
@@ -132,7 +132,7 @@ def test_safe_string_format_with_skip_validation():
     assert result == "Hello Alice, you are 30 years old"
 
 
-def test_safe_string_format_skip_validation_false():
+def test_safe_string_format_skip_validation_false() -> None:
     """Test that skip_validation=False still validates (default behavior)."""
     s = SafeString("Hello {name}")
 
@@ -141,7 +141,7 @@ def test_safe_string_format_skip_validation_false():
         s.format(skip_validation=False)
 
 
-def test_safe_string_format_specifiers():
+def test_safe_string_format_specifiers() -> None:
     """Test formatting with format specifiers."""
     s = SafeString("Price: ${price:.2f}, Count: {count:d}")
     assert s.placeholders == {"price", "count"}
@@ -150,7 +150,7 @@ def test_safe_string_format_specifiers():
     assert result == "Price: $19.99, Count: 5"
 
 
-def test_safe_string_escaped_braces():
+def test_safe_string_escaped_braces() -> None:
     """Test that escaped braces are handled correctly."""
     s = SafeString("{{literal}} but {real} placeholder")
     assert s.placeholders == {"real"}
@@ -159,7 +159,7 @@ def test_safe_string_escaped_braces():
     assert result == "{literal} but actual placeholder"
 
 
-def test_safe_string_empty_placeholders():
+def test_safe_string_empty_placeholders() -> None:
     """Test handling of empty placeholders."""
     s = SafeString("Hello {}")
     assert s.placeholders == {""}
@@ -168,7 +168,7 @@ def test_safe_string_empty_placeholders():
     assert result == "Hello world"
 
 
-def test_safe_string_duplicate_placeholders():
+def test_safe_string_duplicate_placeholders() -> None:
     """Test that duplicate placeholders are handled correctly."""
     s = SafeString("{name} and {name} again")
     assert s.placeholders == {"name"}
@@ -177,7 +177,7 @@ def test_safe_string_duplicate_placeholders():
     assert result == "Alice and Alice again"
 
 
-def test_safe_string_complex_format_specifiers():
+def test_safe_string_complex_format_specifiers() -> None:
     """Test complex format specifiers."""
     s = SafeString("Aligned: {text:>10}, Padded: {num:0>5}")
     assert s.placeholders == {"text", "num"}
@@ -186,7 +186,7 @@ def test_safe_string_complex_format_specifiers():
     assert result == "Aligned:         hi, Padded: 00042"
 
 
-def test_safe_string_performance_placeholders_cached():
+def test_safe_string_performance_placeholders_cached() -> None:
     """Test that placeholders are extracted once, not on each format call."""
     s = SafeString("Hello {name}")
 
@@ -201,7 +201,7 @@ def test_safe_string_performance_placeholders_cached():
     assert s.placeholders is original_placeholders
 
 
-def test_safe_string_skip_validation_with_mixed_args():
+def test_safe_string_skip_validation_with_mixed_args() -> None:
     """Test skip_validation with mixed positional and keyword args."""
     s = SafeString("Hello {0}, you are {age} years old")
 
@@ -214,7 +214,7 @@ def test_safe_string_skip_validation_with_mixed_args():
     assert result == "Hello {0}, you are 30 years old"
 
 
-def test_safe_string_skip_validation_keyword_position():
+def test_safe_string_skip_validation_keyword_position() -> None:
     """Test that skip_validation works regardless of position in kwargs."""
     s = SafeString("Hello {name}")
 
