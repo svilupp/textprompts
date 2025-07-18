@@ -287,8 +287,8 @@ Test content here."""
         assert prompt.meta.description is None
         assert prompt.meta.version is None
         # Content includes the metadata as part of the body
-        assert 'title = "Test Title"' in prompt.body
-        assert "Test content here." in prompt.body
+        assert 'title = "Test Title"' in prompt.prompt
+        assert "Test content here." in prompt.prompt
 
         # Test with parameter override
         set_metadata(MetadataMode.STRICT)
@@ -309,7 +309,7 @@ Test content here."""
         assert prompt.meta.title == "test"  # Uses filename
         assert prompt.meta.description is None
         assert prompt.meta.version is None
-        assert prompt.body == "Just content, no metadata"
+        assert prompt.prompt == "Just content, no metadata"
 
     def test_ignore_mode_with_invalid_toml(self, tmp_path: Path) -> None:
         """Test IGNORE mode doesn't parse invalid TOML"""
@@ -327,7 +327,7 @@ Test content here."""
         prompt = load_prompt(file_path)
         assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
-        assert 'title = "Test Title' in prompt.body
+        assert 'title = "Test Title' in prompt.prompt
 
 
 class TestParameterPriority:
@@ -384,7 +384,7 @@ Test content here."""
         prompt = load_prompt(file_path)
         assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename, metadata ignored
-        assert 'title = "Test Title"' in prompt.body
+        assert 'title = "Test Title"' in prompt.prompt
 
 
 class TestLoadPrompts:

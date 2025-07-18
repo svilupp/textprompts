@@ -11,7 +11,7 @@ from textprompts import load_prompt
 
 # Load a single prompt
 prompt = load_prompt("prompts/greeting.txt")
-message = prompt.body.format(name="Alice")
+message = prompt.prompt.format(name="Alice")
 print(message)
 ```
 
@@ -42,7 +42,7 @@ system_prompt = load_prompt("prompts/customer_support_system.txt")
 # Create agent with formatted prompt
 agent = Agent(
     'openai:gpt-4',
-    system_prompt=system_prompt.body.format(
+    system_prompt=system_prompt.prompt.format(
         company_name="ACME Corp",
         support_level="premium",
         response_time="24 hours"
@@ -69,14 +69,14 @@ response = openai.chat.completions.create(
     messages=[
         {
             "role": "system", 
-            "content": system_prompt.body.format(
+            "content": system_prompt.prompt.format(
                 domain="customer service",
                 tone="helpful and professional"
             )
         },
         {
             "role": "user",
-            "content": user_prompt.body.format(
+            "content": user_prompt.prompt.format(
                 query="How do I return an item?",
                 customer_tier="premium"
             )
@@ -97,7 +97,7 @@ template_prompt = load_prompt("prompts/analysis_template.txt")
 
 # Create LangChain prompt
 prompt = PromptTemplate(
-    template=str(template_prompt.body),
+    template=str(template_prompt.prompt),
     input_variables=["document", "question"]
 )
 
@@ -180,7 +180,7 @@ class PromptRegistry:
     def format(self, name: str, **kwargs) -> str:
         """Get and format prompt."""
         prompt = self.get(name)
-        return prompt.body.format(**kwargs)
+        return prompt.prompt.format(**kwargs)
 
 # Usage
 registry = PromptRegistry("prompts/")
@@ -242,7 +242,7 @@ prompt = get_prompt_with_fallback(
 ### Validation
 
 ```python
-from textprompts import load_prompts, SafeString
+from textprompts import load_prompts, PromptString
 import re
 
 def validate_prompts(directory: str):
@@ -256,7 +256,7 @@ def validate_prompts(directory: str):
             errors.append(f"{prompt.path}: Missing title")
         
         # Check for unsafe placeholders
-        placeholders = re.findall(r'\{([^}]+)\}', prompt.body)
+        placeholders = re.findall(r'\{([^}]+)\}', prompt.prompt)
         unsafe = [p for p in placeholders if not p.isidentifier()]
         if unsafe:
             errors.append(f"{prompt.path}: Unsafe placeholders: {unsafe}")
@@ -276,7 +276,7 @@ if errors:
 
 ```python
 import unittest
-from textprompts import load_prompt, SafeString
+from textprompts import load_prompt, PromptString
 
 class TestPrompts(unittest.TestCase):
     def test_greeting_prompt(self):
@@ -287,7 +287,7 @@ class TestPrompts(unittest.TestCase):
         self.assertIsNotNone(prompt.meta.version)
         
         # Test formatting
-        result = prompt.body.format(name="Alice")
+        result = prompt.prompt.format(name="Alice")
         self.assertIn("Alice", result)
         self.assertNotIn("{name}", result)
     
@@ -296,13 +296,13 @@ class TestPrompts(unittest.TestCase):
         
         # Test that all required variables are documented
         expected_vars = {"customer_name", "issue_type", "agent_name"}
-        content = str(prompt.body)
+        content = str(prompt.prompt)
         found_vars = set(re.findall(r'\{([^}]+)\}', content))
         
         self.assertEqual(found_vars, expected_vars)
     
     def test_safe_string_validation(self):
-        template = SafeString("Hello {name}")
+        template = PromptString("Hello {name}")
         
         # Should work with all variables
         result = template.format(name="Alice")

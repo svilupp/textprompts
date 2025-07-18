@@ -1,7 +1,7 @@
 """
 Utility functions for extracting and validating placeholders in format strings.
 
-This module provides robust placeholder extraction and validation for SafeString
+This module provides robust placeholder extraction and validation for PromptString
 formatting operations.
 """
 

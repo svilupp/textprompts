@@ -52,7 +52,7 @@ import textprompts
 prompt = textprompts.load_prompt("greeting.txt")
 
 # Use it safely - all placeholders must be provided
-message = prompt.body.format(
+message = prompt.prompt.format(
     customer_name="Alice",
     company_name="ACME Corp", 
     issue_type="billing question",
@@ -62,19 +62,22 @@ message = prompt.body.format(
 print(message)
 
 # Or use partial formatting when needed
-partial = prompt.body.format(
+partial = prompt.prompt.format(
     customer_name="Alice",
     company_name="ACME Corp",
     skip_validation=True
 )
 # Result: "Hello Alice!\n\nWelcome to ACME Corp. We're here to help you with {issue_type}.\n\nBest regards,\n{agent_name}"
+
+# Prompt objects expose `.meta` and `.prompt`.
+# Use `prompt.prompt.format()` for safe formatting or `str(prompt)` for raw text.
 ```
 
 **Even simpler** - no metadata required:
 ```python
 # simple_prompt.txt contains just: "Analyze this data: {data}"
 prompt = textprompts.load_prompt("simple_prompt.txt")  # Just works!
-result = prompt.body.format(data="sales figures")
+result = prompt.prompt.format(data="sales figures")
 ```
 
 ## Core Features
@@ -84,9 +87,9 @@ result = prompt.body.format(data="sales figures")
 Never ship a prompt with missing variables again:
 
 ```python
-from textprompts import SafeString
+from textprompts import PromptString
 
-template = SafeString("Hello {name}, your order {order_id} is {status}")
+template = PromptString("Hello {name}, your order {order_id} is {status}")
 
 # ✅ Strict formatting - all placeholders must be provided
 result = template.format(name="Alice", order_id="12345", status="shipped")
@@ -166,14 +169,14 @@ response = openai.chat.completions.create(
     messages=[
         {
             "role": "system",
-            "content": system_prompt.body.format(
+            "content": system_prompt.prompt.format(
                 company_name="ACME Corp",
                 support_level="premium"
             )
         },
         {
             "role": "user", 
-            "content": user_prompt.body.format(
+            "content": user_prompt.prompt.format(
                 query="How do I return an item?",
                 customer_tier="premium"
             )
@@ -229,7 +232,7 @@ from textprompts import load_prompt
 
 # Load and parse the tool definition
 tool_prompt = load_prompt("tools/search_products.txt")
-tool_schema = json.loads(tool_prompt.body)
+tool_schema = json.loads(tool_prompt.prompt)
 
 # Use with OpenAI
 response = openai.chat.completions.create(
@@ -314,7 +317,7 @@ Load a single prompt file.
 
 Returns a `Prompt` object with:
 - `prompt.meta`: Metadata from TOML front-matter (always present)
-- `prompt.body`: The prompt content as a `SafeString`
+- `prompt.prompt`: The prompt content as a `PromptString`
 - `prompt.path`: Path to the original file
 
 ### `load_prompts(*paths, recursive=False, glob="*.txt", meta=None, max_files=1000)`
@@ -361,14 +364,14 @@ save_prompt("my_prompt.txt", "You are a helpful assistant.")
 save_prompt("my_prompt.txt", prompt_object)
 ```
 
-### `SafeString`
+### `PromptString`
 
 A string subclass that validates `format()` calls:
 
 ```python
-from textprompts import SafeString
+from textprompts import PromptString
 
-template = SafeString("Hello {name}, you are {role}")
+template = PromptString("Hello {name}, you are {role}")
 
 # Strict formatting (default) - all placeholders required
 result = template.format(name="Alice", role="admin")  # ✅ Works
@@ -436,8 +439,8 @@ textprompts validate prompts/
 4. **Test your prompts**: Write unit tests for critical prompts
    ```python
    def test_greeting_prompt():
-       prompt = load_prompt("greeting.txt")
-       result = prompt.body.format(customer_name="Test")
+    prompt = load_prompt("greeting.txt")
+    result = prompt.prompt.format(customer_name="Test")
        assert "Test" in result
    ```
 

@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from textprompts import PromptString
 from textprompts.loaders import load_prompt
 from textprompts.models import Prompt, PromptMeta
-from textprompts.safe_string import SafeString
 from textprompts.savers import save_prompt
 
 
@@ -28,7 +28,7 @@ def test_save_prompt_string(tmp_path: Path) -> None:
     prompt = load_prompt(file_path)
     assert prompt.meta is not None
     assert prompt.meta.title == "test"  # Uses filename
-    assert content in str(prompt.body)
+    assert content in str(prompt.prompt)
 
 
 def test_save_prompt_object(tmp_path: Path) -> None:
@@ -44,7 +44,7 @@ def test_save_prompt_object(tmp_path: Path) -> None:
     )
 
     prompt = Prompt(
-        path=file_path, meta=meta, body=SafeString("You are a helpful assistant.")
+        path=file_path, meta=meta, prompt=PromptString("You are a helpful assistant.")
     )
 
     save_prompt(file_path, prompt)
@@ -57,7 +57,7 @@ def test_save_prompt_object(tmp_path: Path) -> None:
     assert loaded_prompt.meta.version == "1.0.0"
     assert loaded_prompt.meta.author == "Test Author"
     assert loaded_prompt.meta.created == date(2023, 1, 1)
-    assert "You are a helpful assistant." in str(loaded_prompt.body)
+    assert "You are a helpful assistant." in str(loaded_prompt.prompt)
 
 
 def test_save_prompt_object_minimal_meta(tmp_path: Path) -> None:
@@ -65,7 +65,7 @@ def test_save_prompt_object_minimal_meta(tmp_path: Path) -> None:
     file_path = tmp_path / "minimal.txt"
 
     meta = PromptMeta(title="Minimal")
-    prompt = Prompt(path=file_path, meta=meta, body=SafeString("Simple prompt."))
+    prompt = Prompt(path=file_path, meta=meta, prompt=PromptString("Simple prompt."))
 
     save_prompt(file_path, prompt)
 

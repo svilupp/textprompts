@@ -2,15 +2,15 @@
 """
 Simple demonstration of the core TextPrompts formatting feature.
 
-This shows how SafeString prevents the common problem of missing variables
+This shows how PromptString prevents the common problem of missing variables
 in prompt templates, making your AI applications more reliable.
 """
 
-from textprompts import SafeString
+from textprompts import PromptString
 
 
 def main():
-    print("TextPrompts SafeString Demo")
+    print("TextPrompts PromptString Demo")
     print("=" * 30)
     print()
 
@@ -29,14 +29,14 @@ def main():
 
     print()
 
-    # The solution with SafeString
-    print("✅ Solution with SafeString:")
-    safe_template = SafeString("Hello {name}, your order #{order_id} is {status}")
+    # The solution with PromptString
+    print("✅ Solution with PromptString:")
+    safe_template = PromptString("Hello {name}, your order #{order_id} is {status}")
 
     try:
         # This fails fast with a clear error message
         result = safe_template.format(name="Alice", status="shipped")
-        print(f"   SafeString result: '{result}'")
+        print(f"   PromptString result: '{result}'")
     except ValueError as e:
         print(f"   ValueError: {e}")
         print("   ^ Clear error message about missing variables!")
@@ -61,8 +61,8 @@ def main():
 
     print()
 
-    # SafeString works like a regular string otherwise
-    print("✅ SafeString is still a string:")
+    # PromptString works like a regular string otherwise
+    print("✅ PromptString is still a string:")
     print(f"   Length: {len(safe_template)}")
     print(f"   Upper: {safe_template.upper()}")
     print(f"   Contains 'order': {'order' in safe_template}")
@@ -72,7 +72,7 @@ def main():
 
     print()
     print(
-        "Use TextPrompts to load prompts from files and get SafeString automatically!"
+        "Use TextPrompts to load prompts from files and get PromptString automatically!"
     )
 
 

@@ -4,13 +4,13 @@ from typing import Optional
 
 try:
     import tomllib
-except ImportError:
+except ImportError:  # pragma: no cover - Python <3.11 fallback
     import tomli as tomllib  # type: ignore[import-not-found, no-redef]
 
-from .config import MetadataMode
+from .config import MetadataMode, warn_on_ignored_metadata
 from .errors import InvalidMetadataError, MalformedHeaderError, MissingMetadataError
 from .models import Prompt, PromptMeta
-from .safe_string import SafeString
+from .prompt_string import PromptString
 
 DELIM = "---"
 
@@ -59,9 +59,20 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
 
     # Handle IGNORE mode - treat entire file as body
     if metadata_mode == MetadataMode.IGNORE:
+        if (
+            warn_on_ignored_metadata()
+            and raw.startswith(DELIM)
+            and raw.find(DELIM, len(DELIM)) != -1
+        ):
+            import warnings
+
+            warnings.warn(
+                "Metadata detected but ignored; use set_metadata('allow') or skip_metadata(skip_warning=True) to silence",
+                stacklevel=2,
+            )
         ignore_meta = PromptMeta(title=path.stem)
         return Prompt(
-            path=path, meta=ignore_meta, body=SafeString(textwrap.dedent(raw))
+            path=path, meta=ignore_meta, prompt=PromptString(textwrap.dedent(raw))
         )
 
     # For STRICT and ALLOW modes, try to parse front matter
@@ -74,7 +85,7 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
                 f"{e}. If this file has no metadata and starts with '---', "
                 f"use meta=MetadataMode.IGNORE to skip metadata parsing."
             ) from e
-        raise
+        raise  # pragma: no cover - reraised to preserve stack
 
     meta: Optional[PromptMeta] = None
     if header_txt is not None:
@@ -116,7 +127,7 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
             ) from e
         except InvalidMetadataError:
             raise
-        except Exception as e:
+        except Exception as e:  # pragma: no cover - unlikely generic error
             raise InvalidMetadataError(f"Invalid metadata: {e}") from e
 
     else:
@@ -131,11 +142,11 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
         meta = PromptMeta()
 
     # Always ensure we have metadata with a title
-    if not meta:
+    if not meta:  # pragma: no cover - meta is never falsy but kept for safety
         meta = PromptMeta()
 
     # Use filename as title if not provided
     if meta.title is None:
         meta.title = path.stem
 
-    return Prompt(path=path, meta=meta, body=SafeString(textwrap.dedent(body)))
+    return Prompt(path=path, meta=meta, prompt=PromptString(textwrap.dedent(body)))

@@ -30,6 +30,7 @@ class MetadataMode(Enum):
 
 # Global configuration variable
 _METADATA_MODE: MetadataMode = MetadataMode.IGNORE
+_WARN_ON_IGNORED_META: bool = True
 
 
 def set_metadata(mode: Union[MetadataMode, str]) -> None:
@@ -80,6 +81,20 @@ def get_metadata() -> MetadataMode:
         The current global metadata handling mode.
     """
     return _METADATA_MODE
+
+
+def skip_metadata(*, skip_warning: bool = False) -> None:
+    """Convenience setter for ignoring metadata with optional warnings."""
+
+    global _WARN_ON_IGNORED_META
+    _WARN_ON_IGNORED_META = not skip_warning  # pragma: no cover
+    set_metadata(MetadataMode.IGNORE)  # pragma: no cover - simple wrapper
+
+
+def warn_on_ignored_metadata() -> bool:
+    """Return whether warnings for ignored metadata are enabled."""
+
+    return _WARN_ON_IGNORED_META
 
 
 def _resolve_metadata_mode(meta: Union[MetadataMode, str, None]) -> MetadataMode:

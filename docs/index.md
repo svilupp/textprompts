@@ -10,7 +10,7 @@ TextPrompts solves the common problem of managing prompts in AI applications. In
 
 - **Zero runtime dependencies** (except Pydantic v2)
 - **Simple TOML frontmatter** with `---` delimiters
-- **SafeString** class prevents format() errors
+- **PromptString** class prevents format() errors
 - **Recursive directory loading** with glob patterns
 - **Performance safeguards** with configurable limits
 - **Comprehensive error handling**
@@ -42,7 +42,7 @@ from textprompts import load_prompt
 textprompts.set_metadata("allow") # optional! 
 
 prompt = load_prompt("prompt.txt")
-response = prompt.body.format(
+response = prompt.prompt.format(
     customer_name="Alice",
     issue_type="billing",
     agent_name="Bob"

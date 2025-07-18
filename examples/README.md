@@ -10,7 +10,7 @@ All examples are self-contained and can be run directly:
 # Basic usage demonstration
 python examples/basic_usage.py
 
-# SafeString formatting demo
+# PromptString formatting demo
 python examples/simple_format_demo.py
 
 # Pydantic AI integration example
@@ -23,15 +23,15 @@ python examples/pydantic_ai_example.py
 Comprehensive demonstration of core TextPrompts functionality:
 - Loading single prompts with metadata
 - Loading multiple prompts from directories
-- Using SafeString for safe formatting
+- Using PromptString for safe formatting
 - Loading prompts without metadata
 - Error handling examples
 
 ### `simple_format_demo.py`
-Focused demonstration of the SafeString feature:
+Focused demonstration of the PromptString feature:
 - Shows the problem with regular string formatting
-- Demonstrates how SafeString prevents silent failures
-- Shows that SafeString works like a regular string
+- Demonstrates how PromptString prevents silent failures
+- Shows that PromptString works like a regular string
 
 ### `pydantic_ai_example.py`
 Integration example with Pydantic AI:
@@ -56,10 +56,10 @@ Your prompt content with {variables} goes here.
 
 ### 2. Safe String Formatting
 ```python
-from textprompts import SafeString
+from textprompts import PromptString
 
 # This validates all variables are provided
-template = SafeString("Hello {name}, order {id} is {status}")
+template = PromptString("Hello {name}, order {id} is {status}")
 result = template.format(name="Alice", id="123", status="shipped")
 ```
 
@@ -78,8 +78,8 @@ prompt_dict = {p.meta.title: p for p in prompts if p.meta}
 regular = "Hello {name}"
 result = regular.format()  # Returns "Hello {name}" - BAD!
 
-# SafeString raises clear errors
-safe = SafeString("Hello {name}")
+# PromptString raises clear errors
+safe = PromptString("Hello {name}")
 result = safe.format()  # Raises ValueError - GOOD!
 ```
 
@@ -117,7 +117,7 @@ print(f"Successfully validated {len(prompts)} prompts")
 1. **Organize prompts by domain** - customer/, internal/, etc.
 2. **Use semantic versioning** - Track prompt changes over time
 3. **Include descriptive metadata** - Document purpose and usage
-4. **Validate variables** - Use SafeString to catch errors early
+4. **Validate variables** - Use PromptString to catch errors early
 5. **Handle errors gracefully** - Provide fallbacks and clear messages
 
 ## Next Steps

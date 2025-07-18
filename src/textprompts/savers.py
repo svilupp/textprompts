@@ -25,7 +25,7 @@ def save_prompt(path: Union[str, Path], content: Union[str, Prompt]) -> None:
     >>> prompt = Prompt(
     ...     path=Path("my_prompt.txt"),
     ...     meta=PromptMeta(title="Assistant", version="1.0.0", description="A helpful AI"),
-    ...     body="You are a helpful assistant."
+    ...     prompt="You are a helpful assistant."
     ... )
     >>> save_prompt("my_prompt.txt", prompt)
     """
@@ -59,7 +59,7 @@ version = ""
 
         lines.append("---")
         lines.append("")
-        lines.append(str(content.body))
+        lines.append(str(content.prompt))
 
         path.write_text("\n".join(lines), encoding="utf-8")
     else:

@@ -16,7 +16,7 @@ def test_good_prompt(fixtures: Path) -> None:
     prompt = load_prompt(fixtures / "good.txt", meta="allow")
     assert prompt.meta is not None
     assert prompt.meta.title == "Example"
-    assert re.search(r"Hello, \{name}", prompt.body)
+    assert re.search(r"Hello, \{name}", prompt.prompt)
 
 
 def test_no_meta_strict(fixtures: Path) -> None:
@@ -60,7 +60,7 @@ def test_starts_with_dash_ignore_meta_works(fixtures: Path) -> None:
     prompt = load_prompt(fixtures / "starts_with_dash.txt", meta="ignore")
     assert prompt.meta is not None
     assert prompt.meta.title == "starts_with_dash"
-    assert "---" in prompt.body
+    assert "---" in prompt.prompt
 
 
 def test_load_prompt_file_missing(tmp_path: Path) -> None:
@@ -160,6 +160,14 @@ def test_prompt_model_validation_edge_cases(tmp_path: Path) -> None:
     # Test Prompt repr methods
     assert "minimal" in repr(prompt)
     assert str(prompt) == "Just content"
+
+
+def test_body_property_deprecated(tmp_path: Path) -> None:
+    test_file = tmp_path / "deprecated.txt"
+    test_file.write_text("Hello")
+    prompt = load_prompt(test_file, meta="ignore")
+    with pytest.deprecated_call():
+        _ = prompt.body
 
 
 def test_prompt_model_repr_with_version(tmp_path: Path) -> None:
