@@ -330,7 +330,7 @@ response = query_engine.query("What are the main benefits?")
 
 ```python
 import streamlit as st
-from textprompts import load_prompts, SafeString
+from textprompts import load_prompts, PromptString
 
 # Load available prompts
 prompts = load_prompts("prompts/", recursive=True)

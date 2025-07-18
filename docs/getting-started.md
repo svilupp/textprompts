@@ -70,12 +70,12 @@ prompts = load_prompts("prompts/", glob="*.prompt")
 
 ## Safe String Formatting
 
-TextPrompts includes a `SafeString` class that prevents common formatting errors:
+TextPrompts includes a `PromptString` class that prevents common formatting errors:
 
 ```python
-from textprompts import SafeString
+from textprompts import PromptString
 
-template = SafeString("Hello {name}, you are {age} years old")
+template = PromptString("Hello {name}, you are {age} years old")
 
 # ✅ This works
 result = template.format(name="Alice", age=30)

@@ -3,14 +3,14 @@
 Example: Basic TextPrompts Usage
 
 This example demonstrates the core functionality of TextPrompts
-including loading single prompts, multiple prompts, and using SafeString.
+including loading single prompts, multiple prompts, and using PromptString.
 """
 
 import os
 import shutil
 import tempfile
 
-from textprompts import SafeString, load_prompt, load_prompts, save_prompt
+from textprompts import PromptString, load_prompt, load_prompts, save_prompt
 
 
 def create_example_prompts():
@@ -174,12 +174,12 @@ def demonstrate_multiple_prompt_loading(prompt_dir):
 
 
 def demonstrate_safestring():
-    """Demonstrate SafeString validation features."""
-    print("3. SafeString Validation")
+    """Demonstrate PromptString validation features."""
+    print("3. PromptString Validation")
     print("-" * 30)
 
     # Create a template with variables
-    template = SafeString(
+    template = PromptString(
         "Order {order_id} for {customer} is {status}. Total: ${amount}"
     )
 
@@ -285,7 +285,7 @@ def demonstrate_save_prompt(prompt_dir):
     from pathlib import Path
 
     from textprompts import Prompt, PromptMeta
-    from textprompts.safe_string import SafeString
+    from textprompts import PromptString
 
     full_meta = PromptMeta(
         title="Generated Prompt",
@@ -298,7 +298,7 @@ def demonstrate_save_prompt(prompt_dir):
     full_prompt = Prompt(
         path=Path(simple_path),
         meta=full_meta,
-        body=SafeString("This is a {type} prompt with full metadata."),
+        prompt=PromptString("This is a {type} prompt with full metadata."),
     )
 
     full_path = os.path.join(prompt_dir, "generated_full.txt")

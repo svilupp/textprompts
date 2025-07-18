@@ -48,7 +48,7 @@ except ImportError:
     RunContext = MockRunContext
     PYDANTIC_AI_AVAILABLE = False
 
-from textprompts import SafeString, load_prompt
+from textprompts import PromptString, load_prompt
 
 
 class CustomerInfo(NamedTuple):
@@ -166,10 +166,10 @@ def main():
     example_1_direct_formatting()
     example_2_single_decorator()
 
-    # Quick SafeString demo
-    print("\n🔒 Bonus: SafeString Demo")
+    # Quick PromptString demo
+    print("\n🔒 Bonus: PromptString Demo")
     print("-" * 25)
-    template = SafeString("Hello {name}, your {item} is ready!")
+    template = PromptString("Hello {name}, your {item} is ready!")
 
     try:
         safe_msg = template.format(name="Charlie", item="order")

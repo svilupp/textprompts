@@ -10,7 +10,8 @@ except ImportError:
 from .config import MetadataMode
 from .errors import InvalidMetadataError, MalformedHeaderError, MissingMetadataError
 from .models import Prompt, PromptMeta
-from .safe_string import SafeString
+from .prompt_string import PromptString
+from .config import warn_on_ignored_metadata
 
 DELIM = "---"
 
@@ -59,9 +60,16 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
 
     # Handle IGNORE mode - treat entire file as body
     if metadata_mode == MetadataMode.IGNORE:
+        if warn_on_ignored_metadata() and raw.startswith(DELIM) and raw.find(DELIM, len(DELIM)) != -1:
+            import warnings
+
+            warnings.warn(
+                "Metadata detected but ignored; use set_metadata('allow') or skip_metadata(skip_warning=True) to silence",
+                stacklevel=2,
+            )
         ignore_meta = PromptMeta(title=path.stem)
         return Prompt(
-            path=path, meta=ignore_meta, body=SafeString(textwrap.dedent(raw))
+            path=path, meta=ignore_meta, prompt=PromptString(textwrap.dedent(raw))
         )
 
     # For STRICT and ALLOW modes, try to parse front matter
@@ -138,4 +146,4 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
     if meta.title is None:
         meta.title = path.stem
 
-    return Prompt(path=path, meta=meta, body=SafeString(textwrap.dedent(body)))
+    return Prompt(path=path, meta=meta, prompt=PromptString(textwrap.dedent(body)))

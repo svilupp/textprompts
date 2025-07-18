@@ -85,14 +85,14 @@ Represents a loaded prompt with metadata and content.
 **Fields:**
 - `path` (Path): Path to the source file
 - `meta` (PromptMeta): Parsed metadata (always present, uses filename as title if no front-matter)
-- `body` (SafeString): The prompt content as a SafeString
+- `prompt` (PromptString): The prompt content as a PromptString
 
 **Example:**
 ```python
 prompt = load_prompt("example.txt")
 print(prompt.path)  # PosixPath('example.txt')
 print(prompt.meta.title)  # "Example Prompt"
-print(prompt.body)  # SafeString("Hello {name}!")
+print(prompt.prompt)  # PromptString("Hello {name}!")
 ```
 
 ### `PromptMeta`
@@ -114,7 +114,7 @@ print(meta.version)  # "1.0.0"
 print(meta.author)  # "Support Team"
 ```
 
-### `SafeString`
+### `PromptString`
 
 A string subclass that validates format() calls to ensure all placeholders are provided.
 
@@ -129,9 +129,9 @@ A string subclass that validates format() calls to ensure all placeholders are p
 
 **Example:**
 ```python
-from textprompts import SafeString
+from textprompts import PromptString
 
-template = SafeString("Hello {name}, you are {age} years old")
+template = PromptString("Hello {name}, you are {age} years old")
 print(template.placeholders)  # {'name', 'age'}
 
 # ✅ Strict formatting (default) - all placeholders required

@@ -23,9 +23,9 @@ def test_whitespace_only_file(fixtures: Path) -> None:
 def test_triple_dash_in_body(fixtures: Path) -> None:
     """Test that triple dashes in body content are preserved."""
     prompt = load_prompt(fixtures / "triple_dash_body.txt", meta="allow")
-    assert "---" in prompt.body
-    assert "triple dashes in the body" in prompt.body
-    assert "more dashes" in prompt.body
+    assert "---" in prompt.prompt
+    assert "triple dashes in the body" in prompt.prompt
+    assert "more dashes" in prompt.prompt
 
 
 def test_header_only_file(fixtures: Path) -> None:
