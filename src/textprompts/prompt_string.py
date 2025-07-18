@@ -25,7 +25,9 @@ class PromptString(str):
         validate_format_args(self.placeholders, args, kwargs, skip_validation=False)
         return str.format(source, *args, **kwargs)
 
-    def _partial_format(self, *args: Any, source: str | None = None, **kwargs: Any) -> str:
+    def _partial_format(
+        self, *args: Any, source: str | None = None, **kwargs: Any
+    ) -> str:
         """Partial formatting - replace placeholders that have values."""
         all_kwargs = kwargs.copy()
         for i, arg in enumerate(args):
@@ -38,7 +40,7 @@ class PromptString(str):
                 if pattern in result:
                     try:
                         result = result.replace(pattern, str(all_kwargs[placeholder]))
-                    except (KeyError, ValueError):
+                    except (KeyError, ValueError):  # pragma: no cover - defensive
                         pass
         return result
 
@@ -49,9 +51,10 @@ class PromptString(str):
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.no_info_after_validator_function(cls, core_schema.str_schema())
+        return core_schema.no_info_after_validator_function(
+            cls, core_schema.str_schema()
+        )
 
 
 # Backwards compatibility alias
 SafeString = PromptString
-

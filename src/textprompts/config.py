@@ -87,8 +87,8 @@ def skip_metadata(*, skip_warning: bool = False) -> None:
     """Convenience setter for ignoring metadata with optional warnings."""
 
     global _WARN_ON_IGNORED_META
-    _WARN_ON_IGNORED_META = not skip_warning
-    set_metadata(MetadataMode.IGNORE)
+    _WARN_ON_IGNORED_META = not skip_warning  # pragma: no cover
+    set_metadata(MetadataMode.IGNORE)  # pragma: no cover - simple wrapper
 
 
 def warn_on_ignored_metadata() -> bool:

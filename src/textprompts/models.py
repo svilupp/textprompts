@@ -4,7 +4,7 @@ from typing import Any, Union
 
 from pydantic import BaseModel, Field, field_validator
 
-from .prompt_string import PromptString, SafeString
+from .prompt_string import PromptString
 
 
 class PromptMeta(BaseModel):

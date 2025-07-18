@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from textprompts import PromptString
 from textprompts.loaders import load_prompt
 from textprompts.models import Prompt, PromptMeta
-from textprompts import PromptString, PromptString
 from textprompts.savers import save_prompt
 
 

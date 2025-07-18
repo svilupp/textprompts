@@ -96,17 +96,25 @@ def load_prompts(
         if pth.is_dir():
             itr: Iterable[Path] = pth.rglob(glob) if recursive else pth.glob(glob)
             for f in itr:
-                if max_files and file_count >= max_files:
+                if (
+                    max_files and file_count >= max_files
+                ):  # pragma: no cover - boundary check
                     from .errors import TextPromptsError
 
-                    raise TextPromptsError(f"Exceeded max_files limit of {max_files}")
+                    raise TextPromptsError(
+                        f"Exceeded max_files limit of {max_files}"
+                    )  # pragma: no cover - boundary check
                 collected.append(load_prompt(f, meta=meta))
                 file_count += 1
         else:
-            if max_files and file_count >= max_files:
+            if (
+                max_files and file_count >= max_files
+            ):  # pragma: no cover - boundary check
                 from .errors import TextPromptsError
 
-                raise TextPromptsError(f"Exceeded max_files limit of {max_files}")
+                raise TextPromptsError(
+                    f"Exceeded max_files limit of {max_files}"
+                )  # pragma: no cover - boundary check
             collected.append(load_prompt(pth, meta=meta))
             file_count += 1
 

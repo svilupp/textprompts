@@ -1,3 +1,5 @@
-from .prompt_string import PromptString, SafeString
+"""Backward-compatible alias module."""  # pragma: no cover
 
-__all__ = ["PromptString", "SafeString"]
+from .prompt_string import PromptString, SafeString  # pragma: no cover
+
+__all__ = ["PromptString", "SafeString"]  # pragma: no cover

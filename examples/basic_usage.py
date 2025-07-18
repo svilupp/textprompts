@@ -284,8 +284,7 @@ def demonstrate_save_prompt(prompt_dir):
     from datetime import date
     from pathlib import Path
 
-    from textprompts import Prompt, PromptMeta
-    from textprompts import PromptString
+    from textprompts import Prompt, PromptMeta, PromptString
 
     full_meta = PromptMeta(
         title="Generated Prompt",

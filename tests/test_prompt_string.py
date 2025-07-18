@@ -1,6 +1,6 @@
 import pytest
 
-from textprompts import PromptString, SafeString
+from textprompts import PromptString
 
 
 def test_prompt_string_basic_functionality() -> None:
@@ -72,7 +72,8 @@ def test_safe_string_repr() -> None:
 
     s_with_placeholders = PromptString("Hello {name}")
     assert (
-        repr(s_with_placeholders) == "PromptString('Hello {name}', placeholders={'name'})"
+        repr(s_with_placeholders)
+        == "PromptString('Hello {name}', placeholders={'name'})"
     )
 
 
