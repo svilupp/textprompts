@@ -1,0 +1,8 @@
+name = "TextPrompts"
+uuid = "8a79288f-0000-4e7a-b000-000000000000"
+authors = ["Example <example@example.com>"]
+version = "0.0.1"
+[compat]
+julia = "1.11"
+TOML = "1"
+Dates = "1"

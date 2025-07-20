@@ -41,6 +41,14 @@ jobs:
           bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
+
+      - name: Build Julia docs
+        run: julia --project=julia/TextPrompts julia/docs/make.jl
+
+      - name: Copy Julia docs
+        run: |
+          mkdir -p docs/_site/julia
+          cp -r julia/docs/build/* docs/_site/julia/
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
