@@ -4,6 +4,7 @@ version = "0.0.2"
 description = "Minimal text-based prompt-loader with TOML front-matter"
 readme = "README.md"
 license = "MIT"
+license-file = "LICENSE"
 authors = [
     {name = "Jan Siml", email = "49557684+svilupp@users.noreply.github.com"},
 ]
