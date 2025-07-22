@@ -27,7 +27,6 @@ version = "1.0.0"
 author = "Demo Author"
 created = "2024-01-15"
 ---
-
 This prompt has complete metadata with title: {title}, description, and version."""
 
     # File with partial metadata
@@ -36,7 +35,6 @@ title = "Partial Prompt"
 # Missing description and version
 author = "Demo Author"
 ---
-
 This prompt has partial metadata - only title and author."""
 
     # File with no metadata
@@ -49,7 +47,6 @@ It just has content with a {placeholder}."""
 title = "Invalid TOML
 # Missing closing quote - this will cause TOML parse error
 ---
-
 This file has invalid TOML metadata."""
 
     # Write test files

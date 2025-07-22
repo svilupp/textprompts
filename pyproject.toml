@@ -1,6 +1,6 @@
 [project]
 name = "textprompts"
-version = "0.0.2"
+version = "0.0.3"
 description = "Minimal text-based prompt-loader with TOML front-matter"
 readme = "README.md"
 license = "MIT"
@@ -37,6 +37,9 @@ dev = [
     "pytest-cov>=6.2.1",
     "ruff>=0.12.2",
     "pre-commit>=3.0.0",
+]
+test = [
+    "pydantic-ai>=0.4.5",
 ]
 
 [build-system]

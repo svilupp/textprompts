@@ -2,6 +2,7 @@
 Global configuration for textprompts metadata handling.
 """
 
+import os
 from enum import Enum
 from typing import Union
 
@@ -29,7 +30,13 @@ class MetadataMode(Enum):
 
 
 # Global configuration variable
-_METADATA_MODE: MetadataMode = MetadataMode.IGNORE
+_env_mode = os.getenv("TEXTPROMPTS_METADATA_MODE")
+try:
+    _METADATA_MODE: MetadataMode = (
+        MetadataMode(_env_mode.lower()) if _env_mode else MetadataMode.IGNORE
+    )
+except ValueError:
+    _METADATA_MODE = MetadataMode.IGNORE
 _WARN_ON_IGNORED_META: bool = True
 
 

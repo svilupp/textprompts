@@ -22,7 +22,6 @@ uv add textprompts
 title = "Hello World"
 description = "A simple greeting prompt"
 ---
-
 Hello {name}! Welcome to TextPrompts.
 ```
 
