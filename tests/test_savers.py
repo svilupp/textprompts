@@ -26,9 +26,12 @@ def test_save_prompt_string(tmp_path: Path) -> None:
 
     # Verify it can be loaded back
     from textprompts.config import set_metadata
+
     set_metadata("ignore")
     import importlib
+
     import textprompts.loaders as loaders
+
     importlib.reload(loaders)
     prompt = loaders.load_prompt(file_path)
     assert prompt.meta is not None

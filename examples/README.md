@@ -50,7 +50,6 @@ version = "1.0.0"
 author = "Your Name"
 description = "What this prompt does"
 ---
-
 Your prompt content with {variables} goes here.
 ```
 

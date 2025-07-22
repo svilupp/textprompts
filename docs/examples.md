@@ -41,7 +41,7 @@ system_prompt = load_prompt("prompts/customer_support_system.txt")
 
 # Create agent with formatted prompt
 agent = Agent(
-    'openai:gpt-4',
+    'openai:gpt-4.1',
     system_prompt=system_prompt.prompt.format(
         company_name="ACME Corp",
         support_level="premium",

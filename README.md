@@ -1,5 +1,12 @@
 # textprompts
 
+[![PyPI version](https://img.shields.io/pypi/v/textprompts.svg)](https://pypi.org/project/textprompts/)
+[![Python versions](https://img.shields.io/pypi/pyversions/textprompts.svg)](https://pypi.org/project/textprompts/)
+[![CI status](https://github.com/svilupp/textprompts/workflows/CI/badge.svg)](https://github.com/svilupp/textprompts/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/svilupp/textprompts)](https://codecov.io/gh/svilupp/textprompts)
+[![License](https://img.shields.io/pypi/l/textprompts.svg)](https://github.com/svilupp/textprompts/blob/main/LICENSE)
+
+
 > **So simple, it's not even worth vibing about coding yet it just makes so much sense.**
 
 Are you tired of vendors trying to sell you fancy UIs for prompt management that just make your system more confusing and harder to debug? Isn't it nice to just have your prompts **next to your code**? 
@@ -35,7 +42,6 @@ title = "Customer Greeting"
 version = "1.0.0"
 description = "Friendly greeting for customer support"
 ---
-
 Hello {customer_name}!
 
 Welcome to {company_name}. We're here to help you with {issue_type}.
@@ -198,7 +204,6 @@ title = "Product Search Tool"
 version = "2.1.0"
 description = "Search our product catalog"
 ---
-
 {
     "type": "function",
     "function": {
@@ -284,7 +289,6 @@ description = "What this prompt does"
 created = "2024-01-15"
 tags = ["customer-support", "greeting"]
 ---
-
 Your prompt content goes here.
 
 Use {variables} for templating.

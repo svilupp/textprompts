@@ -12,41 +12,7 @@ from datetime import date
 from pathlib import Path
 from typing import NamedTuple
 
-try:
-    from pydantic_ai import Agent, RunContext
-
-    PYDANTIC_AI_AVAILABLE = True
-except ImportError:
-    # Mock classes for demonstration when pydantic_ai is not available
-    class MockRunContext:
-        def __init__(self, deps):
-            self.deps = deps
-
-    class MockAgent:
-        def __init__(self, model, deps_type=None, system_prompt=None):
-            self.model = model
-            self.deps_type = deps_type
-            self._system_prompt_value = system_prompt
-            self._system_prompt_func = None
-
-        def system_prompt(self, func):
-            self._system_prompt_func = func
-            return func
-
-        def run_sync(self, message, deps=None):
-            if self._system_prompt_func:
-                system = self._system_prompt_func(MockRunContext(deps))
-            else:
-                system = self._system_prompt_value
-
-            class MockResult:
-                output = f"[MOCK] System: {system[:50]}... | User: {message} | Response: Professional support response."
-
-            return MockResult()
-
-    Agent = MockAgent
-    RunContext = MockRunContext
-    PYDANTIC_AI_AVAILABLE = False
+from pydantic_ai import Agent
 
 from textprompts import PromptString, load_prompt
 
@@ -66,7 +32,6 @@ def create_prompts():
 title = "Support Agent"
 version = "1.0"
 ---
-
 You are a helpful support agent for {company}.
 Customer: {customer_name}
 Tier: {tier}
@@ -157,10 +122,6 @@ def main():
     """Run both examples."""
     print("🤖 TextPrompts + Pydantic AI: Two Approaches")
     print("=" * 50)
-
-    if not PYDANTIC_AI_AVAILABLE:
-        print("ℹ️  Note: pydantic_ai not installed - using mock for demonstration")
-        print()
 
     # Run both examples
     example_1_direct_formatting()

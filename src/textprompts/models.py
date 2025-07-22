@@ -4,6 +4,7 @@ from typing import Any, Union
 
 from pydantic import BaseModel, Field, field_validator
 
+from .config import MetadataMode
 from .prompt_string import PromptString
 
 
@@ -23,13 +24,11 @@ class Prompt(BaseModel):
     def __init__(
         self,
         path: Union[str, Path],
-        *args: Any,
-        meta: Union[PromptMeta, "MetadataMode", str, None] = None,
+        meta: Union[PromptMeta, MetadataMode, str, None] = None,
         prompt: Union[str, PromptString, None] = None,
-        **kwargs: Any,
     ) -> None:
         """Initialize Prompt from fields or load from file."""
-        if prompt is None and not args and not kwargs:
+        if prompt is None:
             from .loaders import load_prompt
 
             loaded = load_prompt(path, meta=meta)
@@ -37,7 +36,7 @@ class Prompt(BaseModel):
         else:
             if isinstance(prompt, str):
                 prompt = PromptString(prompt)
-            super().__init__(path=Path(path), meta=meta, prompt=prompt, **kwargs)
+            super().__init__(path=Path(path), meta=meta, prompt=prompt)
 
     @field_validator("prompt")
     @classmethod

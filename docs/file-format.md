@@ -12,7 +12,6 @@ author = "Optional: Author name"
 created = "Optional: Creation date (YYYY-MM-DD)"
 description = "Optional: Description"
 ---
-
 Your prompt content goes here.
 You can use {variables} for string formatting.
 ```
@@ -42,7 +41,6 @@ author = "Support Team"
 created = "2024-01-15"
 description = "Standard response template for customer inquiries"
 ---
-
 Dear {customer_name},
 
 Thank you for contacting {company_name} regarding {issue_type}.
@@ -60,7 +58,6 @@ Best regards,
 ---
 title = "Simple Greeting"
 ---
-
 Hello {name}!
 ```
 
@@ -114,7 +111,6 @@ Here's a YAML frontmatter example:
 ---
 title: "My Document"
 ---
-
 This works fine!
 ```
 
@@ -126,7 +122,6 @@ Prompts with empty content will raise a validation error:
 ---
 title = "Empty Prompt"
 ---
-
 ```
 
 This will raise: `ValueError: Prompt body is empty`
@@ -139,7 +134,6 @@ Invalid TOML will raise an `InvalidMetadataError`:
 ---
 title = "Unclosed quote
 ---
-
 Content here
 ```
 

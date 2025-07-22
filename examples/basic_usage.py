@@ -29,7 +29,6 @@ author = "Customer Success Team"
 created = "2024-01-15"
 description = "Standard greeting for customer interactions"
 ---
-
 Hello {customer_name}!
 
 Welcome to {company_name}. We're excited to help you with {service_type} today.
