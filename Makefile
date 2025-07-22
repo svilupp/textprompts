@@ -70,6 +70,7 @@ clean: ## Clean build artifacts and cache
 
 build: ## Build package for distribution
 	@echo "$(BLUE)Building package...$(RESET)"
+	rm -rf dist/
 	uv build
 	@echo "$(GREEN)✓ Package built$(RESET)"
 
