@@ -71,8 +71,12 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
                 stacklevel=2,
             )
         ignore_meta = PromptMeta(title=path.stem)
-        return Prompt(
-            path=path, meta=ignore_meta, prompt=PromptString(textwrap.dedent(raw))
+        return Prompt.model_validate(
+            {
+                "path": path,
+                "meta": ignore_meta,
+                "prompt": PromptString(textwrap.dedent(raw)),
+            }
         )
 
     # For STRICT and ALLOW modes, try to parse front matter
@@ -149,4 +153,10 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
     if meta.title is None:
         meta.title = path.stem
 
-    return Prompt(path=path, meta=meta, prompt=PromptString(textwrap.dedent(body)))
+    return Prompt.model_validate(
+        {
+            "path": path,
+            "meta": meta,
+            "prompt": PromptString(textwrap.dedent(body)),
+        }
+    )

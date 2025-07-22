@@ -50,6 +50,8 @@ import textprompts
 
 # Just load it - works with or without metadata
 prompt = textprompts.load_prompt("greeting.txt")
+# Or simply
+alt = textprompts.Prompt("greeting.txt")
 
 # Use it safely - all placeholders must be provided
 message = prompt.prompt.format(
@@ -295,6 +297,10 @@ Choose the right level of strictness for your use case:
 1. **IGNORE** (default) - Simple text file loading, filename becomes title
 2. **ALLOW** - Load metadata if present, don't worry about completeness  
 3. **STRICT** - Require complete metadata (title, description, version) for production safety
+
+You can also set the environment variable `TEXTPROMPTS_METADATA_MODE` to one of
+`strict`, `allow`, or `ignore` before importing the library to configure the
+default mode.
 
 ```python
 # Set globally

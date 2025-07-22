@@ -39,7 +39,10 @@ Best regards,
 from textprompts import load_prompt
 
 # Optionally, you can look for TOML metadata in the header of the file
-textprompts.set_metadata("allow") # optional! 
+textprompts.set_metadata("allow") # optional!
+
+# Or set via environment variable before import
+# export TEXTPROMPTS_METADATA_MODE=allow
 
 prompt = load_prompt("prompt.txt")
 response = prompt.prompt.format(

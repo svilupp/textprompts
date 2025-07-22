@@ -20,6 +20,25 @@ class Prompt(BaseModel):
     meta: Union[PromptMeta, None]
     prompt: PromptString
 
+    def __init__(
+        self,
+        path: Union[str, Path],
+        *args: Any,
+        meta: Union[PromptMeta, "MetadataMode", str, None] = None,
+        prompt: Union[str, PromptString, None] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize Prompt from fields or load from file."""
+        if prompt is None and not args and not kwargs:
+            from .loaders import load_prompt
+
+            loaded = load_prompt(path, meta=meta)
+            super().__init__(**loaded.model_dump())
+        else:
+            if isinstance(prompt, str):
+                prompt = PromptString(prompt)
+            super().__init__(path=Path(path), meta=meta, prompt=prompt, **kwargs)
+
     @field_validator("prompt")
     @classmethod
     def prompt_not_empty(cls, v: str) -> PromptString:

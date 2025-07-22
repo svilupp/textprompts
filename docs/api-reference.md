@@ -10,6 +10,9 @@ Load a single prompt file.
 - `path` (str | Path): Path to the prompt file
 - `meta` (MetadataMode | str | None): Metadata handling mode - "strict", "allow", "ignore", or None (uses global config)
 
+You can also set the environment variable `TEXTPROMPTS_METADATA_MODE` before
+importing the package to choose the default mode.
+
 **Returns:** `Prompt` object
 
 **Raises:** `TextPromptsError` subclasses on any failure
@@ -90,6 +93,8 @@ Represents a loaded prompt with metadata and content.
 **Example:**
 ```python
 prompt = load_prompt("example.txt")
+# or
+prompt = Prompt("example.txt")
 print(prompt.path)  # PosixPath('example.txt')
 print(prompt.meta.title)  # "Example Prompt"
 print(prompt.prompt)  # PromptString("Hello {name}!")
