@@ -1,0 +1,43 @@
+name: Julia CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: '1.11'
+      - name: Install dependencies
+        run: julia --project=julia/TextPrompts -e 'using Pkg; Pkg.instantiate()'
+      - name: Run tests
+        run: julia --project=julia/TextPrompts -e 'using Pkg; Pkg.test("TextPrompts", coverage=true)'
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: julia/TextPrompts/coverage/lcov.info
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: '1.11'
+      - name: Build docs
+        run: julia --project=julia/TextPrompts julia/docs/make.jl
+      - name: Copy docs
+        run: |
+          mkdir -p docs/_site/julia
+          cp -r julia/docs/build/* docs/_site/julia/
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_site
