@@ -94,7 +94,7 @@ Represents a loaded prompt with metadata and content.
 ```python
 prompt = load_prompt("example.txt")
 # or
-prompt = Prompt("example.txt")
+prompt = Prompt.from_path("example.txt")
 print(prompt.path)  # PosixPath('example.txt')
 print(prompt.meta.title)  # "Example Prompt"
 print(prompt.prompt)  # PromptString("Hello {name}!")
@@ -142,7 +142,7 @@ print(template.placeholders)  # {'name', 'age'}
 # ✅ Strict formatting (default) - all placeholders required
 result = template.format(name="Alice", age=30)
 
-# ❌ This raises ValueError  
+# ❌ This raises ValueError
 result = template.format(name="Alice")  # Missing 'age'
 
 # ✅ Partial formatting with skip_validation

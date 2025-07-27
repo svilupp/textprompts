@@ -21,22 +21,14 @@ class Prompt(BaseModel):
     meta: Union[PromptMeta, None]
     prompt: PromptString
 
-    def __init__(
-        self,
-        path: Union[str, Path],
-        meta: Union[PromptMeta, MetadataMode, str, None] = None,
-        prompt: Union[str, PromptString, None] = None,
-    ) -> None:
-        """Initialize Prompt from fields or load from file."""
-        if prompt is None:
-            from .loaders import load_prompt
+    @classmethod
+    def from_path(
+        cls, path: Union[str, Path], *, meta: Union[MetadataMode, str, None] = None
+    ) -> "Prompt":
+        """Load a Prompt from ``path`` using ``load_prompt``."""
+        from .loaders import load_prompt
 
-            loaded = load_prompt(path, meta=meta)
-            super().__init__(**loaded.model_dump())
-        else:
-            if isinstance(prompt, str):
-                prompt = PromptString(prompt)
-            super().__init__(path=Path(path), meta=meta, prompt=prompt)
+        return load_prompt(path, meta=meta)
 
     @field_validator("prompt")
     @classmethod
