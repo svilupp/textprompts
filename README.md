@@ -9,7 +9,7 @@
 
 > **So simple, it's not even worth vibing about coding yet it just makes so much sense.**
 
-Are you tired of vendors trying to sell you fancy UIs for prompt management that just make your system more confusing and harder to debug? Isn't it nice to just have your prompts **next to your code**? 
+Are you tired of vendors trying to sell you fancy UIs for prompt management that just make your system more confusing and harder to debug? Isn't it nice to just have your prompts **next to your code**?
 
 But then you worry: *Did my formatter change my prompt? Are those spaces at the beginning actually part of the prompt or just indentation?*
 
@@ -18,7 +18,7 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 ## Why textprompts?
 
 - ✅ **Prompts live next to your code** - no external systems to manage
-- ✅ **Git is your version control** - diff, branch, and experiment with ease  
+- ✅ **Git is your version control** - diff, branch, and experiment with ease
 - ✅ **No formatter headaches** - your prompts stay exactly as you wrote them
 - ✅ **Minimal markup** - just TOML front-matter when you need metadata (or no metadata if you prefer!)
 - ✅ **Zero dependencies** - well, almost (just Pydantic)
@@ -57,12 +57,12 @@ import textprompts
 # Just load it - works with or without metadata
 prompt = textprompts.load_prompt("greeting.txt")
 # Or simply
-alt = textprompts.Prompt("greeting.txt")
+alt = textprompts.Prompt.from_path("greeting.txt")
 
 # Use it safely - all placeholders must be provided
 message = prompt.prompt.format(
     customer_name="Alice",
-    company_name="ACME Corp", 
+    company_name="ACME Corp",
     issue_type="billing question",
     agent_name="Sarah"
 )
@@ -145,7 +145,7 @@ prompt = textprompts.load_prompt("prompt.txt")  # No metadata parsing
 print(prompt.meta.title)  # "prompt" (from filename)
 
 # 2. ALLOW: Load metadata if present, don't worry if it's incomplete
-textprompts.set_metadata("allow")  # Flexible metadata loading  
+textprompts.set_metadata("allow")  # Flexible metadata loading
 prompt = textprompts.load_prompt("prompt.txt")  # Loads any metadata found
 
 # 3. STRICT: Require complete metadata for production use
@@ -158,7 +158,7 @@ prompt = textprompts.load_prompt("prompt.txt", meta="strict")
 
 **Why this design?**
 - **Default = Simple**: No configuration needed, just load files
-- **Flexible**: Add metadata when you want structure  
+- **Flexible**: Add metadata when you want structure
 - **Production-Safe**: Use strict mode to catch missing metadata before deployment
 
 ## Real-World Examples
@@ -183,7 +183,7 @@ response = openai.chat.completions.create(
             )
         },
         {
-            "role": "user", 
+            "role": "user",
             "content": user_prompt.prompt.format(
                 query="How do I return an item?",
                 customer_tier="premium"
@@ -217,7 +217,7 @@ description = "Search our product catalog"
                     "description": "Search query for products"
                 },
                 "category": {
-                    "type": "string", 
+                    "type": "string",
                     "enum": ["electronics", "clothing", "books"],
                     "description": "Product category to search within"
                 },
@@ -299,7 +299,7 @@ Use {variables} for templating.
 Choose the right level of strictness for your use case:
 
 1. **IGNORE** (default) - Simple text file loading, filename becomes title
-2. **ALLOW** - Load metadata if present, don't worry about completeness  
+2. **ALLOW** - Load metadata if present, don't worry about completeness
 3. **STRICT** - Require complete metadata (title, description, version) for production safety
 
 You can also set the environment variable `TEXTPROMPTS_METADATA_MODE` to one of
@@ -309,7 +309,7 @@ default mode.
 ```python
 # Set globally
 textprompts.set_metadata("ignore")   # Default: simple file loading
-textprompts.set_metadata("allow")    # Flexible: load any metadata  
+textprompts.set_metadata("allow")    # Flexible: load any metadata
 textprompts.set_metadata("strict")   # Production: require complete metadata
 
 # Or override per prompt
@@ -387,7 +387,7 @@ template = PromptString("Hello {name}, you are {role}")
 result = template.format(name="Alice", role="admin")  # ✅ Works
 result = template.format(name="Alice")  # ❌ Raises ValueError
 
-# Partial formatting - replace only available placeholders  
+# Partial formatting - replace only available placeholders
 partial = template.format(name="Alice", skip_validation=True)  # ✅ "Hello Alice, you are {role}"
 
 # Access placeholder information

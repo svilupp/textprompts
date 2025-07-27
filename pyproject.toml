@@ -1,6 +1,6 @@
 [project]
 name = "textprompts"
-version = "0.0.3"
+version = "0.0.4"
 description = "Minimal text-based prompt-loader with TOML front-matter"
 readme = "README.md"
 license = "MIT"
@@ -60,6 +60,7 @@ ignore = ["E501"]  # Ignore line length
 [tool.mypy]
 python_version = "3.11"
 strict = true
+mypy_path = "src"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
