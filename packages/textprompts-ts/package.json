@@ -1,0 +1,39 @@
+{
+  "name": "@textprompts/textprompts-ts",
+  "version": "0.1.0",
+  "description": "TypeScript companion to textprompts for loading and formatting prompt files.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./cli": {
+      "import": "./dist/cli.js",
+      "types": "./dist/cli.d.ts"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts src/cli.ts --format esm --dts",
+    "types": "tsc --emitDeclarationOnly -p tsconfig.json",
+    "test": "bun test",
+    "prepublishOnly": "bun run build && bun run types"
+  },
+  "bin": {
+    "textprompts-ts": "./dist/cli.js"
+  },
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "fast-glob": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/bun": "^1.0.7",
+    "tsup": "^7.2.0",
+    "typescript": "^5.4.0"
+  }
+}
