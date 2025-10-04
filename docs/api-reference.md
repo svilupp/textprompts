@@ -23,7 +23,7 @@ from textprompts import load_prompt
 
 prompt = load_prompt("prompts/greeting.txt")
 print(prompt.meta.title)
-print(prompt.body)
+print(prompt.prompt)
 ```
 
 ### `load_prompts(*paths, recursive=False, glob="*.txt", meta=None, max_files=1000)`
@@ -68,14 +68,16 @@ Save a prompt to a file.
 
 **Example:**
 ```python
-from textprompts import save_prompt, Prompt, PromptMeta
+from pathlib import Path
+
+from textprompts import Prompt, PromptMeta, save_prompt
 
 # Save a simple prompt with metadata template
 save_prompt("my_prompt.txt", "You are a helpful assistant.")
 
 # Save a Prompt object with full metadata
 meta = PromptMeta(title="Assistant", version="1.0.0", description="A helpful AI")
-prompt = Prompt(path=Path("my_prompt.txt"), meta=meta, body="You are a helpful assistant.")
+prompt = Prompt(path=Path("my_prompt.txt"), meta=meta, prompt="You are a helpful assistant.")
 save_prompt("my_prompt.txt", prompt)
 ```
 

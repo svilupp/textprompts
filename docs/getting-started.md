@@ -37,7 +37,7 @@ prompt = load_prompt("hello.txt")
 print(prompt.meta.title)  # "Hello World"
 
 # Use the prompt
-message = prompt.body.format(name="Alice")
+message = prompt.prompt.format(name="Alice")
 print(message)  # "Hello Alice! Welcome to TextPrompts."
 ```
 
