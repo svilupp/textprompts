@@ -36,10 +36,10 @@ Best regards,
 
 **Python code**:
 ```python
-from textprompts import load_prompt
+from textprompts import load_prompt, set_metadata
 
-# Optionally, you can look for TOML metadata in the header of the file
-textprompts.set_metadata("allow") # optional!
+# Optionally, configure metadata parsing
+set_metadata("allow")  # optional!
 
 # Or set via environment variable before import
 # export TEXTPROMPTS_METADATA_MODE=allow

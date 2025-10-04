@@ -101,10 +101,14 @@ Tests are located in `tests/` and follow pytest conventions.
 TextPrompts is fully typed. All public APIs must include type hints:
 
 ```python
-from typing import Optional
 from pathlib import Path
 
-def load_prompt(path: str | Path, *, skip_meta: bool = False) -> Prompt:
+from textprompts import MetadataMode, Prompt
+
+
+def load_prompt(
+    path: str | Path, *, meta: MetadataMode | str | None = None
+) -> Prompt:
     """Load a single prompt file."""
     ...
 ```
