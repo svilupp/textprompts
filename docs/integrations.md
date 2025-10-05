@@ -65,7 +65,7 @@ agent = Agent(
 
 @agent.system_prompt
 def contextual_prompt(ctx: RunContext[CustomerContext]) -> str:
-    return agent_prompt.body.format(
+    return agent_prompt.prompt.format(
         customer_tier=ctx.deps.tier,
         region=ctx.deps.region,
         policies=get_regional_policies(ctx.deps.region)
