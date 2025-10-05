@@ -18,7 +18,7 @@ system_prompt = load_prompt("prompts/customer_agent.txt")
 # Create agent
 agent = Agent(
     'openai:gpt-4',
-    system_prompt=system_prompt.body.format(
+    system_prompt=system_prompt.prompt.format(
         company_name="ACME Corp",
         support_level="premium"
     )
@@ -30,6 +30,11 @@ result = agent.run_sync("Help me with my order")
 
 ### Advanced Usage with Dependencies
 
+When you need to tailor the system prompt using request-specific context, you can
+register a formatter with the `@agent.system_prompt` decorator. This keeps the
+prompt logic close to the agent while still allowing you to compute any helper
+values that the template depends on.
+
 ```python
 from textprompts import load_prompt
 from pydantic_ai import Agent, RunContext
@@ -40,6 +45,15 @@ class CustomerContext(BaseModel):
     tier: str
     region: str
 
+# Simple helper to keep the example self-contained
+def get_regional_policies(region: str) -> str:
+    policies = {
+        "US": "Follow U.S. consumer protection regulations and ACME's premium guarantees.",
+        "EU": "Comply with EU return directives and ACME's standard guarantees.",
+        "default": "Apply ACME's global support policy with local adjustments as needed.",
+    }
+    return policies.get(region, policies["default"])
+
 # Load prompt template
 agent_prompt = load_prompt("prompts/contextual_agent.txt")
 
@@ -47,12 +61,15 @@ agent_prompt = load_prompt("prompts/contextual_agent.txt")
 agent = Agent(
     'openai:gpt-4',
     deps_type=CustomerContext,
-    system_prompt=lambda ctx: agent_prompt.body.format(
-        customer_tier=ctx.tier,
-        region=ctx.region,
-        policies=get_regional_policies(ctx.region)
-    )
 )
+
+@agent.system_prompt
+def contextual_prompt(ctx: RunContext[CustomerContext]) -> str:
+    return agent_prompt.body.format(
+        customer_tier=ctx.deps.tier,
+        region=ctx.deps.region,
+        policies=get_regional_policies(ctx.deps.region)
+    )
 
 # Run with context
 context = CustomerContext(
@@ -81,14 +98,14 @@ response = openai.chat.completions.create(
     messages=[
         {
             "role": "system",
-            "content": system_prompt.body.format(
+            "content": system_prompt.prompt.format(
                 domain="technical support",
                 tone="helpful and detailed"
             )
         },
         {
             "role": "user",
-            "content": user_prompt_template.body.format(
+            "content": user_prompt_template.prompt.format(
                 query="How do I reset my password?",
                 context="mobile app"
             )
@@ -111,7 +128,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_weather",
-            "description": function_prompt.body.format(
+            "description": function_prompt.prompt.format(
                 function_name="get_weather",
                 purpose="Get current weather for a location"
             ),
@@ -146,7 +163,7 @@ template_prompt = load_prompt("prompts/analysis_template.txt")
 
 # Create LangChain prompt
 prompt = PromptTemplate(
-    template=str(template_prompt.body),
+    template=str(template_prompt.prompt),
     input_variables=["document", "question", "context"]
 )
 
@@ -173,8 +190,8 @@ user_prompt = load_prompt("prompts/chat_user.txt")
 
 # Create chat template
 chat_prompt = ChatPromptTemplate.from_messages([
-    ("system", system_prompt.prompt),
-    ("human", user_prompt.prompt),
+    SystemMessage(content=str(system_prompt.prompt)),
+    HumanMessage(content=str(user_prompt.prompt))
 ])
 
 # Format and use
@@ -205,14 +222,14 @@ client = anthropic.Anthropic()
 response = client.messages.create(
     model="claude-3-sonnet-20240229",
     max_tokens=1000,
-    system=system_prompt.body.format(
+    system=system_prompt.prompt.format(
         expertise="software engineering",
         communication_style="technical but accessible"
     ),
     messages=[
         {
             "role": "user",
-            "content": user_prompt.body.format(
+            "content": user_prompt.prompt.format(
                 task="code review",
                 code_snippet="...",
                 focus_areas="performance, security, maintainability"
@@ -237,7 +254,7 @@ prompt_template = load_prompt("prompts/text_generation.txt")
 generator = pipeline("text-generation", model="gpt2")
 
 # Generate text
-prompt = prompt_template.body.format(
+prompt = prompt_template.prompt.format(
     topic="artificial intelligence",
     style="informative",
     length="medium"
@@ -258,7 +275,7 @@ chat_template = load_prompt("prompts/chat_template.txt")
 tokenizer = AutoTokenizer.from_pretrained("microsoft/DialoGPT-medium")
 
 # Apply chat template
-conversation = chat_template.body.format(
+conversation = chat_template.prompt.format(
     user_message="Hello, how are you?",
     context="friendly conversation",
     personality="helpful and engaging"
@@ -285,7 +302,7 @@ response = ollama.chat(
     messages=[
         {
             'role': 'system',
-            'content': system_prompt.body.format(
+            'content': system_prompt.prompt.format(
                 domain="creative writing",
                 tone="imaginative and engaging"
             )
@@ -303,7 +320,8 @@ response = ollama.chat(
 ### Query Engine
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core.prompts import PromptTemplate
 from textprompts import load_prompt
 
 # Load query template
@@ -315,12 +333,15 @@ index = VectorStoreIndex.from_documents(documents)
 
 # Create query engine with custom prompt
 query_engine = index.as_query_engine(
-    text_qa_template=query_template.body.format(
+    text_qa_template=query_template.prompt.format(
         instruction="Answer based on the context provided",
         format="bullet points",
         tone="concise and informative"
     )
 )
+
+# Create query engine with custom prompt
+query_engine = index.as_query_engine(text_qa_template=text_qa_prompt)
 
 # Query
 response = query_engine.query("What are the main benefits?")
@@ -358,7 +379,7 @@ if selected_prompt:
     
     # Extract variables
     import re
-    variables = re.findall(r'\{([^}]+)\}', prompt.body)
+    variables = re.findall(r'\{([^}]+)\}', prompt.prompt)
     
     # Input fields for variables
     st.subheader("Variables")
@@ -369,7 +390,7 @@ if selected_prompt:
     # Generate output
     if st.button("Generate"):
         try:
-            result = prompt.body.format(**values)
+            result = prompt.prompt.format(**values)
             st.subheader("Result")
             st.text_area("Generated prompt:", result, height=200)
         except ValueError as e:
@@ -411,7 +432,7 @@ async def format_prompt(request: FormatRequest):
     
     prompt = prompts[request.prompt_name]
     try:
-        result = prompt.body.format(**request.variables)
+        result = prompt.prompt.format(**request.variables)
         return {"result": result}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -488,7 +509,7 @@ def validate_prompt_collection(directory: str):
             print(f"WARNING: {prompt.path} missing title")
         
         # Check for common issues
-        if "{" in prompt.body and "}" in prompt.body:
-            variables = re.findall(r'\{([^}]+)\}', prompt.body)
+        if "{" in prompt.prompt and "}" in prompt.prompt:
+            variables = re.findall(r'\{([^}]+)\}', prompt.prompt)
             print(f"INFO: {prompt.path} uses variables: {variables}")
 ```

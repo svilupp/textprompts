@@ -70,7 +70,9 @@ Just use {variables} as needed.
 
 To load prompts without metadata:
 ```python
-prompt = load_prompt("simple.txt", skip_meta=True)
+from textprompts import load_prompt
+
+prompt = load_prompt("simple.txt", meta="ignore")
 ```
 
 ## Format Rules
