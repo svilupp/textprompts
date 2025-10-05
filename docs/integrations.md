@@ -30,6 +30,11 @@ result = agent.run_sync("Help me with my order")
 
 ### Advanced Usage with Dependencies
 
+When you need to tailor the system prompt using request-specific context, you can
+register a formatter with the `@agent.system_prompt` decorator. This keeps the
+prompt logic close to the agent while still allowing you to compute any helper
+values that the template depends on.
+
 ```python
 from textprompts import load_prompt
 from pydantic_ai import Agent, RunContext
@@ -40,6 +45,15 @@ class CustomerContext(BaseModel):
     tier: str
     region: str
 
+# Simple helper to keep the example self-contained
+def get_regional_policies(region: str) -> str:
+    policies = {
+        "US": "Follow U.S. consumer protection regulations and ACME's premium guarantees.",
+        "EU": "Comply with EU return directives and ACME's standard guarantees.",
+        "default": "Apply ACME's global support policy with local adjustments as needed.",
+    }
+    return policies.get(region, policies["default"])
+
 # Load prompt template
 agent_prompt = load_prompt("prompts/contextual_agent.txt")
 
@@ -47,12 +61,15 @@ agent_prompt = load_prompt("prompts/contextual_agent.txt")
 agent = Agent(
     'openai:gpt-4',
     deps_type=CustomerContext,
-    system_prompt=lambda ctx: agent_prompt.prompt.format(
-        customer_tier=ctx.tier,
-        region=ctx.region,
-        policies=get_regional_policies(ctx.region)
-    )
 )
+
+@agent.system_prompt
+def contextual_prompt(ctx: RunContext[CustomerContext]) -> str:
+    return agent_prompt.body.format(
+        customer_tier=ctx.deps.tier,
+        region=ctx.deps.region,
+        policies=get_regional_policies(ctx.deps.region)
+    )
 
 # Run with context
 context = CustomerContext(
