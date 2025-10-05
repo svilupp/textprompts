@@ -50,17 +50,6 @@ class Prompt(BaseModel):
     def __str__(self) -> str:
         return str(self.prompt)
 
-    @property
-    def body(self) -> PromptString:
-        import warnings
-
-        warnings.warn(
-            "Prompt.body is deprecated; use .prompt instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.prompt
-
     def __len__(self) -> int:
         return len(self.prompt)
 

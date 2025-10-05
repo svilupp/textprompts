@@ -21,7 +21,7 @@ def main() -> None:
         if args.json:
             print(json.dumps(prompt.meta.model_dump() if prompt.meta else {}, indent=2))
         else:
-            print(prompt.body)
+            print(prompt.prompt)
     except TextPromptsError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

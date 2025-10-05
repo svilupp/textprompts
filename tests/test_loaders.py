@@ -162,12 +162,13 @@ def test_prompt_model_validation_edge_cases(tmp_path: Path) -> None:
     assert str(prompt) == "Just content"
 
 
-def test_body_property_deprecated(tmp_path: Path) -> None:
+def test_prompt_has_no_body_alias(tmp_path: Path) -> None:
     test_file = tmp_path / "deprecated.txt"
     test_file.write_text("Hello")
     prompt = load_prompt(test_file, meta="ignore")
-    with pytest.deprecated_call():
-        _ = prompt.body
+    assert not hasattr(prompt, "body")
+    with pytest.raises(AttributeError):
+        getattr(prompt, "body")
 
 
 def test_prompt_model_repr_with_version(tmp_path: Path) -> None:
