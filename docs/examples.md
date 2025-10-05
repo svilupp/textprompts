@@ -156,8 +156,9 @@ latest_prompt = get_latest_prompt("Customer Support")
 ### Prompt Registry
 
 ```python
-from textprompts import load_prompts
 from typing import Dict
+
+from textprompts import Prompt, load_prompts
 
 class PromptRegistry:
     def __init__(self, directory: str):
@@ -341,6 +342,6 @@ Hello {name}!"""
         assert prompts[0].meta.title == "Test Prompt"
         
         # Test formatting
-        result = prompts[0].body.format(name="Test")
+        result = prompts[0].prompt.format(name="Test")
         assert result == "Hello Test!"
 ```

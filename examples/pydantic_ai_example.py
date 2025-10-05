@@ -54,7 +54,7 @@ def example_1_direct_formatting():
     customer = CustomerInfo(name="Alice", company="ACME Corp", tier="Premium")
 
     # Format the system prompt directly
-    formatted_prompt = system_prompt.body.format(
+    formatted_prompt = system_prompt.prompt.format(
         company=customer.company,
         customer_name=customer.name,
         tier=customer.tier,
@@ -99,7 +99,7 @@ def example_2_single_decorator():
     # Use single decorator to define the complete system prompt
     @agent.system_prompt
     def complete_system_prompt(ctx) -> str:
-        return system_prompt.body.format(
+        return system_prompt.prompt.format(
             company=ctx.deps.company,
             customer_name=ctx.deps.name,
             tier=ctx.deps.tier,

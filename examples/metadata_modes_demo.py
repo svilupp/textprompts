@@ -82,7 +82,7 @@ def demonstrate_ignore_mode(test_dir):
             prompt = textprompts.load_prompt(file_path)
             print(f"✅ {filename}:")
             print(f"   Title: {prompt.meta.title} (from filename)")
-            print(f"   Content preview: {str(prompt.body)[:60]}...")
+            print(f"   Content preview: {str(prompt.prompt)[:60]}...")
             print()
         except Exception as e:
             print(f"❌ {filename}: {type(e).__name__}: {e}")

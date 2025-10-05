@@ -123,7 +123,7 @@ def demonstrate_single_prompt_loading(prompt_dir):
     print(f"Description: {greeting.meta.description}")
 
     # Use the prompt
-    message = greeting.body.format(
+    message = greeting.prompt.format(
         customer_name="Alice Johnson",
         company_name="Tech Solutions Inc",
         service_type="cloud hosting",
@@ -156,7 +156,7 @@ def demonstrate_multiple_prompt_loading(prompt_dir):
     # Use support response template
     if "Support Response Template" in prompt_lookup:
         support = prompt_lookup["Support Response Template"]
-        response = support.body.format(
+        response = support.prompt.format(
             customer_name="Bob Smith",
             company_name="Tech Solutions Inc",
             issue_type="billing inquiry",
@@ -247,7 +247,7 @@ def demonstrate_no_metadata_loading(prompt_dir):
         print(f"   Version: {simple.meta.version}")
 
         # Use the prompt
-        result = simple.body.format(purpose="quick testing", variables="placeholder")
+        result = simple.prompt.format(purpose="quick testing", variables="placeholder")
         print(f"   Result: {result}")
 
     except Exception as e:
