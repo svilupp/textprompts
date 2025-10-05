@@ -182,7 +182,6 @@ result = chain.invoke({
 
 ```python
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema import HumanMessage, SystemMessage
 from textprompts import load_prompt
 
 # Load system and user prompts
@@ -199,8 +198,11 @@ chat_prompt = ChatPromptTemplate.from_messages([
 messages = chat_prompt.format_messages(
     role="helpful assistant",
     user_query="Explain quantum computing",
-    difficulty_level="beginner"
+    difficulty_level="beginner",
 )
+
+for message in messages:
+    print(f"{message.type}: {message.content}")
 ```
 
 ## Anthropic Claude
