@@ -30,6 +30,11 @@ result = agent.run_sync("Help me with my order")
 
 ### Advanced Usage with Dependencies
 
+When you need to tailor the system prompt using request-specific context, you can
+register a formatter with the `@agent.system_prompt` decorator. This keeps the
+prompt logic close to the agent while still allowing you to compute any helper
+values that the template depends on.
+
 ```python
 from textprompts import load_prompt
 from pydantic_ai import Agent, RunContext
@@ -57,7 +62,6 @@ agent = Agent(
     'openai:gpt-4',
     deps_type=CustomerContext,
 )
-
 
 @agent.system_prompt
 def contextual_prompt(ctx: RunContext[CustomerContext]) -> str:
