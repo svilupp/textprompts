@@ -318,7 +318,8 @@ response = ollama.chat(
 ### Query Engine
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core.prompts import PromptTemplate
 from textprompts import load_prompt
 
 # Load query template
@@ -336,6 +337,9 @@ query_engine = index.as_query_engine(
         tone="concise and informative"
     )
 )
+
+# Create query engine with custom prompt
+query_engine = index.as_query_engine(text_qa_template=text_qa_prompt)
 
 # Query
 response = query_engine.query("What are the main benefits?")
