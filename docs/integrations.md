@@ -301,7 +301,8 @@ response = ollama.chat(
 ### Query Engine
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core.prompts import PromptTemplate
 from textprompts import load_prompt
 
 # Load query template
@@ -311,14 +312,17 @@ query_template = load_prompt("prompts/query_template.txt")
 documents = SimpleDirectoryReader("data").load_data()
 index = VectorStoreIndex.from_documents(documents)
 
-# Create query engine with custom prompt
-query_engine = index.as_query_engine(
-    text_qa_template=query_template.body.format(
+# Create prompt template
+text_qa_prompt = PromptTemplate(
+    query_template.body.format(
         instruction="Answer based on the context provided",
         format="bullet points",
         tone="concise and informative"
     )
 )
+
+# Create query engine with custom prompt
+query_engine = index.as_query_engine(text_qa_template=text_qa_prompt)
 
 # Query
 response = query_engine.query("What are the main benefits?")
