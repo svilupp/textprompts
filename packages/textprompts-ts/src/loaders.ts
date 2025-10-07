@@ -20,6 +20,7 @@ export const loadPrompt = async (path: string, options: LoadPromptOptions = {}):
     if (error instanceof FileMissingError) {
       throw error;
     }
+    // Any other error (e.g., ENOENT) means file is missing
     throw new FileMissingError(path);
   }
 
@@ -48,9 +49,7 @@ const extractPathsAndOptions = (
         ? (maybeOptions as LoadPromptsOptions)
         : {};
     const paths = [...first];
-    if (options === maybeOptions) {
-      rest.pop();
-    }
+    // Note: We don't mutate rest array - caller should handle this
     return { paths, options };
   }
 
@@ -65,8 +64,6 @@ const extractPathsAndOptions = (
   return { paths, options };
 };
 
-export function loadPrompts(paths: string[], options?: LoadPromptsOptions): Promise<Prompt[]>;
-export function loadPrompts(path: string, ...rest: Array<string | LoadPromptsOptions>): Promise<Prompt[]>;
 export async function loadPrompts(
   first: string | string[],
   ...rest: Array<string | LoadPromptsOptions>
@@ -104,14 +101,14 @@ export async function loadPrompts(
         deep: recursive ? Infinity : 1,
       });
       for (const file of matches) {
-        if (maxFiles && processed >= maxFiles) {
+        if (maxFiles !== null && processed >= maxFiles) {
           throw new TextPromptsError(`Exceeded maxFiles limit of ${maxFiles}`);
         }
         prompts.push(await loadPrompt(file, { meta: resolvedMode }));
         processed += 1;
       }
     } else {
-      if (maxFiles && processed >= maxFiles) {
+      if (maxFiles !== null && processed >= maxFiles) {
         throw new TextPromptsError(`Exceeded maxFiles limit of ${maxFiles}`);
       }
       prompts.push(await loadPrompt(entry, { meta: resolvedMode }));

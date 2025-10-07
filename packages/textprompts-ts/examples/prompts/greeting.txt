@@ -1,0 +1,12 @@
+---
+title = "Customer Greeting"
+version = "1.0.0"
+description = "Friendly greeting for customer support"
+author = "Customer Success Team"
+---
+Hello {customer_name}!
+
+Welcome to {company_name}. We're here to help you with {issue_type}.
+
+Best regards,
+{agent_name}

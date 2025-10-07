@@ -1,4 +1,5 @@
 import { extractPlaceholders, validateFormatArgs } from "./placeholder-utils";
+import { PLACEHOLDER_PATTERN } from "./constants";
 
 export interface FormatCallOptions {
   skipValidation?: boolean;
@@ -8,8 +9,6 @@ export interface FormatOptions extends FormatCallOptions {
   args?: unknown[];
   kwargs?: Record<string, unknown>;
 }
-
-const placeholderPattern = /\{([^}:]*)(?::[^}]*)?\}/g;
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -22,25 +21,32 @@ export class PromptString {
     this.placeholders = extractPlaceholders(value);
   }
 
-  format(options?: FormatOptions): string;
+  format(kwargs: Record<string, unknown>, options?: FormatCallOptions): string;
   format(args: unknown[], kwargs?: Record<string, unknown>, options?: FormatCallOptions): string;
   format(
-    arg0?: FormatOptions | unknown[],
-    arg1?: Record<string, unknown>,
+    arg0?: Record<string, unknown> | unknown[],
+    arg1?: Record<string, unknown> | FormatCallOptions,
     arg2?: FormatCallOptions,
   ): string {
     let args: unknown[] = [];
     let kwargs: Record<string, unknown> = {};
     let skipValidation = false;
 
-    if (Array.isArray(arg0) || arg0 === undefined) {
-      args = Array.isArray(arg0) ? arg0 : [];
-      kwargs = arg1 ?? {};
-      skipValidation = arg2?.skipValidation ?? false;
+    if (Array.isArray(arg0)) {
+      // format([args], kwargs, options)
+      args = arg0;
+      kwargs = (arg1 && !("skipValidation" in arg1)) ? arg1 as Record<string, unknown> : {};
+      skipValidation = arg2?.skipValidation ?? (arg1 as FormatCallOptions)?.skipValidation ?? false;
+    } else if (arg0 === undefined) {
+      // format()
+      args = [];
+      kwargs = {};
+      skipValidation = false;
     } else {
-      args = arg0.args ?? [];
-      kwargs = arg0.kwargs ?? {};
-      skipValidation = arg0.skipValidation ?? false;
+      // format(kwargs, options)
+      args = [];
+      kwargs = arg0;
+      skipValidation = (arg1 as FormatCallOptions)?.skipValidation ?? false;
     }
 
     const source = this.value.trim();
@@ -48,7 +54,11 @@ export class PromptString {
       return this.partialFormat(args, kwargs, source);
     }
     validateFormatArgs(this.placeholders, args, kwargs, false);
-    return source.replace(placeholderPattern, (_match, key: string) => {
+
+    // Track position for empty placeholders
+    let emptyPlaceholderIndex = 0;
+
+    return source.replace(PLACEHOLDER_PATTERN, (_match, key: string) => {
       if (Object.prototype.hasOwnProperty.call(kwargs, key)) {
         return String(kwargs[key]);
       }
@@ -57,7 +67,9 @@ export class PromptString {
         return String(args[index]);
       }
       if (key === "" && args.length > 0) {
-        return String(args[0]);
+        const value = String(args[emptyPlaceholderIndex] ?? _match);
+        emptyPlaceholderIndex++;
+        return value;
       }
       return _match;
     });
@@ -72,8 +84,11 @@ export class PromptString {
     for (const placeholder of this.placeholders) {
       if (Object.prototype.hasOwnProperty.call(merged, placeholder)) {
         const value = merged[placeholder];
-        const pattern = new RegExp(`\\{${escapeRegExp(placeholder)}(?::[^}]*)?\\}`, "g");
-        result = result.replace(pattern, String(value));
+        // Skip null/undefined values - leave placeholder unreplaced
+        if (value != null) {
+          const pattern = new RegExp(`\\{${escapeRegExp(placeholder)}(?::[^}]*)?\\}`, "g");
+          result = result.replace(pattern, String(value));
+        }
       }
     }
     return result;
@@ -99,5 +114,3 @@ export class PromptString {
     return this.value.length;
   }
 }
-
-export const SafeString = PromptString;

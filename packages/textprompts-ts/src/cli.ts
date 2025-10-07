@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { argv, exit, stderr, stdout } from "process";
 
 import { loadPrompt } from "./loaders";

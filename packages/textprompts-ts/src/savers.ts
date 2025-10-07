@@ -1,4 +1,5 @@
 import { writeFile } from "fs/promises";
+import * as TOML from "@iarna/toml";
 
 import { Prompt, PromptMeta } from "./models";
 
@@ -6,7 +7,8 @@ const serializeMetaValue = (value: string | null | undefined): string => {
   if (value == null) {
     return "";
   }
-  return String(value);
+  // Escape special TOML characters
+  return String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r");
 };
 
 export const savePrompt = async (path: string, content: string | Prompt): Promise<void> => {
@@ -26,10 +28,10 @@ export const savePrompt = async (path: string, content: string | Prompt): Promis
   lines.push(`description = "${serializeMetaValue(meta.description)}"`);
   lines.push(`version = "${serializeMetaValue(meta.version)}"`);
   if (meta.author) {
-    lines.push(`author = "${meta.author}"`);
+    lines.push(`author = "${serializeMetaValue(meta.author)}"`);
   }
   if (meta.created) {
-    lines.push(`created = "${meta.created}"`);
+    lines.push(`created = "${serializeMetaValue(meta.created)}"`);
   }
   lines.push("---", "", content.prompt.toString());
   await writeFile(path, lines.join("\n"), { encoding: "utf8" });

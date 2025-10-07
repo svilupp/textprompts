@@ -1,0 +1,212 @@
+#!/usr/bin/env node
+/**
+ * Example: Basic TextPrompts Usage
+ *
+ * This example demonstrates the core functionality of textprompts-ts
+ * including loading single prompts, multiple prompts, and using PromptString.
+ */
+
+import { join } from "path";
+import { loadPrompt, loadPrompts, PromptString } from "../src/index";
+
+const PROMPTS_DIR = join(import.meta.dir, "prompts");
+
+async function demonstrateSinglePromptLoading() {
+  console.log("1. Single Prompt Loading");
+  console.log("-".repeat(30));
+
+  // Load greeting prompt
+  const greetingPath = join(PROMPTS_DIR, "greeting.txt");
+  const greeting = await loadPrompt(greetingPath, { meta: "allow" });
+
+  console.log(`Loaded: ${greeting.meta.title}`);
+  console.log(`Version: ${greeting.meta.version}`);
+  console.log(`Author: ${greeting.meta.author}`);
+  console.log(`Description: ${greeting.meta.description}`);
+
+  // Use the prompt
+  const message = greeting.prompt.format({
+    customer_name: "Alice Johnson",
+    company_name: "Tech Solutions Inc",
+    issue_type: "cloud hosting",
+    agent_name: "Sarah",
+  });
+
+  console.log("\nFormatted message:");
+  console.log(message);
+  console.log();
+}
+
+async function demonstrateMultiplePromptLoading() {
+  console.log("2. Multiple Prompt Loading");
+  console.log("-".repeat(30));
+
+  // Load all prompts from directory
+  const prompts = await loadPrompts(PROMPTS_DIR, {
+    meta: "allow",
+    glob: "*.txt",
+  });
+
+  console.log(`Loaded ${prompts.length} prompts:`);
+  for (const prompt of prompts) {
+    if (prompt.meta.version) {
+      console.log(`  • ${prompt.meta.title} (v${prompt.meta.version})`);
+    } else {
+      console.log(`  • ${prompt.meta.title} (from filename)`);
+    }
+  }
+
+  // Create a lookup by title
+  const promptLookup = new Map(prompts.map((p) => [p.meta.title!, p]));
+
+  // Use system prompt
+  const system = promptLookup.get("AI Assistant System Prompt");
+  if (system) {
+    const formatted = system.prompt.format({
+      company_name: "Tech Solutions Inc",
+      tone: "friendly and professional",
+    });
+
+    console.log(`\nSample ${system.meta.title}:`);
+    console.log(formatted.slice(0, 150) + "...");
+  }
+  console.log();
+}
+
+function demonstratePromptString() {
+  console.log("3. PromptString Validation");
+  console.log("-".repeat(30));
+
+  // Create a template with variables
+  const template = new PromptString(
+    "Order {order_id} for {customer} is {status}. Total: ${amount}"
+  );
+
+  console.log("Template:", template.toString());
+  console.log("Placeholders:", Array.from(template.placeholders));
+
+  // Successful formatting (all placeholders provided)
+  try {
+    const result = template.format({
+      order_id: "12345",
+      customer: "Alice",
+      status: "shipped",
+      amount: "99.99",
+    });
+    console.log(`✅ Success: ${result}`);
+  } catch (error) {
+    console.log(`❌ Error: ${error}`);
+  }
+
+  // Failed formatting - missing variables
+  try {
+    const result = template.format({
+      order_id: "12345",
+      customer: "Bob",
+      // Missing: status, amount
+    });
+    console.log(`✅ Success: ${result}`);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(`❌ Error (expected): ${error.message}`);
+    }
+  }
+
+  // Partial formatting with skipValidation
+  try {
+    const partial = template.format(
+      {
+        order_id: "12345",
+        customer: "Bob",
+      },
+      { skipValidation: true }
+    );
+    console.log(`✅ Partial format: ${partial}`);
+    console.log("   ^ Notice {status} and {amount} remain as placeholders");
+  } catch (error) {
+    console.log(`❌ Error: ${error}`);
+  }
+
+  // Alternative format signature with args array
+  try {
+    const argsTemplate = new PromptString("Item {0}: {1} - ${2}");
+    const result = argsTemplate.format(["Widget", "In Stock", "29.99"]);
+    console.log(`✅ Array args format: ${result}`);
+  } catch (error) {
+    console.log(`❌ Error: ${error}`);
+  }
+
+  console.log();
+}
+
+async function demonstrateNoMetadataLoading() {
+  console.log("4. No Metadata Loading");
+  console.log("-".repeat(30));
+
+  const simplePath = join(PROMPTS_DIR, "simple.txt");
+
+  // Load with metadata ignored
+  try {
+    const simple = await loadPrompt(simplePath, { meta: "ignore" });
+    console.log(`✅ Loaded simple prompt`);
+    console.log(`   Title (from filename): ${simple.meta.title}`);
+
+    // Use the prompt
+    const result = simple.prompt.format({
+      data_type: "sales data",
+      data: "Q1: $100k, Q2: $150k",
+    });
+    console.log(`   Result: ${result.slice(0, 50)}...`);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(`❌ Error: ${error.message}`);
+    }
+  }
+
+  console.log();
+}
+
+async function demonstrateErrorHandling() {
+  console.log("5. Error Handling");
+  console.log("-".repeat(30));
+
+  // Try to load non-existent file
+  try {
+    await loadPrompt(join(PROMPTS_DIR, "nonexistent.txt"));
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(`❌ File not found: ${error.message}`);
+    }
+  }
+
+  // Try with file limit
+  try {
+    const prompts = await loadPrompts(PROMPTS_DIR, {
+      meta: "allow",
+      maxFiles: 2,
+    });
+    console.log(`✅ Loaded ${prompts.length} prompts with limit`);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(`❌ File limit exceeded: ${error.message}`);
+    }
+  }
+
+  console.log();
+}
+
+async function main() {
+  console.log("TextPrompts Basic Usage Examples");
+  console.log("=".repeat(40));
+  console.log();
+
+  await demonstrateSinglePromptLoading();
+  await demonstrateMultiplePromptLoading();
+  demonstratePromptString();
+  await demonstrateNoMetadataLoading();
+  await demonstrateErrorHandling();
+
+  console.log("All examples completed successfully! 🎉");
+}
+
+main().catch(console.error);

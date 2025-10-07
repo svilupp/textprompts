@@ -151,9 +151,6 @@ export const parseFile = async (path: string, metadataMode: MetadataMode): Promi
     meta = {};
   }
 
-  if (!meta) {
-    meta = {};
-  }
   if (!meta.title) {
     meta.title = basename(path, extname(path));
   }

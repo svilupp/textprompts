@@ -1,15 +1,9 @@
 export { loadPrompt, loadPrompts } from "./loaders";
 export { savePrompt } from "./savers";
-export { Prompt, PromptMeta } from "./models";
-export { PromptString, SafeString } from "./prompt-string";
-export {
-  MetadataMode,
-  type MetadataMode as MetadataModeType,
-  setMetadata,
-  getMetadata,
-  skipMetadata,
-  warnOnIgnoredMetadata,
-} from "./config";
+export { Prompt } from "./models";
+export type { PromptMeta } from "./models";
+export { PromptString } from "./prompt-string";
+export { MetadataMode, setMetadata, getMetadata, skipMetadata, warnOnIgnoredMetadata } from "./config";
 export {
   TextPromptsError,
   FileMissingError,

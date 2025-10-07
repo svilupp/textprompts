@@ -1,14 +1,14 @@
-const ESCAPED_OPEN = "\x00ESCAPED_OPEN\x00";
-const ESCAPED_CLOSE = "\x00ESCAPED_CLOSE\x00";
+import { ESCAPED_OPEN, ESCAPED_CLOSE, PLACEHOLDER_PATTERN } from "./constants";
 
 export const extractPlaceholders = (text: string): Set<string> => {
   const temp = text.replaceAll("{{", ESCAPED_OPEN).replaceAll("}}", ESCAPED_CLOSE);
-  const pattern = /\{([^}:]*)(?::[^}]*)?\}/g;
   const matches = new Set<string>();
   let match: RegExpExecArray | null;
-  while ((match = pattern.exec(temp))) {
+  while ((match = PLACEHOLDER_PATTERN.exec(temp))) {
     matches.add(match[1]);
   }
+  // Reset regex state
+  PLACEHOLDER_PATTERN.lastIndex = 0;
   return matches;
 };
 
@@ -26,8 +26,14 @@ export const validateFormatArgs = (
     merged[String(index)] = value;
   });
 
-  if (placeholders.has("") && args.length > 0) {
-    merged[""] = args[0];
+  // Count empty placeholders - each needs an arg
+  if (placeholders.has("")) {
+    // Empty placeholders consume args sequentially, so we need enough args
+    // to satisfy all empty placeholders. Since we can't easily count them here,
+    // we mark "" as provided if ANY args exist (will be validated during formatting)
+    if (args.length > 0) {
+      merged[""] = true; // Marker that empty placeholders have args available
+    }
   }
 
   const providedKeys = new Set(Object.keys(merged));
@@ -37,8 +43,6 @@ export const validateFormatArgs = (
     throw new Error(`Missing format variables: ${JSON.stringify(missing.sort())}`);
   }
 };
-
-export const shouldIgnoreValidation = (ignoreFlag: boolean): boolean => ignoreFlag;
 
 export const getPlaceholderInfo = (text: string) => {
   const placeholders = extractPlaceholders(text);
