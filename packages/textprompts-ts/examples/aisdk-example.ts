@@ -39,7 +39,9 @@ async function main() {
     tone: "friendly and professional",
   });
 
-  console.log(`Loaded: ${systemPrompt.meta?.title ?? 'Untitled'} (v${systemPrompt.meta?.version ?? 'unknown'})\n`);
+  console.log(
+    `Loaded: ${systemPrompt.meta?.title ?? "Untitled"} (v${systemPrompt.meta?.version ?? "unknown"})\n`,
+  );
 
   const messages: CoreMessage[] = [{ role: "system", content: systemMessage }];
 

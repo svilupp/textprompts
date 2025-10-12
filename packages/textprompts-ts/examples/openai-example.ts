@@ -31,8 +31,12 @@ async function demonstrateBasicIntegration() {
 
   console.log("1. Loaded Prompts");
   console.log("-".repeat(30));
-  console.log(`System: ${systemPrompt.meta?.title ?? 'Untitled'} (v${systemPrompt.meta?.version ?? 'unknown'})`);
-  console.log(`User: ${greetingPrompt.meta?.title ?? 'Untitled'} (v${greetingPrompt.meta?.version ?? 'unknown'})`);
+  console.log(
+    `System: ${systemPrompt.meta?.title ?? "Untitled"} (v${systemPrompt.meta?.version ?? "unknown"})`,
+  );
+  console.log(
+    `User: ${greetingPrompt.meta?.title ?? "Untitled"} (v${greetingPrompt.meta?.version ?? "unknown"})`,
+  );
   console.log();
 
   // Format the prompts with safe variable replacement
