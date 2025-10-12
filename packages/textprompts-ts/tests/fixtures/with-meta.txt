@@ -1,0 +1,8 @@
+---
+title = "Assistant"
+description = "A helpful assistant"
+version = "1.0.0"
+author = "Example"
+---
+
+Hello {name}, welcome!
