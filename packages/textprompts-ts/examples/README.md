@@ -107,7 +107,7 @@ import { loadPrompts } from "@textprompts/textprompts-ts";
 
 // Load all prompts from a directory tree
 const prompts = await loadPrompts("prompts/", { recursive: true });
-const promptMap = new Map(prompts.map(p => [p.meta.title!, p]));
+const promptMap = new Map(prompts.map(p => [p.meta?.title ?? 'Untitled', p]));
 ```
 
 ### 4. Error Prevention

@@ -132,7 +132,7 @@ const prompts = await loadPrompts("prompts/", { recursive: true });
 
 // Create a lookup
 const promptMap = new Map(
-  prompts.map(p => [p.meta.title!, p])
+  prompts.map(p => [p.meta?.title ?? 'Untitled', p])
 );
 const greeting = promptMap.get("Customer Greeting");
 ```
@@ -151,7 +151,7 @@ const prompt = await loadPrompt("my_prompt.txt");  // Just works!
 // 1. IGNORE (default): Treat as simple text file, use filename as title
 setMetadata(MetadataMode.IGNORE);  // Super simple file loading
 const simple = await loadPrompt("prompt.txt");  // No metadata parsing
-console.log(simple.meta.title);  // "prompt" (from filename)
+console.log(simple.meta?.title);  // "prompt" (from filename)
 
 // 2. ALLOW: Load metadata if present, don't worry if it's incomplete
 setMetadata(MetadataMode.ALLOW);  // Flexible metadata loading
