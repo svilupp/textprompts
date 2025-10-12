@@ -1,10 +1,10 @@
-# Getting Started with textprompts-ts
+# Getting Started with textprompts
 
-Welcome to textprompts-ts! This guide will help you get started with managing your AI prompts as text files.
+Welcome to textprompts! This guide will help you get started with managing your AI prompts as text files.
 
-## What is textprompts-ts?
+## What is textprompts?
 
-textprompts-ts is a TypeScript/JavaScript library that helps you manage AI prompts as simple text files with optional metadata. It provides:
+textprompts is a TypeScript/JavaScript library that helps you manage AI prompts as simple text files with optional metadata. It provides:
 
 - **Safe string formatting** - catch missing variables before they cause problems
 - **Version control** - treat prompts like code with git
@@ -18,16 +18,16 @@ Choose your package manager:
 
 ```bash
 # npm
-npm install @textprompts/textprompts-ts
+npm install textprompts
 
 # Bun
-bun add @textprompts/textprompts-ts
+bun add textprompts
 
 # pnpm
-pnpm add @textprompts/textprompts-ts
+pnpm add textprompts
 
 # yarn
-yarn add @textprompts/textprompts-ts
+yarn add textprompts
 ```
 
 ## Your First Prompt
@@ -50,7 +50,7 @@ Welcome to {company_name}.
 ### 2. Load and use it
 
 ```typescript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 // Load the prompt
 const prompt = await loadPrompt("greeting.txt");
@@ -107,7 +107,7 @@ Both work! The library adapts to your needs.
 Never ship a prompt with missing variables:
 
 ```typescript
-import { PromptString } from "@textprompts/textprompts-ts";
+import { PromptString } from "textprompts";
 
 const template = new PromptString("Hello {name}!");
 
@@ -123,7 +123,7 @@ template.format({});  // Error: Missing format variables: ["name"]
 ### Loading Multiple Prompts
 
 ```typescript
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 // Load all prompts from a directory
 const prompts = await loadPrompts("prompts/", {
@@ -172,7 +172,7 @@ const final = new PromptString(partial).format({
 
 ```typescript
 import OpenAI from "openai";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const systemPrompt = await loadPrompt("prompts/system.txt");
 const openai = new OpenAI();
@@ -196,14 +196,14 @@ const response = await openai.chat.completions.create({
 
 ## Metadata Modes
 
-textprompts-ts has three modes for handling metadata:
+textprompts has three modes for handling metadata:
 
 ### IGNORE (Default)
 
 Simple mode - just loads text, uses filename as title:
 
 ```typescript
-import { setMetadata, MetadataMode } from "@textprompts/textprompts-ts";
+import { setMetadata, MetadataMode } from "textprompts";
 
 setMetadata(MetadataMode.IGNORE);
 const prompt = await loadPrompt("simple.txt");
@@ -270,7 +270,7 @@ Now that you understand the basics:
 ### Use TypeScript for Type Safety
 
 ```typescript
-import type { Prompt, PromptMeta } from "@textprompts/textprompts-ts";
+import type { Prompt, PromptMeta } from "textprompts";
 
 const prompt: Prompt = await loadPrompt("greeting.txt");
 const meta: PromptMeta = prompt.meta;
@@ -292,7 +292,7 @@ async function getPrompt(name: string): Promise<Prompt> {
 ### Validate at Build Time
 
 ```typescript
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 // In your build script or tests
 const prompts = await loadPrompts("prompts/", {

@@ -1,6 +1,6 @@
 # Usage Guide
 
-Best practices and advanced patterns for textprompts-ts.
+Best practices and advanced patterns for textprompts.
 
 ## Table of Contents
 
@@ -75,7 +75,7 @@ prompts/
 Load based on environment:
 
 ```typescript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const env = process.env.NODE_ENV || "development";
 const systemPrompt = await loadPrompt(`prompts/${env}/system.txt`);
@@ -93,7 +93,7 @@ Best for:
 - Prompts without versioning needs
 
 ```typescript
-import { setMetadata, MetadataMode } from "@textprompts/textprompts-ts";
+import { setMetadata, MetadataMode } from "textprompts";
 
 setMetadata(MetadataMode.IGNORE);
 ```
@@ -159,7 +159,7 @@ Document:
 ### Basic Formatting
 
 ```typescript
-import { PromptString } from "@textprompts/textprompts-ts";
+import { PromptString } from "textprompts";
 
 const template = new PromptString("Hello {name}!");
 const result = template.format({ name: "Alice" });
@@ -220,7 +220,7 @@ const result = template.format({ value: "42" });
 Cache loaded prompts to avoid repeated file I/O:
 
 ```typescript
-import { Prompt, loadPrompt } from "@textprompts/textprompts-ts";
+import { Prompt, loadPrompt } from "textprompts";
 
 class PromptCache {
   private cache = new Map<string, Prompt>();
@@ -251,7 +251,7 @@ const prompt = await cache.get("prompts/greeting.txt");
 Load prompts at startup for better runtime performance:
 
 ```typescript
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 class PromptManager {
   private prompts = new Map<string, Prompt>();
@@ -302,7 +302,7 @@ class LazyPromptLoader {
 Provide fallbacks for missing prompts:
 
 ```typescript
-import { loadPrompt, FileMissingError } from "@textprompts/textprompts-ts";
+import { loadPrompt, FileMissingError } from "textprompts";
 
 async function getPromptWithFallback(
   path: string,
@@ -329,7 +329,7 @@ async function getPromptWithFallback(
 Handle missing variables clearly:
 
 ```typescript
-import { PromptString } from "@textprompts/textprompts-ts";
+import { PromptString } from "textprompts";
 
 function safeFormat(
   template: PromptString,
@@ -355,7 +355,7 @@ import {
   FileMissingError,
   InvalidMetadataError,
   MissingMetadataError,
-} from "@textprompts/textprompts-ts";
+} from "textprompts";
 
 async function loadPromptSafe(path: string) {
   try {
@@ -385,7 +385,7 @@ Test prompt loading and formatting:
 
 ```typescript
 import { test, expect } from "bun:test";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 test("greeting prompt loads correctly", async () => {
   const prompt = await loadPrompt("prompts/greeting.txt");
@@ -423,7 +423,7 @@ test("greeting prompt requires all variables", async () => {
 Validate all prompts at build time:
 
 ```typescript
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 test("all prompts are valid", async () => {
   const prompts = await loadPrompts("prompts/", {
@@ -447,7 +447,7 @@ Test prompt output doesn't change unexpectedly:
 
 ```typescript
 import { test, expect } from "bun:test";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 test("greeting prompt output matches snapshot", async () => {
   const prompt = await loadPrompt("prompts/greeting.txt");
@@ -495,7 +495,7 @@ bun run validate-prompts || {
 
 ```typescript
 // scripts/validate-prompts.ts
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 const prompts = await loadPrompts("prompts/", {
   recursive: true,
@@ -536,7 +536,7 @@ git diff prompts/system.txt
 
 ```typescript
 import OpenAI from "openai";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const openai = new OpenAI();
 const systemPrompt = await loadPrompt("prompts/system.txt");
@@ -561,7 +561,7 @@ async function chat(userMessage: string) {
 
 ```typescript
 import Anthropic from "@anthropic-ai/sdk";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const anthropic = new Anthropic();
 const systemPrompt = await loadPrompt("prompts/system.txt");
@@ -583,7 +583,7 @@ async function chat(userMessage: string) {
 ```typescript
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const systemPrompt = await loadPrompt("prompts/system.txt");
 
@@ -599,7 +599,7 @@ const { text } = await generateText({
 ```typescript
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const systemPrompt = await loadPrompt("prompts/system.txt");
 const model = new ChatOpenAI();
