@@ -35,7 +35,7 @@ export class PromptString {
     if (Array.isArray(arg0)) {
       // format([args], kwargs, options)
       args = arg0;
-      kwargs = (arg1 && !("skipValidation" in arg1)) ? arg1 as Record<string, unknown> : {};
+      kwargs = arg1 && !("skipValidation" in arg1) ? (arg1 as Record<string, unknown>) : {};
       skipValidation = arg2?.skipValidation ?? (arg1 as FormatCallOptions)?.skipValidation ?? false;
     } else if (arg0 === undefined) {
       // format()
@@ -59,7 +59,7 @@ export class PromptString {
     let emptyPlaceholderIndex = 0;
 
     return source.replace(PLACEHOLDER_PATTERN, (_match, key: string) => {
-      if (Object.prototype.hasOwnProperty.call(kwargs, key)) {
+      if (Object.hasOwn(kwargs, key)) {
         return String(kwargs[key]);
       }
       const index = Number.parseInt(key, 10);
@@ -82,7 +82,7 @@ export class PromptString {
     });
     let result = source;
     for (const placeholder of this.placeholders) {
-      if (Object.prototype.hasOwnProperty.call(merged, placeholder)) {
+      if (Object.hasOwn(merged, placeholder)) {
         const value = merged[placeholder];
         // Skip null/undefined values - leave placeholder unreplaced
         if (value != null) {

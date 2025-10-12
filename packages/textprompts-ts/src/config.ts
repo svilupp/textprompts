@@ -8,7 +8,11 @@ export type MetadataMode = (typeof MetadataMode)[keyof typeof MetadataMode];
 
 const normalizeMode = (mode: string): MetadataMode => {
   const lower = mode.toLowerCase();
-  if (lower === MetadataMode.STRICT || lower === MetadataMode.ALLOW || lower === MetadataMode.IGNORE) {
+  if (
+    lower === MetadataMode.STRICT ||
+    lower === MetadataMode.ALLOW ||
+    lower === MetadataMode.IGNORE
+  ) {
     return lower;
   }
   throw new Error(

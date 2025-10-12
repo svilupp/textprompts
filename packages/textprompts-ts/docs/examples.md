@@ -6,6 +6,7 @@ Real-world code examples for common use cases.
 
 - [Basic Usage](#basic-usage)
 - [OpenAI Integration](#openai-integration)
+- [Vercel AI SDK Integration](#vercel-ai-sdk-integration)
 - [Anthropic Claude Integration](#anthropic-claude-integration)
 - [Caching & Performance](#caching--performance)
 - [Error Handling](#error-handling)
@@ -92,39 +93,24 @@ console.log(partial); // "Order 12345 is {status}"
 import OpenAI from "openai";
 import { loadPrompt } from "@textprompts/textprompts-ts";
 
-const openai = new OpenAI();
-
 const systemPrompt = await loadPrompt("prompts/system.txt");
-const userPrompt = await loadPrompt("prompts/user-query.txt");
 
-async function chat(query: string, context: Record<string, string>) {
-  const response = await openai.chat.completions.create({
-    model: "gpt-4",
-    messages: [
-      {
-        role: "system",
-        content: systemPrompt.format({
-          company_name: "ACME Corp",
-          tone: "professional"
-        })
-      },
-      {
-        role: "user",
-        content: userPrompt.format({
-          query,
-          ...context
-        })
-      }
-    ]
-  });
-
-  return response.choices[0].message.content;
-}
-
-// Usage
-const answer = await chat("How do I return an item?", {
-  customer_tier: "premium"
+const client = new OpenAI();
+const response = await client.chat.completions.create({
+  model: "gpt-5-mini",
+  messages: [
+    {
+      role: "system",
+      content: systemPrompt.format({
+        company_name: "ACME Corp",
+        tone: "professional"
+      })
+    },
+    { role: "user", content: "Hello!" }
+  ]
 });
+
+console.log(response.choices[0].message.content);
 ```
 
 ### Streaming Responses
@@ -138,7 +124,7 @@ const systemPrompt = await loadPrompt("prompts/system.txt");
 
 async function streamChat(userMessage: string) {
   const stream = await openai.chat.completions.create({
-    model: "gpt-4",
+    model: "gpt-5-mini",
     messages: [
       {
         role: "system",
@@ -194,6 +180,106 @@ class ChatSession {
 const session = new ChatSession({ company: "ACME Corp" });
 await session.sendMessage("Hello!");
 await session.sendMessage("What are your hours?");
+```
+
+## Vercel AI SDK Integration
+
+### Streaming Text
+
+```typescript
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+import { loadPrompt } from "@textprompts/textprompts-ts";
+
+const systemPrompt = await loadPrompt("prompts/system.txt");
+
+const result = streamText({
+  model: openai('gpt-4o-mini'),
+  messages: [
+    {
+      role: 'system',
+      content: systemPrompt.format({
+        company_name: "ACME Corp",
+        tone: "friendly"
+      })
+    },
+    { role: 'user', content: 'Hello!' }
+  ]
+});
+
+// Stream to stdout
+for await (const delta of result.textStream) {
+  process.stdout.write(delta);
+}
+```
+
+### Interactive Chat
+
+```typescript
+import { openai } from '@ai-sdk/openai';
+import { CoreMessage, streamText } from 'ai';
+import * as readline from 'node:readline/promises';
+import { loadPrompt } from "@textprompts/textprompts-ts";
+
+const terminal = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+const systemPrompt = await loadPrompt("prompts/system.txt");
+
+const messages: CoreMessage[] = [
+  {
+    role: 'system',
+    content: systemPrompt.format({
+      company_name: 'Tech Solutions Inc',
+      tone: 'friendly and professional',
+    })
+  },
+];
+
+while (true) {
+  const userInput = await terminal.question('You: ');
+  messages.push({ role: 'user', content: userInput });
+
+  const result = streamText({
+    model: openai('gpt-4o-mini'),
+    messages,
+  });
+
+  let fullResponse = '';
+  process.stdout.write('\nAssistant: ');
+  for await (const delta of result.textStream) {
+    fullResponse += delta;
+    process.stdout.write(delta);
+  }
+  process.stdout.write('\n\n');
+
+  messages.push({ role: 'assistant', content: fullResponse });
+}
+```
+
+### Generate Text (Non-Streaming)
+
+```typescript
+import { openai } from '@ai-sdk/openai';
+import { generateText } from 'ai';
+import { loadPrompt } from "@textprompts/textprompts-ts";
+
+const systemPrompt = await loadPrompt("prompts/system.txt");
+
+const { text } = await generateText({
+  model: openai('gpt-4o-mini'),
+  messages: [
+    {
+      role: 'system',
+      content: systemPrompt.format({ company: "ACME" })
+    },
+    { role: 'user', content: 'Hello!' }
+  ]
+});
+
+console.log(text);
 ```
 
 ## Anthropic Claude Integration

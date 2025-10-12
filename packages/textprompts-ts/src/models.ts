@@ -1,6 +1,6 @@
 import { resolve } from "path";
 
-import { MetadataMode } from "./config";
+import type { MetadataMode } from "./config";
 import { PromptString } from "./prompt-string";
 
 export interface PromptMeta {
@@ -50,7 +50,11 @@ export class Prompt {
   }
 
   format(kwargs: Record<string, unknown>, options?: Parameters<PromptString["format"]>[1]): string;
-  format(args: unknown[], kwargs?: Record<string, unknown>, options?: Parameters<PromptString["format"]>[2]): string;
+  format(
+    args: unknown[],
+    kwargs?: Record<string, unknown>,
+    options?: Parameters<PromptString["format"]>[2],
+  ): string;
   format(
     arg0?: Record<string, unknown> | unknown[],
     arg1?: Record<string, unknown> | Parameters<PromptString["format"]>[1],

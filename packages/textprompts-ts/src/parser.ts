@@ -2,8 +2,13 @@ import { basename, extname } from "path";
 import { readFile } from "fs/promises";
 
 import { MetadataMode, warnOnIgnoredMetadata } from "./config";
-import { InvalidMetadataError, MalformedHeaderError, MissingMetadataError, TextPromptsError } from "./errors";
-import { Prompt, PromptMeta } from "./models";
+import {
+  InvalidMetadataError,
+  MalformedHeaderError,
+  MissingMetadataError,
+  TextPromptsError,
+} from "./errors";
+import { Prompt, type PromptMeta } from "./models";
 import { PromptString } from "./prompt-string";
 import { parseToml } from "./toml";
 
@@ -92,7 +97,11 @@ export const parseFile = async (path: string, metadataMode: MetadataMode): Promi
   }
 
   if (metadataMode === MetadataMode.IGNORE) {
-    if (warnOnIgnoredMetadata() && raw.startsWith(DELIM) && raw.indexOf(DELIM, DELIM.length) !== -1) {
+    if (
+      warnOnIgnoredMetadata() &&
+      raw.startsWith(DELIM) &&
+      raw.indexOf(DELIM, DELIM.length) !== -1
+    ) {
       console.warn(
         "Metadata detected but ignored; use setMetadata('allow') or skipMetadata({ skipWarning: true }) to silence",
       );

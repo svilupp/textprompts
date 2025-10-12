@@ -25,9 +25,7 @@ function main() {
 
   // The solution with PromptString
   console.log("✅ Solution with PromptString:");
-  const safeTemplate = new PromptString(
-    "Hello {name}, your order #{order_id} is {status}"
-  );
+  const safeTemplate = new PromptString("Hello {name}, your order #{order_id} is {status}");
 
   try {
     // This fails fast with a clear error message
@@ -48,10 +46,7 @@ function main() {
 
   // Partial formatting with skipValidation
   console.log("✅ Partial formatting (skipValidation: true):");
-  const partialResult = safeTemplate.format(
-    { name: "Alice" },
-    { skipValidation: true }
-  );
+  const partialResult = safeTemplate.format({ name: "Alice" }, { skipValidation: true });
   console.log(`   Partial result: '${partialResult}'`);
   console.log("   ^ Only {name} was replaced, others remain as placeholders!");
 

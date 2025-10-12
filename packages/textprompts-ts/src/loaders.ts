@@ -1,16 +1,19 @@
 import { lstat } from "fs/promises";
 import fg from "fast-glob";
 
-import { MetadataMode, resolveMetadataMode } from "./config";
+import { type MetadataMode, resolveMetadataMode } from "./config";
 import { FileMissingError, TextPromptsError } from "./errors";
-import { Prompt } from "./models";
+import type { Prompt } from "./models";
 import { parseFile } from "./parser";
 
 export interface LoadPromptOptions {
   meta?: MetadataMode | string | null;
 }
 
-export const loadPrompt = async (path: string, options: LoadPromptOptions = {}): Promise<Prompt> => {
+export const loadPrompt = async (
+  path: string,
+  options: LoadPromptOptions = {},
+): Promise<Prompt> => {
   try {
     const stats = await lstat(path);
     if (!(stats.isFile() || stats.isSymbolicLink())) {
@@ -83,7 +86,7 @@ export async function loadPrompts(
   let processed = 0;
 
   for (const entry of paths) {
-    let stats;
+    let stats: Awaited<ReturnType<typeof lstat>>;
     try {
       stats = await lstat(entry);
     } catch {

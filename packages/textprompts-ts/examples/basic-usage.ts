@@ -79,7 +79,7 @@ function demonstratePromptString() {
 
   // Create a template with variables
   const template = new PromptString(
-    "Order {order_id} for {customer} is {status}. Total: ${amount}"
+    "Order {order_id} for {customer} is {status}. Total: ${amount}",
   );
 
   console.log("Template:", template.toString());
@@ -119,7 +119,7 @@ function demonstratePromptString() {
         order_id: "12345",
         customer: "Bob",
       },
-      { skipValidation: true }
+      { skipValidation: true },
     );
     console.log(`✅ Partial format: ${partial}`);
     console.log("   ^ Notice {status} and {amount} remain as placeholders");

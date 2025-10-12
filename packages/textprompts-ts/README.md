@@ -178,30 +178,50 @@ const override = await loadPrompt("prompt.txt", { meta: "strict" });
 import OpenAI from "openai";
 import { loadPrompt } from "@textprompts/textprompts-ts";
 
-const systemPrompt = await loadPrompt("prompts/customer_support_system.txt");
-const userPrompt = await loadPrompt("prompts/user_query_template.txt");
+const systemPrompt = await loadPrompt("prompts/system.txt");
 
-const openai = new OpenAI();
-
-const response = await openai.chat.completions.create({
-  model: "gpt-4",
+const client = new OpenAI();
+const response = await client.chat.completions.create({
+  model: "gpt-5-mini",
   messages: [
     {
       role: "system",
       content: systemPrompt.prompt.format({
         company_name: "ACME Corp",
-        support_level: "premium"
+        tone: "professional"
       })
     },
-    {
-      role: "user",
-      content: userPrompt.prompt.format({
-        query: "How do I return an item?",
-        customer_tier: "premium"
-      })
-    }
+    { role: "user", content: "Hello!" }
   ]
 });
+```
+
+### Vercel AI SDK Integration
+
+```typescript
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+import { loadPrompt } from "@textprompts/textprompts-ts";
+
+const systemPrompt = await loadPrompt("prompts/system.txt");
+
+const result = streamText({
+  model: openai('gpt-5-mini'),
+  messages: [
+    {
+      role: 'system',
+      content: systemPrompt.prompt.format({
+        company_name: "ACME Corp",
+        tone: "friendly"
+      })
+    },
+    { role: 'user', content: 'Hello!' }
+  ]
+});
+
+for await (const delta of result.textStream) {
+  process.stdout.write(delta);
+}
 ```
 
 ### Anthropic Claude Integration
@@ -515,10 +535,13 @@ See the [examples/](./examples/) directory for complete, runnable examples:
 - **[basic-usage.ts](./examples/basic-usage.ts)** - Core functionality demo
 - **[simple-format-demo.ts](./examples/simple-format-demo.ts)** - PromptString features
 - **[openai-example.ts](./examples/openai-example.ts)** - OpenAI integration
+- **[aisdk-example.ts](./examples/aisdk-example.ts)** - Vercel AI SDK streaming chat
 
 Run them with:
 ```bash
 bun examples/basic-usage.ts
+bun examples/openai-example.ts
+bun examples/aisdk-example.ts
 ```
 
 ## Documentation

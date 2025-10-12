@@ -1,14 +1,18 @@
 import { writeFile } from "fs/promises";
 import * as TOML from "@iarna/toml";
 
-import { Prompt, PromptMeta } from "./models";
+import { Prompt, type PromptMeta } from "./models";
 
 const serializeMetaValue = (value: string | null | undefined): string => {
   if (value == null) {
     return "";
   }
   // Escape special TOML characters
-  return String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r");
+  return String(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r");
 };
 
 export const savePrompt = async (path: string, content: string | Prompt): Promise<void> => {

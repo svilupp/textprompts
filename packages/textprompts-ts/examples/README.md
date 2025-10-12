@@ -15,6 +15,9 @@ bun examples/simple-format-demo.ts
 
 # OpenAI integration example
 bun examples/openai-example.ts
+
+# AI SDK interactive chat example
+bun examples/aisdk-example.ts
 ```
 
 ## Example Files
@@ -48,12 +51,32 @@ bun examples/simple-format-demo.ts
 Integration example with OpenAI:
 - System and user prompt templates
 - Safe formatting with validation
-- Mock implementation (works without API key)
+- Real OpenAI API integration
 - Error prevention patterns
+
+**Prerequisites:**
+- OpenAI package (already in devDependencies)
+- `OPENAI_API_KEY` in `.env` file
 
 **Run it:**
 ```bash
 bun examples/openai-example.ts
+```
+
+### `aisdk-example.ts`
+Interactive chat example with Vercel AI SDK:
+- Streaming chat responses
+- System prompt from file
+- Version-controlled conversation setup
+- Real-time interaction
+
+**Prerequisites:**
+- AI SDK packages (already in devDependencies)
+- `OPENAI_API_KEY` in `.env` file
+
+**Run it:**
+```bash
+bun examples/aisdk-example.ts
 ```
 
 ## Key Concepts Demonstrated

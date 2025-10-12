@@ -1,64 +1,20 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
  * Example: OpenAI Integration with TextPrompts
  *
  * This demonstrates how to use textprompts-ts with OpenAI's API
  * for safe, version-controlled prompt management.
  *
- * Note: This uses mock responses when no API key is provided.
+ * Prerequisites:
+ * - OpenAI package (installed as dev dependency)
+ * - OPENAI_API_KEY in .env file
  */
 
 import { join } from "path";
 import { loadPrompt } from "../src/index";
+import OpenAI from "openai";
 
 const PROMPTS_DIR = join(import.meta.dir, "prompts");
-
-interface ChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
-
-interface ChatCompletionResponse {
-  id: string;
-  choices: Array<{
-    message: ChatMessage;
-    finish_reason: string;
-  }>;
-  model: string;
-}
-
-/**
- * Mock OpenAI client for demonstration purposes.
- * Replace with actual OpenAI client when API key is available.
- */
-class MockOpenAIClient {
-  async createChatCompletion(params: {
-    model: string;
-    messages: ChatMessage[];
-  }): Promise<ChatCompletionResponse> {
-    console.log("\n[Mock OpenAI Request]");
-    console.log(`Model: ${params.model}`);
-    console.log(`Messages: ${params.messages.length}`);
-
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    return {
-      id: "mock-" + Math.random().toString(36).substr(2, 9),
-      model: params.model,
-      choices: [
-        {
-          message: {
-            role: "assistant",
-            content:
-              "I'd be happy to help you with your cloud hosting question. Based on your inquiry, here's what I recommend...",
-          },
-          finish_reason: "stop",
-        },
-      ],
-    };
-  }
-}
 
 async function demonstrateBasicIntegration() {
   console.log("OpenAI Integration Example");
@@ -100,11 +56,10 @@ async function demonstrateBasicIntegration() {
   console.log(userMessage.slice(0, 100) + "...");
   console.log();
 
-  // Call OpenAI API (using mock client)
-  const client = new MockOpenAIClient();
-
-  const response = await client.createChatCompletion({
-    model: "gpt-4",
+  // Call OpenAI API
+  const client = new OpenAI();
+  const response = await client.chat.completions.create({
+    model: "gpt-5-mini",
     messages: [
       { role: "system", content: systemMessage },
       { role: "user", content: userMessage },
@@ -135,9 +90,7 @@ async function demonstrateErrorPrevention() {
   } catch (error) {
     if (error instanceof Error) {
       console.log("✅ Caught missing variables:", error.message);
-      console.log(
-        "   ^ This prevents sending incomplete prompts to OpenAI!"
-      );
+      console.log("   ^ This prevents sending incomplete prompts to OpenAI!");
     }
   }
 
@@ -158,7 +111,7 @@ async function demonstratePartialFormatting() {
       company_name: "Tech Solutions Inc",
       // Leave {tone} for runtime customization
     },
-    { skipValidation: true }
+    { skipValidation: true },
   );
 
   console.log("Base system prompt (partial):");
@@ -175,10 +128,6 @@ async function main() {
 
     console.log("=".repeat(40));
     console.log("✅ All examples completed!");
-    console.log("\nTo use with real OpenAI API:");
-    console.log("1. Install: bun add openai");
-    console.log("2. Replace MockOpenAIClient with actual OpenAI client");
-    console.log("3. Set OPENAI_API_KEY environment variable");
   } catch (error) {
     console.error("Error:", error);
     process.exit(1);
