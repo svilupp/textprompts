@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/pypi/l/textprompts.svg)](https://github.com/svilupp/textprompts/blob/main/LICENSE)
 
 
-> **So simple, it's not even worth vibing about coding yet it just makes so much sense.**
+> **So simple, it's not even worth vibe coding yet it just makes so much sense.**
 
 Are you tired of vendors trying to sell you fancy UIs for prompt management that just make your system more confusing and harder to debug? Isn't it nice to just have your prompts **next to your code**?
 
