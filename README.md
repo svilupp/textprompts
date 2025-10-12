@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/pypi/l/textprompts.svg)](https://github.com/svilupp/textprompts/blob/main/LICENSE)
 
 
-> **So simple, it's not even worth vibing about coding yet it just makes so much sense.**
+> **So simple, it's not even worth vibe coding yet it just makes so much sense.**
 
 Are you tired of vendors trying to sell you fancy UIs for prompt management that just make your system more confusing and harder to debug? Isn't it nice to just have your prompts **next to your code**?
 
@@ -24,6 +24,16 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 - ✅ **Zero dependencies** - well, almost (just Pydantic)
 - ✅ **Safe formatting** - catch missing variables before they cause problems
 - ✅ **Works with everything** - OpenAI, Anthropic, local models, function calls
+
+## Cross-Language Support
+
+**textprompts** uses a cross-language compatible prompt template format:
+
+- **Python** (this package): Available on PyPI as `textprompts`
+- **Node/TypeScript**: Identical package available in `packages/textprompts-ts` folder
+- **Julia**: Version currently in development
+
+This means you can share prompt files across different parts of your stack without any conversion or compatibility issues.
 
 ## Installation
 

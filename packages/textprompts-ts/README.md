@@ -1,6 +1,6 @@
 # textprompts
 
-> **So simple, it's not even worth vibing about coding yet it just makes so much sense.**
+> **So simple, it's not even worth vibe coding yet it just makes so much sense.**
 
 TypeScript/JavaScript companion to [textprompts](https://github.com/svilupp/textprompts) for loading and formatting prompt files.
 
