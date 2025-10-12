@@ -10,7 +10,7 @@
  * - OPENAI_API_KEY in .env file
  */
 
-import { join } from "path";
+import { join } from "node:path";
 import { loadPrompt } from "../src/index";
 import OpenAI from "openai";
 
@@ -31,8 +31,8 @@ async function demonstrateBasicIntegration() {
 
   console.log("1. Loaded Prompts");
   console.log("-".repeat(30));
-  console.log(`System: ${systemPrompt.meta.title} (v${systemPrompt.meta.version})`);
-  console.log(`User: ${greetingPrompt.meta.title} (v${greetingPrompt.meta.version})`);
+  console.log(`System: ${systemPrompt.meta?.title ?? 'Untitled'} (v${systemPrompt.meta?.version ?? 'unknown'})`);
+  console.log(`User: ${greetingPrompt.meta?.title ?? 'Untitled'} (v${greetingPrompt.meta?.version ?? 'unknown'})`);
   console.log();
 
   // Format the prompts with safe variable replacement
@@ -51,9 +51,9 @@ async function demonstrateBasicIntegration() {
   console.log("2. Formatted Messages");
   console.log("-".repeat(30));
   console.log("System message:");
-  console.log(systemMessage.slice(0, 100) + "...");
+  console.log(`${systemMessage.slice(0, 100)}...`);
   console.log("\nUser message:");
-  console.log(userMessage.slice(0, 100) + "...");
+  console.log(`${userMessage.slice(0, 100)}...`);
   console.log();
 
   // Call OpenAI API
@@ -115,7 +115,7 @@ async function demonstratePartialFormatting() {
   );
 
   console.log("Base system prompt (partial):");
-  console.log(baseSystem.slice(0, 150) + "...");
+  console.log(`${baseSystem.slice(0, 150)}...`);
   console.log("\n^ Notice {tone} placeholder is preserved for later replacement");
   console.log();
 }

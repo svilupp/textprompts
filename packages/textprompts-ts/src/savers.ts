@@ -1,5 +1,4 @@
-import { writeFile } from "fs/promises";
-import * as TOML from "@iarna/toml";
+import { writeFile } from "node:fs/promises";
 
 import { Prompt, type PromptMeta } from "./models";
 

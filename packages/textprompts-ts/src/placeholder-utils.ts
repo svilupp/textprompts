@@ -3,9 +3,10 @@ import { ESCAPED_OPEN, ESCAPED_CLOSE, PLACEHOLDER_PATTERN } from "./constants";
 export const extractPlaceholders = (text: string): Set<string> => {
   const temp = text.replaceAll("{{", ESCAPED_OPEN).replaceAll("}}", ESCAPED_CLOSE);
   const matches = new Set<string>();
-  let match: RegExpExecArray | null;
-  while ((match = PLACEHOLDER_PATTERN.exec(temp))) {
+  let match: RegExpExecArray | null = PLACEHOLDER_PATTERN.exec(temp);
+  while (match) {
     matches.add(match[1]);
+    match = PLACEHOLDER_PATTERN.exec(temp);
   }
   // Reset regex state
   PLACEHOLDER_PATTERN.lastIndex = 0;

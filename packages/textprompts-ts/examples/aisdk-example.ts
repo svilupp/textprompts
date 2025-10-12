@@ -12,7 +12,7 @@
 
 import { openai } from "@ai-sdk/openai";
 import { type CoreMessage, streamText } from "ai";
-import { join } from "path";
+import { join } from "node:path";
 import * as readline from "node:readline/promises";
 import { loadPrompt } from "../src/index";
 
@@ -39,7 +39,7 @@ async function main() {
     tone: "friendly and professional",
   });
 
-  console.log(`Loaded: ${systemPrompt.meta.title} (v${systemPrompt.meta.version})\n`);
+  console.log(`Loaded: ${systemPrompt.meta?.title ?? 'Untitled'} (v${systemPrompt.meta?.version ?? 'unknown'})\n`);
 
   const messages: CoreMessage[] = [{ role: "system", content: systemMessage }];
 

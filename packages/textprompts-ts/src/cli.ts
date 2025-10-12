@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { argv, exit, stderr, stdout } from "process";
+import { argv, exit, stderr, stdout } from "node:process";
 
 import { loadPrompt } from "./loaders";
 import { TextPromptsError } from "./errors";

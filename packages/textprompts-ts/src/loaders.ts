@@ -1,4 +1,4 @@
-import { lstat } from "fs/promises";
+import { lstat } from "node:fs/promises";
 import fg from "fast-glob";
 
 import { type MetadataMode, resolveMetadataMode } from "./config";

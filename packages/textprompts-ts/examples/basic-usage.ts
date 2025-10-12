@@ -6,7 +6,7 @@
  * including loading single prompts, multiple prompts, and using PromptString.
  */
 
-import { join } from "path";
+import { join } from "node:path";
 import { loadPrompt, loadPrompts, PromptString } from "../src/index";
 
 const PROMPTS_DIR = join(import.meta.dir, "prompts");
@@ -19,10 +19,10 @@ async function demonstrateSinglePromptLoading() {
   const greetingPath = join(PROMPTS_DIR, "greeting.txt");
   const greeting = await loadPrompt(greetingPath, { meta: "allow" });
 
-  console.log(`Loaded: ${greeting.meta.title}`);
-  console.log(`Version: ${greeting.meta.version}`);
-  console.log(`Author: ${greeting.meta.author}`);
-  console.log(`Description: ${greeting.meta.description}`);
+  console.log(`Loaded: ${greeting.meta?.title ?? 'Untitled'}`);
+  console.log(`Version: ${greeting.meta?.version ?? 'unknown'}`);
+  console.log(`Author: ${greeting.meta?.author ?? 'unknown'}`);
+  console.log(`Description: ${greeting.meta?.description ?? 'No description'}`);
 
   // Use the prompt
   const message = greeting.prompt.format({
@@ -49,15 +49,15 @@ async function demonstrateMultiplePromptLoading() {
 
   console.log(`Loaded ${prompts.length} prompts:`);
   for (const prompt of prompts) {
-    if (prompt.meta.version) {
-      console.log(`  • ${prompt.meta.title} (v${prompt.meta.version})`);
+    if (prompt.meta?.version) {
+      console.log(`  • ${prompt.meta?.title ?? 'Untitled'} (v${prompt.meta.version})`);
     } else {
-      console.log(`  • ${prompt.meta.title} (from filename)`);
+      console.log(`  • ${prompt.meta?.title ?? 'Untitled'} (from filename)`);
     }
   }
 
   // Create a lookup by title
-  const promptLookup = new Map(prompts.map((p) => [p.meta.title!, p]));
+  const promptLookup = new Map(prompts.map((p) => [p.meta?.title ?? 'Untitled', p]));
 
   // Use system prompt
   const system = promptLookup.get("AI Assistant System Prompt");
@@ -67,8 +67,8 @@ async function demonstrateMultiplePromptLoading() {
       tone: "friendly and professional",
     });
 
-    console.log(`\nSample ${system.meta.title}:`);
-    console.log(formatted.slice(0, 150) + "...");
+    console.log(`\nSample ${system.meta?.title ?? 'Untitled'}:`);
+    console.log(`${formatted.slice(0, 150)}...`);
   }
   console.log();
 }
@@ -149,7 +149,7 @@ async function demonstrateNoMetadataLoading() {
   try {
     const simple = await loadPrompt(simplePath, { meta: "ignore" });
     console.log(`✅ Loaded simple prompt`);
-    console.log(`   Title (from filename): ${simple.meta.title}`);
+    console.log(`   Title (from filename): ${simple.meta?.title ?? 'Untitled'}`);
 
     // Use the prompt
     const result = simple.prompt.format({

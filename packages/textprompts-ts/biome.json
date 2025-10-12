@@ -22,7 +22,8 @@
         "noNonNullAssertion": "off"
       },
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noExplicitAny": "warn",
+        "noTemplateCurlyInString": "off"
       }
     }
   },
