@@ -20,7 +20,7 @@ Real-world code examples for common use cases.
 ### Loading a Single Prompt
 
 ```typescript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const prompt = await loadPrompt("prompts/greeting.txt");
 
@@ -40,7 +40,7 @@ console.log(message);
 ### Loading Multiple Prompts
 
 ```typescript
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 // Load all prompts from a directory
 const prompts = await loadPrompts("prompts/", { recursive: true });
@@ -60,7 +60,7 @@ if (greeting) {
 ### Safe String Formatting
 
 ```typescript
-import { PromptString } from "@textprompts/textprompts-ts";
+import { PromptString } from "textprompts";
 
 const template = new PromptString("Order {order_id} is {status}");
 
@@ -91,7 +91,7 @@ console.log(partial); // "Order 12345 is {status}"
 
 ```typescript
 import OpenAI from "openai";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const systemPrompt = await loadPrompt("prompts/system.txt");
 
@@ -117,7 +117,7 @@ console.log(response.choices[0].message.content);
 
 ```typescript
 import OpenAI from "openai";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const openai = new OpenAI();
 const systemPrompt = await loadPrompt("prompts/system.txt");
@@ -146,7 +146,7 @@ async function streamChat(userMessage: string) {
 
 ```typescript
 import OpenAI from "openai";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const openai = new OpenAI();
 const systemPrompt = await loadPrompt("prompts/system.txt");
@@ -189,7 +189,7 @@ await session.sendMessage("What are your hours?");
 ```typescript
 import { openai } from '@ai-sdk/openai';
 import { streamText } from 'ai';
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const systemPrompt = await loadPrompt("prompts/system.txt");
 
@@ -219,7 +219,7 @@ for await (const delta of result.textStream) {
 import { openai } from '@ai-sdk/openai';
 import { CoreMessage, streamText } from 'ai';
 import * as readline from 'node:readline/promises';
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const terminal = readline.createInterface({
   input: process.stdin,
@@ -264,7 +264,7 @@ while (true) {
 ```typescript
 import { openai } from '@ai-sdk/openai';
 import { generateText } from 'ai';
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const systemPrompt = await loadPrompt("prompts/system.txt");
 
@@ -288,7 +288,7 @@ console.log(text);
 
 ```typescript
 import Anthropic from "@anthropic-ai/sdk";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const anthropic = new Anthropic();
 const systemPrompt = await loadPrompt("prompts/system.txt");
@@ -314,7 +314,7 @@ async function chat(userMessage: string) {
 
 ```typescript
 import Anthropic from "@anthropic-ai/sdk";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const anthropic = new Anthropic();
 const systemPrompt = await loadPrompt("prompts/system.txt");
@@ -341,7 +341,7 @@ async function streamChat(userMessage: string) {
 ### Simple Prompt Cache
 
 ```typescript
-import { Prompt, loadPrompt } from "@textprompts/textprompts-ts";
+import { Prompt, loadPrompt } from "textprompts";
 
 class PromptCache {
   private cache = new Map<string, Prompt>();
@@ -370,7 +370,7 @@ const prompt = await cache.get("prompts/system.txt");
 ### Preloading All Prompts
 
 ```typescript
-import { loadPrompts, Prompt } from "@textprompts/textprompts-ts";
+import { loadPrompts, Prompt } from "textprompts";
 
 class PromptManager {
   private prompts = new Map<string, Prompt>();
@@ -450,7 +450,7 @@ class LRUPromptCache {
 ### Graceful Fallbacks
 
 ```typescript
-import { loadPrompt, FileMissingError, Prompt, PromptString } from "@textprompts/textprompts-ts";
+import { loadPrompt, FileMissingError, Prompt, PromptString } from "textprompts";
 
 async function loadPromptWithFallback(
   path: string,
@@ -488,7 +488,7 @@ import {
   MissingMetadataError,
   InvalidMetadataError,
   MalformedHeaderError
-} from "@textprompts/textprompts-ts";
+} from "textprompts";
 
 async function safeLoadPrompt(path: string) {
   try {
@@ -519,7 +519,7 @@ async function safeLoadPrompt(path: string) {
 ### Validation with Error Collection
 
 ```typescript
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 async function validateAllPrompts(dir: string) {
   const errors: Array<{ path: string; error: Error }> = [];
@@ -546,7 +546,7 @@ async function validateAllPrompts(dir: string) {
 ### Simple Environment Switching
 
 ```typescript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const env = process.env.NODE_ENV || "development";
 
@@ -557,7 +557,7 @@ const errorPrompt = await loadPrompt(`prompts/${env}/error.txt`);
 ### Environment Config Class
 
 ```typescript
-import { loadPrompt, Prompt } from "@textprompts/textprompts-ts";
+import { loadPrompt, Prompt } from "textprompts";
 
 class EnvironmentPrompts {
   private env: string;
@@ -589,7 +589,7 @@ const system = await prompts.load("system");
 ### Simple Variant Selection
 
 ```typescript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 function selectVariant(userId: string): "a" | "b" {
   // Simple hash-based selection
@@ -609,7 +609,7 @@ const prompt = await getPromptForUser("user-123");
 ### A/B Test Framework
 
 ```typescript
-import { loadPrompt, Prompt } from "@textprompts/textprompts-ts";
+import { loadPrompt, Prompt } from "textprompts";
 
 interface Experiment {
   name: string;
@@ -722,7 +722,7 @@ Load and use:
 
 ```typescript
 import OpenAI from "openai";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const openai = new OpenAI();
 const toolPrompt = await loadPrompt("prompts/tools/search.txt");
@@ -740,7 +740,7 @@ const response = await openai.chat.completions.create({
 ### Combining Multiple Prompts
 
 ```typescript
-import { loadPrompt, PromptString } from "@textprompts/textprompts-ts";
+import { loadPrompt, PromptString } from "textprompts";
 
 const baseSystem = await loadPrompt("prompts/base-system.txt");
 const expertMode = await loadPrompt("prompts/expert-mode.txt");
@@ -767,7 +767,7 @@ const formatted = fullSystem.format({
 ### Dynamic Composition
 
 ```typescript
-import { loadPrompt, PromptString } from "@textprompts/textprompts-ts";
+import { loadPrompt, PromptString } from "textprompts";
 
 async function buildSystemPrompt(options: {
   base: string;

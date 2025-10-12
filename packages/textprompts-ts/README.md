@@ -1,4 +1,4 @@
-# textprompts-ts
+# textprompts
 
 > **So simple, it's not even worth vibing about coding yet it just makes so much sense.**
 
@@ -8,9 +8,9 @@ Are you tired of vendors trying to sell you fancy UIs for prompt management that
 
 But then you worry: *Did my formatter change my prompt? Are those spaces at the beginning actually part of the prompt or just indentation?*
 
-**textprompts-ts** solves this elegantly: treat your prompts as **text files** and keep your linters and formatters away from them.
+**textprompts** solves this elegantly: treat your prompts as **text files** and keep your linters and formatters away from them.
 
-## Why textprompts-ts?
+## Why textprompts?
 
 - ✅ **Prompts live next to your code** - no external systems to manage
 - ✅ **Git is your version control** - diff, branch, and experiment with ease
@@ -25,13 +25,13 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 
 ```bash
 # With npm
-npm install @textprompts/textprompts-ts
+npm install textprompts
 
 # With Bun
-bun add @textprompts/textprompts-ts
+bun add textprompts
 
 # With pnpm
-pnpm add @textprompts/textprompts-ts
+pnpm add textprompts
 ```
 
 ## Quick Start
@@ -55,7 +55,7 @@ Best regards,
 
 2. **Load and use it** (no configuration needed):
 ```typescript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 // Just load it - works with or without metadata
 const prompt = await loadPrompt("greeting.txt");
@@ -98,7 +98,7 @@ const result = prompt.prompt.format({ data: "sales figures" });
 Never ship a prompt with missing variables again:
 
 ```typescript
-import { PromptString } from "@textprompts/textprompts-ts";
+import { PromptString } from "textprompts";
 
 const template = new PromptString("Hello {name}, your order {order_id} is {status}");
 
@@ -125,7 +125,7 @@ console.log(partial);  // "Hello Alice, your order {order_id} is {status}"
 Load entire directories of prompts:
 
 ```typescript
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 // Load all prompts from a directory
 const prompts = await loadPrompts("prompts/", { recursive: true });
@@ -142,7 +142,7 @@ const greeting = promptMap.get("Customer Greeting");
 TextPrompts is designed to be **super simple** by default - just load text files with optional metadata when available. No configuration needed!
 
 ```typescript
-import { loadPrompt, setMetadata, MetadataMode } from "@textprompts/textprompts-ts";
+import { loadPrompt, setMetadata, MetadataMode } from "textprompts";
 
 // Default behavior: load metadata if available, otherwise just use the file content
 const prompt = await loadPrompt("my_prompt.txt");  // Just works!
@@ -176,7 +176,7 @@ const override = await loadPrompt("prompt.txt", { meta: "strict" });
 
 ```typescript
 import OpenAI from "openai";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const systemPrompt = await loadPrompt("prompts/system.txt");
 
@@ -201,7 +201,7 @@ const response = await client.chat.completions.create({
 ```typescript
 import { openai } from '@ai-sdk/openai';
 import { streamText } from 'ai';
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const systemPrompt = await loadPrompt("prompts/system.txt");
 
@@ -228,7 +228,7 @@ for await (const delta of result.textStream) {
 
 ```typescript
 import Anthropic from "@anthropic-ai/sdk";
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const systemPrompt = await loadPrompt("prompts/system.txt");
 
@@ -250,7 +250,7 @@ const message = await anthropic.messages.create({
 ### Environment-Specific Prompts
 
 ```typescript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const env = process.env.NODE_ENV || "development";
 const systemPrompt = await loadPrompt(`prompts/${env}/system.txt`);
@@ -262,7 +262,7 @@ const systemPrompt = await loadPrompt(`prompts/${env}/system.txt`);
 ### Prompt Versioning & Experimentation
 
 ```typescript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 // Easy A/B testing
 const promptVersion = "v2";  // or "v1", "experimental", etc.
@@ -303,7 +303,7 @@ You can also set the environment variable `TEXTPROMPTS_METADATA_MODE` to one of
 default mode.
 
 ```typescript
-import { setMetadata, MetadataMode } from "@textprompts/textprompts-ts";
+import { setMetadata, MetadataMode } from "textprompts";
 
 // Set globally
 setMetadata(MetadataMode.IGNORE);   // Default: simple file loading
@@ -414,7 +414,7 @@ interface FormatOptions {
 
 **Examples:**
 ```typescript
-import { PromptString } from "@textprompts/textprompts-ts";
+import { PromptString } from "textprompts";
 
 const template = new PromptString("Hello {name}, you are {role}");
 
@@ -473,7 +473,7 @@ import {
   MissingMetadataError,   // No TOML front-matter when required
   InvalidMetadataError,   // Invalid TOML syntax
   MalformedHeaderError,   // Malformed front-matter structure
-} from "@textprompts/textprompts-ts";
+} from "textprompts";
 ```
 
 ## Best Practices
@@ -499,7 +499,7 @@ import {
 4. **Test your prompts**: Write unit tests for critical prompts
    ```typescript
    import { test, expect } from "bun:test";
-   import { loadPrompt } from "@textprompts/textprompts-ts";
+   import { loadPrompt } from "textprompts";
 
    test("greeting prompt formats correctly", async () => {
      const prompt = await loadPrompt("greeting.txt");
@@ -560,4 +560,4 @@ MIT License - see [LICENSE](../../LICENSE) for details.
 
 ---
 
-**textprompts-ts** - Because your prompts deserve better than being buried in code strings. 🚀
+**textprompts** - Because your prompts deserve better than being buried in code strings. 🚀

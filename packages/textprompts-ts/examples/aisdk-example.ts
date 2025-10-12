@@ -2,7 +2,7 @@
 /**
  * Example: AI SDK Integration with TextPrompts
  *
- * This demonstrates how to use textprompts-ts with Vercel AI SDK
+ * This demonstrates how to use textprompts with Vercel AI SDK
  * for streaming chat interactions with version-controlled prompts.
  *
  * Prerequisites:

@@ -1,6 +1,6 @@
 # TextPrompts TypeScript Examples
 
-This directory contains practical examples showing how to use textprompts-ts in real applications.
+This directory contains practical examples showing how to use textprompts in real applications.
 
 ## Running the Examples
 
@@ -94,7 +94,7 @@ Your prompt content with {variables} goes here.
 
 ### 2. Safe String Formatting
 ```typescript
-import { PromptString } from "@textprompts/textprompts-ts";
+import { PromptString } from "textprompts";
 
 // This validates all variables are provided
 const template = new PromptString("Hello {name}, order {id} is {status}");
@@ -103,7 +103,7 @@ const result = template.format({ name: "Alice", id: "123", status: "shipped" });
 
 ### 3. Directory Loading
 ```typescript
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 // Load all prompts from a directory tree
 const prompts = await loadPrompts("prompts/", { recursive: true });
@@ -143,7 +143,7 @@ async function getPrompt(name: string) {
 
 ### Validation Pipeline
 ```typescript
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 // Validate all prompts can be loaded
 const prompts = await loadPrompts("prompts/", { recursive: true });
@@ -169,7 +169,7 @@ import type {
   PromptString,     // Safe formatting string
   LoadPromptOptions,
   LoadPromptsOptions,
-} from "@textprompts/textprompts-ts";
+} from "textprompts";
 ```
 
 ## Next Steps

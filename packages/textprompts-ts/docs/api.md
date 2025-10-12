@@ -1,6 +1,6 @@
 # API Reference
 
-Complete API documentation for textprompts-ts.
+Complete API documentation for textprompts.
 
 ## Functions
 
@@ -30,7 +30,7 @@ async function loadPrompt(
 
 **Example:**
 ```typescript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 // Simple usage
 const prompt = await loadPrompt("prompts/greeting.txt");
@@ -77,7 +77,7 @@ async function loadPrompts(
 
 **Examples:**
 ```typescript
-import { loadPrompts } from "@textprompts/textprompts-ts";
+import { loadPrompts } from "textprompts";
 
 // Load from directory
 const prompts = await loadPrompts("prompts/");
@@ -121,7 +121,7 @@ async function savePrompt(
 
 **Examples:**
 ```typescript
-import { savePrompt, Prompt, PromptString } from "@textprompts/textprompts-ts";
+import { savePrompt, Prompt, PromptString } from "textprompts";
 
 // Save simple string (creates template)
 await savePrompt("new.txt", "Hello {name}!");
@@ -154,7 +154,7 @@ function setMetadata(mode: MetadataMode | string): void
 
 **Example:**
 ```typescript
-import { setMetadata, MetadataMode } from "@textprompts/textprompts-ts";
+import { setMetadata, MetadataMode } from "textprompts";
 
 // Using enum
 setMetadata(MetadataMode.STRICT);
@@ -177,7 +177,7 @@ function getMetadata(): MetadataMode
 
 **Example:**
 ```typescript
-import { getMetadata } from "@textprompts/textprompts-ts";
+import { getMetadata } from "textprompts";
 
 const current = getMetadata();
 console.log(current);  // "ignore", "allow", or "strict"
@@ -198,7 +198,7 @@ function skipMetadata(options?: { skipWarning?: boolean }): void
 
 **Example:**
 ```typescript
-import { skipMetadata } from "@textprompts/textprompts-ts";
+import { skipMetadata } from "textprompts";
 
 // Skip metadata but still warn if present
 skipMetadata();
@@ -224,7 +224,7 @@ function extractPlaceholders(text: string): Set<string>
 
 **Example:**
 ```typescript
-import { extractPlaceholders } from "@textprompts/textprompts-ts";
+import { extractPlaceholders } from "textprompts";
 
 const placeholders = extractPlaceholders("Hello {name}, you ordered {item}");
 console.log([...placeholders]);  // ["name", "item"]
@@ -258,7 +258,7 @@ function getPlaceholderInfo(text: string): {
 
 **Example:**
 ```typescript
-import { getPlaceholderInfo } from "@textprompts/textprompts-ts";
+import { getPlaceholderInfo } from "textprompts";
 
 const info = getPlaceholderInfo("User {0} ordered {item} on {1}");
 console.log(info);
@@ -546,7 +546,7 @@ type MetadataMode = (typeof MetadataMode)[keyof typeof MetadataMode];
 
 **Usage:**
 ```typescript
-import { MetadataMode } from "@textprompts/textprompts-ts";
+import { MetadataMode } from "textprompts";
 
 setMetadata(MetadataMode.STRICT);
 // or
@@ -641,7 +641,7 @@ import {
   InvalidMetadataError,
   MissingMetadataError,
   MalformedHeaderError,
-} from "@textprompts/textprompts-ts";
+} from "textprompts";
 
 try {
   const prompt = await loadPrompt("file.txt", { meta: "strict" });
@@ -683,7 +683,7 @@ process.env.TEXTPROMPTS_METADATA_MODE = "strict";
 
 ```typescript
 // Now all loads use strict mode by default
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const prompt = await loadPrompt("file.txt");  // Uses strict mode
 ```
@@ -710,7 +710,7 @@ import type {
   MissingMetadataError,
   InvalidMetadataError,
   MalformedHeaderError,
-} from "@textprompts/textprompts-ts";
+} from "textprompts";
 ```
 
 ---

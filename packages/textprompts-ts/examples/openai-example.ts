@@ -2,7 +2,7 @@
 /**
  * Example: OpenAI Integration with TextPrompts
  *
- * This demonstrates how to use textprompts-ts with OpenAI's API
+ * This demonstrates how to use textprompts with OpenAI's API
  * for safe, version-controlled prompt management.
  *
  * Prerequisites:

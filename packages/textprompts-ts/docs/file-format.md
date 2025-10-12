@@ -119,7 +119,7 @@ estimated_tokens = 150
 ---
 ```
 
-Custom fields are preserved but not validated by textprompts-ts.
+Custom fields are preserved but not validated by textprompts.
 
 ## Prompt Content
 
@@ -525,7 +525,7 @@ prompt = load_prompt("greeting.txt")
 
 ```typescript
 // TypeScript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 const prompt = await loadPrompt("greeting.txt");
 ```
 
@@ -549,7 +549,7 @@ Hello {name}, welcome to {company}!
 
 2. Load and use:
 ```typescript
-import { loadPrompt } from "@textprompts/textprompts-ts";
+import { loadPrompt } from "textprompts";
 
 const prompt = await loadPrompt("prompts/greeting.txt");
 const message = prompt.format({ name: "Alice", company: "ACME" });
