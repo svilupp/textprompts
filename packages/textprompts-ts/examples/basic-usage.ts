@@ -2,7 +2,7 @@
 /**
  * Example: Basic TextPrompts Usage
  *
- * This example demonstrates the core functionality of textprompts-ts
+ * This example demonstrates the core functionality of textprompts
  * including loading single prompts, multiple prompts, and using PromptString.
  */
 

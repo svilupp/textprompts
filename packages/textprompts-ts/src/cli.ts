@@ -16,7 +16,7 @@ const parseArgs = () => {
     }
   }
   if (files.length !== 1) {
-    stderr.write("Usage: textprompts-ts [--json] <file>\n");
+    stderr.write("Usage: textprompts [--json] <file>\n");
     exit(1);
   }
   return { file: files[0], json };
