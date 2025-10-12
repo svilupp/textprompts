@@ -25,6 +25,16 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 - ✅ **Safe formatting** - catch missing variables before they cause problems
 - ✅ **Works with everything** - OpenAI, Anthropic, local models, function calls
 
+## Cross-Language Support
+
+**textprompts** uses a cross-language compatible prompt template format:
+
+- **Python** (this package): Available on PyPI as `textprompts`
+- **Node/TypeScript**: Identical package available in `packages/textprompts-ts` folder
+- **Julia**: Version currently in development
+
+This means you can share prompt files across different parts of your stack without any conversion or compatibility issues.
+
 ## Installation
 
 ```bash
