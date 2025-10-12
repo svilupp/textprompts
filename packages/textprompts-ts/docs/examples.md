@@ -24,8 +24,8 @@ import { loadPrompt } from "@textprompts/textprompts-ts";
 
 const prompt = await loadPrompt("prompts/greeting.txt");
 
-console.log(`Title: ${prompt.meta.title}`);
-console.log(`Version: ${prompt.meta.version}`);
+console.log(`Title: ${prompt.meta?.title ?? 'Untitled'}`);
+console.log(`Version: ${prompt.meta?.version ?? 'unknown'}`);
 
 const message = prompt.format({
   customer_name: "Alice",
@@ -47,7 +47,7 @@ const prompts = await loadPrompts("prompts/", { recursive: true });
 
 // Create a lookup by title
 const promptMap = new Map(
-  prompts.map(p => [p.meta.title!, p])
+  prompts.map(p => [p.meta?.title ?? 'Untitled', p])
 );
 
 // Use by title

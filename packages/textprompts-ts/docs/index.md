@@ -133,7 +133,7 @@ const prompts = await loadPrompts("prompts/", {
 
 // Create a lookup by title
 const promptMap = new Map(
-  prompts.map(p => [p.meta.title!, p])
+  prompts.map(p => [p.meta?.title ?? 'Untitled', p])
 );
 
 const greeting = promptMap.get("Customer Greeting");
@@ -207,7 +207,7 @@ import { setMetadata, MetadataMode } from "@textprompts/textprompts-ts";
 
 setMetadata(MetadataMode.IGNORE);
 const prompt = await loadPrompt("simple.txt");
-console.log(prompt.meta.title);  // "simple"
+console.log(prompt.meta?.title);  // "simple"
 ```
 
 ### ALLOW
