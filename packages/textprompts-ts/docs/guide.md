@@ -260,7 +260,7 @@ class PromptManager {
     const loaded = await loadPrompts("prompts/", { recursive: true });
 
     for (const prompt of loaded) {
-      if (prompt.meta.title) {
+      if (prompt.meta?.title) {
         this.prompts.set(prompt.meta.title, prompt);
       }
     }
@@ -390,8 +390,8 @@ import { loadPrompt } from "@textprompts/textprompts-ts";
 test("greeting prompt loads correctly", async () => {
   const prompt = await loadPrompt("prompts/greeting.txt");
 
-  expect(prompt.meta.title).toBe("Customer Greeting");
-  expect(prompt.meta.version).toBe("1.0.0");
+  expect(prompt.meta?.title).toBe("Customer Greeting");
+  expect(prompt.meta?.version).toBe("1.0.0");
 });
 
 test("greeting prompt formats correctly", async () => {
@@ -434,9 +434,9 @@ test("all prompts are valid", async () => {
   expect(prompts.length).toBeGreaterThan(0);
 
   for (const prompt of prompts) {
-    expect(prompt.meta.title).toBeTruthy();
-    expect(prompt.meta.version).toMatch(/^\d+\.\d+\.\d+$/);
-    expect(prompt.meta.description).toBeTruthy();
+    expect(prompt.meta?.title).toBeTruthy();
+    expect(prompt.meta?.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(prompt.meta?.description).toBeTruthy();
   }
 });
 ```

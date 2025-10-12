@@ -382,7 +382,7 @@ class PromptManager {
     });
 
     for (const prompt of loaded) {
-      if (prompt.meta.title) {
+      if (prompt.meta?.title) {
         this.prompts.set(prompt.meta.title, prompt);
       }
     }
