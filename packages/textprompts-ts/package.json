@@ -1,6 +1,6 @@
 {
   "name": "textprompts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeScript companion to textprompts for loading and formatting prompt files.",
   "type": "module",
   "main": "./dist/index.js",
