@@ -3,6 +3,7 @@ export { savePrompt } from "./savers";
 export { Prompt } from "./models";
 export type { PromptMeta } from "./models";
 export { PromptString } from "./prompt-string";
+export { parseString } from "./parser";
 export {
   MetadataMode,
   setMetadata,

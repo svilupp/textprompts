@@ -87,41 +87,45 @@ const enforceStrictRequirements = (meta: PromptMeta): void => {
   }
 };
 
-export const parseFile = async (path: string, metadataMode: MetadataMode): Promise<Prompt> => {
-  let raw: string;
-  try {
-    raw = await readFile(path, { encoding: "utf8" });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new TextPromptsError(`Cannot read ${path}: ${message}`);
-  }
-
+/**
+ * Parse a prompt from a string with optional TOML front-matter.
+ *
+ * @param content - The raw content to parse (may include TOML front-matter)
+ * @param sourcePath - The source path for metadata and error messages
+ * @param metadataMode - How to handle metadata (IGNORE, ALLOW, or STRICT)
+ * @returns A Prompt instance
+ */
+export const parseString = (
+  content: string,
+  sourcePath: string,
+  metadataMode: MetadataMode,
+): Prompt => {
   if (metadataMode === MetadataMode.IGNORE) {
     if (
       warnOnIgnoredMetadata() &&
-      raw.startsWith(DELIM) &&
-      raw.indexOf(DELIM, DELIM.length) !== -1
+      content.startsWith(DELIM) &&
+      content.indexOf(DELIM, DELIM.length) !== -1
     ) {
       console.warn(
         "Metadata detected but ignored; use setMetadata('allow') or skipMetadata({ skipWarning: true }) to silence",
       );
     }
-    const title = basename(path, extname(path));
+    const title = basename(sourcePath, extname(sourcePath));
     return new Prompt({
-      path,
+      path: sourcePath,
       meta: { title },
-      prompt: new PromptString(dedent(raw)),
+      prompt: new PromptString(dedent(content)),
     });
   }
 
   let header: string | null;
   let body: string;
   try {
-    ({ header, body } = splitFrontMatter(raw));
+    ({ header, body } = splitFrontMatter(content));
   } catch (error) {
-    if (raw.startsWith(DELIM) && error instanceof MalformedHeaderError) {
+    if (content.startsWith(DELIM) && error instanceof MalformedHeaderError) {
       throw new InvalidMetadataError(
-        `${error.message}. If this file has no metadata and starts with '---', use meta=MetadataMode.IGNORE to skip metadata parsing.`,
+        `${error.message}. If this content has no metadata and starts with '---', use meta=MetadataMode.IGNORE to skip metadata parsing.`,
       );
     }
     throw error;
@@ -154,19 +158,31 @@ export const parseFile = async (path: string, metadataMode: MetadataMode): Promi
   } else {
     if (metadataMode === MetadataMode.STRICT) {
       throw new MissingMetadataError(
-        `No metadata found in ${path}. STRICT mode requires metadata with title, description, and version fields. Use meta=MetadataMode.ALLOW or meta=MetadataMode.IGNORE for less strict validation.`,
+        `No metadata found in ${sourcePath}. STRICT mode requires metadata with title, description, and version fields. Use meta=MetadataMode.ALLOW or meta=MetadataMode.IGNORE for less strict validation.`,
       );
     }
     meta = {};
   }
 
   if (!meta.title) {
-    meta.title = basename(path, extname(path));
+    meta.title = basename(sourcePath, extname(sourcePath));
   }
 
   return new Prompt({
-    path,
+    path: sourcePath,
     meta,
     prompt: new PromptString(dedent(body)),
   });
+};
+
+export const parseFile = async (path: string, metadataMode: MetadataMode): Promise<Prompt> => {
+  let raw: string;
+  try {
+    raw = await readFile(path, { encoding: "utf8" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new TextPromptsError(`Cannot read ${path}: ${message}`);
+  }
+
+  return parseString(raw, path, metadataMode);
 };

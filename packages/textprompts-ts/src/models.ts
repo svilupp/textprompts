@@ -37,6 +37,17 @@ export class Prompt {
     return loadPrompt(path, options?.meta !== undefined ? { meta: options.meta } : {});
   }
 
+  static fromString(
+    content: string,
+    options?: { path?: string; meta?: MetadataMode | string | null },
+  ): Prompt {
+    const { parseString } = require("./parser");
+    const { resolveMetadataMode } = require("./config");
+    const sourcePath = options?.path ?? "<string>";
+    const mode = resolveMetadataMode(options?.meta ?? null);
+    return parseString(content, sourcePath, mode);
+  }
+
   toString(): string {
     return this.prompt.toString();
   }

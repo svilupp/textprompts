@@ -38,6 +38,8 @@ pnpm add textprompts
 
 **Super simple by default** - TextPrompts just loads text files with optional metadata:
 
+### Loading from Files
+
 1. **Create a prompt file** (`greeting.txt`):
 ```
 ---
@@ -90,6 +92,52 @@ const partial = prompt.prompt.format(
 const prompt = await loadPrompt("simple_prompt.txt");  // Just works!
 const result = prompt.prompt.format({ data: "sales figures" });
 ```
+
+### Loading from Strings (for Bundlers)
+
+**Problem**: Modern bundlers (Vite, Webpack, Rollup) often don't include `.txt` files in your bundle by default.
+
+**Solution**: Load prompts directly from strings using `Prompt.fromString()`:
+
+```typescript
+import { Prompt } from "textprompts";
+
+// Vite: Use ?raw suffix to import as string
+import greetingContent from "./greeting.txt?raw";
+
+// Or with Webpack using raw-loader
+// import greetingContent from "raw-loader!./greeting.txt";
+
+// Load from the string content
+const prompt = Prompt.fromString(greetingContent);
+
+// Works identically to file-based loading
+const message = prompt.format({
+  customer_name: "Alice",
+  company_name: "ACME Corp",
+  issue_type: "billing question",
+  agent_name: "Sarah"
+});
+```
+
+**With metadata support**:
+```typescript
+import promptContent from "./system-prompt.txt?raw";
+
+// The ?raw import includes TOML front-matter if present
+const prompt = Prompt.fromString(promptContent, {
+  meta: "allow",  // or MetadataMode.ALLOW
+  path: "system-prompt.txt"  // Optional: for better error messages
+});
+
+console.log(prompt.meta?.title);     // Access metadata
+console.log(prompt.meta?.version);   // Works like fromPath
+```
+
+**When to use `fromString` vs `fromPath`**:
+- Use `fromPath()` for Node.js/Bun server-side code
+- Use `fromString()` for bundled frontend code (Vite, Webpack, etc.)
+- Use `fromString()` when loading prompts from APIs or databases
 
 ## Core Features
 
@@ -443,6 +491,7 @@ class Prompt {
   readonly prompt: PromptString;
 
   static async fromPath(path: string, options?: { meta?: MetadataMode | string | null }): Promise<Prompt>;
+  static fromString(content: string, options?: { path?: string; meta?: MetadataMode | string | null }): Prompt;
 
   toString(): string;
   valueOf(): string;
@@ -460,6 +509,41 @@ interface PromptMeta {
   created?: string | null;
   description?: string | null;
 }
+```
+
+**`Prompt.fromString(content, options?)`**
+
+Load a prompt from a string (useful for bundlers):
+
+```typescript
+static fromString(
+  content: string,
+  options?: {
+    path?: string;  // Optional path for metadata/error messages (default: "<string>")
+    meta?: MetadataMode | string | null;  // Metadata mode (default: global config)
+  }
+): Prompt
+```
+
+- `content`: String containing the prompt (may include TOML front-matter)
+- `path`: Optional path for better error messages and metadata extraction (defaults to `"<string>"`)
+- `meta`: Metadata handling mode (same as `fromPath`)
+
+Returns a `Prompt` object with the same structure as `fromPath`.
+
+**Examples:**
+```typescript
+import { Prompt, MetadataMode } from "textprompts";
+
+// Simple usage
+const prompt = Prompt.fromString("Hello {name}!");
+
+// With Vite raw import
+import content from "./prompt.txt?raw";
+const prompt = Prompt.fromString(content, { path: "prompt.txt" });
+
+// With strict metadata validation
+const prompt = Prompt.fromString(content, { meta: MetadataMode.STRICT });
 ```
 
 ## Error Handling
@@ -533,6 +617,7 @@ You could, but then you lose:
 See the [examples/](./examples/) directory for complete, runnable examples:
 
 - **[basic-usage.ts](./examples/basic-usage.ts)** - Core functionality demo
+- **[fromstring-example.ts](./examples/fromstring-example.ts)** - Loading from strings for bundlers
 - **[simple-format-demo.ts](./examples/simple-format-demo.ts)** - PromptString features
 - **[openai-example.ts](./examples/openai-example.ts)** - OpenAI integration
 - **[aisdk-example.ts](./examples/aisdk-example.ts)** - Vercel AI SDK streaming chat
@@ -540,6 +625,7 @@ See the [examples/](./examples/) directory for complete, runnable examples:
 Run them with:
 ```bash
 bun examples/basic-usage.ts
+bun examples/fromstring-example.ts
 bun examples/openai-example.ts
 bun examples/aisdk-example.ts
 ```
