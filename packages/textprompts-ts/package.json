@@ -1,44 +1,37 @@
 {
   "name": "textprompts",
-  "version": "0.3.0",
+  "version": "0.2.0",
   "description": "TypeScript companion to textprompts for loading and formatting prompt files.",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./cli": {
-      "types": "./dist/cli.d.ts",
-      "import": "./dist/cli.mjs",
-      "require": "./dist/cli.cjs"
+      "import": "./dist/cli.js",
+      "types": "./dist/cli.d.ts"
     }
   },
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
   "sideEffects": false,
   "scripts": {
-    "clean": "rm -rf dist",
-    "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run build:types",
-    "build:esm": "bun build src/index.ts src/cli.ts --target node --format esm --outdir dist --entry-naming [name].mjs --external fast-glob --external @iarna/toml",
-    "build:cjs": "bun build src/index.ts src/cli.ts --target node --format cjs --outdir dist --entry-naming [name].cjs --external fast-glob --external @iarna/toml",
-    "build:types": "tsup src/index.ts src/cli.ts --dts-only --format esm --out-dir dist",
+    "build": "tsup src/index.ts src/cli.ts --format esm --dts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint --write --unsafe .",
     "lint:check": "biome lint .",
-    "check": "npm run typecheck && npm run format:check && npm run lint:check && bun test",
-    "prepublishOnly": "npm run build"
+    "check": "bun run typecheck && bun run format:check && bun run lint:check && bun test",
+    "prepublishOnly": "bun run build"
   },
   "bin": {
-    "textprompts": "./dist/cli.cjs"
+    "textprompts": "./dist/cli.js"
   },
   "publishConfig": {
     "access": "public"

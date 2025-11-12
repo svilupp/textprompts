@@ -180,7 +180,7 @@ function getMetadata(): MetadataMode
 import { getMetadata } from "textprompts";
 
 const current = getMetadata();
-console.log(current);  // "allow", "ignore", or "strict"
+console.log(current);  // "ignore", "allow", or "strict"
 ```
 
 ---

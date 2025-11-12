@@ -27,12 +27,12 @@ const envMode =
 
 let currentMetadataMode: MetadataMode = (() => {
   if (!envMode) {
-    return MetadataMode.ALLOW;
+    return MetadataMode.IGNORE;
   }
   try {
     return normalizeMode(envMode);
   } catch {
-    return MetadataMode.ALLOW;
+    return MetadataMode.IGNORE;
   }
 })();
 

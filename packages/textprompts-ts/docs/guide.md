@@ -85,30 +85,28 @@ const systemPrompt = await loadPrompt(`prompts/${env}/system.txt`);
 
 ### When to Use Each Mode
 
-#### ALLOW Mode (Default)
-
-Best for:
-- Mixed projects (some prompts have metadata, some don't)
-- Gradual migration to metadata
-- Flexible development
-- Getting started with the library
-
-```typescript
-import { setMetadata, MetadataMode } from "textprompts";
-
-setMetadata(MetadataMode.ALLOW);
-```
-
-#### IGNORE Mode
+#### IGNORE Mode (Default)
 
 Best for:
 - Quick prototyping
 - Simple projects
 - Prompts without versioning needs
-- Treating prompts as plain text
 
 ```typescript
+import { setMetadata, MetadataMode } from "textprompts";
+
 setMetadata(MetadataMode.IGNORE);
+```
+
+#### ALLOW Mode
+
+Best for:
+- Mixed projects (some prompts have metadata, some don't)
+- Gradual migration to metadata
+- Flexible development
+
+```typescript
+setMetadata(MetadataMode.ALLOW);
 ```
 
 #### STRICT Mode
