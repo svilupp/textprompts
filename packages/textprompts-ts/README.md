@@ -8,7 +8,7 @@ Are you tired of vendors trying to sell you fancy UIs for prompt management that
 
 But then you worry: *Did my formatter change my prompt? Are those spaces at the beginning actually part of the prompt or just indentation?*
 
-**textprompts** solves this elegantly: treat your prompts as **text files** and keep your linters and formatters away from them.
+**textprompts** solves this elegantly: treat your prompts as **text files** and keep your linters and formatters away from them. And you get prompt metadata headers for free!
 
 ## Why textprompts?
 
@@ -20,6 +20,7 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 - ✅ **Safe formatting** - catch missing variables before they cause problems
 - ✅ **Works with everything** - OpenAI, Anthropic, local models, function calls
 - ✅ **Node.js & Bun compatible** - works seamlessly with both runtimes
+- ✅ **Dual ESM/CJS build support** - works with both module systems
 
 ## Installation
 
