@@ -198,26 +198,26 @@ const response = await openai.chat.completions.create({
 
 textprompts has three modes for handling metadata:
 
-### IGNORE (Default)
-
-Simple mode - just loads text, uses filename as title:
-
-```typescript
-import { setMetadata, MetadataMode } from "textprompts";
-
-setMetadata(MetadataMode.IGNORE);
-const prompt = await loadPrompt("simple.txt");
-console.log(prompt.meta?.title);  // "simple"
-```
-
-### ALLOW
+### ALLOW (Default)
 
 Flexible mode - loads metadata if present, doesn't require it:
 
 ```typescript
+import { setMetadata, MetadataMode } from "textprompts";
+
 setMetadata(MetadataMode.ALLOW);
 const prompt = await loadPrompt("prompt.txt");
 // Works with or without metadata
+```
+
+### IGNORE
+
+Simple mode - just loads text, uses filename as title:
+
+```typescript
+setMetadata(MetadataMode.IGNORE);
+const prompt = await loadPrompt("simple.txt");
+console.log(prompt.meta?.title);  // "simple"
 ```
 
 ### STRICT

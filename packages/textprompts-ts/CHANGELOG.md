@@ -75,10 +75,11 @@ const { loadPrompt } = require("textprompts");
 ```
 
 **Build system changes:**
-- Updated `tsup` configuration to generate both ESM (.mjs) and CJS (.cjs) outputs
+- Migrated to Bun build for ESM and CJS generation
+- tsup used only for type declaration generation (--dts-only)
 - Explicit file extensions (.mjs/.cjs) for unambiguous module resolution
-- Added tsup.config.ts for better build control
 - Build now generates: dist/*.mjs (ESM), dist/*.cjs (CJS), dist/*.d.ts (types)
+- Three-step build process: ESM → CJS → types
 
 ## [0.2.0] - 2024-XX-XX
 
