@@ -4,7 +4,7 @@ import { MetadataMode, setMetadata, getMetadata, skipMetadata, warnOnIgnoredMeta
 
 describe("config", () => {
   beforeEach(() => {
-    setMetadata(MetadataMode.IGNORE);
+    setMetadata(MetadataMode.ALLOW);
   });
 
   test("setMetadata and getMetadata round-trip with enum", () => {
@@ -67,7 +67,7 @@ describe("config", () => {
     expect(warnOnIgnoredMetadata()).toBe(false);
   });
 
-  test("default mode is IGNORE", () => {
-    expect(getMetadata()).toBe(MetadataMode.IGNORE);
+  test("default mode is ALLOW", () => {
+    expect(getMetadata()).toBe(MetadataMode.ALLOW);
   });
 });

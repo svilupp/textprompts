@@ -168,6 +168,7 @@ setMetadata("allow");
 ### `getMetadata()`
 
 Get the current global metadata handling mode.
+Defaults to `MetadataMode.ALLOW`, which parses metadata when present without requiring it.
 
 ```typescript
 function getMetadata(): MetadataMode
@@ -180,7 +181,7 @@ function getMetadata(): MetadataMode
 import { getMetadata } from "textprompts";
 
 const current = getMetadata();
-console.log(current);  // "ignore", "allow", or "strict"
+console.log(current);  // "allow", "ignore", or "strict"
 ```
 
 ---

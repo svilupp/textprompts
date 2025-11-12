@@ -196,14 +196,14 @@ import { loadPrompt, setMetadata, MetadataMode } from "textprompts";
 const prompt = await loadPrompt("my_prompt.txt");  // Just works!
 
 // Three modes available for different use cases:
-// 1. IGNORE (default): Treat as simple text file, use filename as title
+// 1. ALLOW (default): Load metadata if present, keep going if it's missing
+setMetadata(MetadataMode.ALLOW);  // Flexible metadata loading
+const flexible = await loadPrompt("prompt.txt");  // Loads any metadata found
+
+// 2. IGNORE: Treat as simple text file, use filename as title
 setMetadata(MetadataMode.IGNORE);  // Super simple file loading
 const simple = await loadPrompt("prompt.txt");  // No metadata parsing
 console.log(simple.meta?.title);  // "prompt" (from filename)
-
-// 2. ALLOW: Load metadata if present, don't worry if it's incomplete
-setMetadata(MetadataMode.ALLOW);  // Flexible metadata loading
-const flexible = await loadPrompt("prompt.txt");  // Loads any metadata found
 
 // 3. STRICT: Require complete metadata for production use
 setMetadata(MetadataMode.STRICT);  // Prevent errors in production

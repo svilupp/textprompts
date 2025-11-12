@@ -25,7 +25,7 @@ const parseArgs = () => {
 (async () => {
   const { file, json } = parseArgs();
   try {
-    const prompt = await loadPrompt(file, { meta: "ignore" });
+    const prompt = await loadPrompt(file);
     if (json) {
       stdout.write(`${JSON.stringify(prompt.meta ?? {}, null, 2)}\n`);
     } else {
