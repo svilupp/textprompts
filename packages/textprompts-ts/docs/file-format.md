@@ -252,18 +252,18 @@ The library doesn't enforce extensions, but `.txt` is recommended for consistenc
 
 ## Validation Rules
 
-### IGNORE Mode
-
-- No validation performed
-- Metadata is not parsed
-- Filename (without extension) becomes `title`
-
-### ALLOW Mode
+### ALLOW Mode (Default)
 
 - Parses metadata if present
 - Allows incomplete metadata
 - Validates TOML syntax
 - Falls back to filename for `title` if not provided
+
+### IGNORE Mode
+
+- No validation performed
+- Metadata is not parsed
+- Filename (without extension) becomes `title`
 
 ### STRICT Mode
 

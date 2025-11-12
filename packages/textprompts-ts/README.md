@@ -8,7 +8,7 @@ Are you tired of vendors trying to sell you fancy UIs for prompt management that
 
 But then you worry: *Did my formatter change my prompt? Are those spaces at the beginning actually part of the prompt or just indentation?*
 
-**textprompts** solves this elegantly: treat your prompts as **text files** and keep your linters and formatters away from them.
+**textprompts** solves this elegantly: treat your prompts as **text files** and keep your linters and formatters away from them. And you get prompt metadata headers for free!
 
 ## Why textprompts?
 
@@ -20,6 +20,7 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 - ✅ **Safe formatting** - catch missing variables before they cause problems
 - ✅ **Works with everything** - OpenAI, Anthropic, local models, function calls
 - ✅ **Node.js & Bun compatible** - works seamlessly with both runtimes
+- ✅ **Dual ESM/CJS build support** - works with both module systems
 
 ## Installation
 
@@ -196,14 +197,14 @@ import { loadPrompt, setMetadata, MetadataMode } from "textprompts";
 const prompt = await loadPrompt("my_prompt.txt");  // Just works!
 
 // Three modes available for different use cases:
-// 1. IGNORE (default): Treat as simple text file, use filename as title
+// 1. ALLOW (default): Load metadata if present, don't worry if it's incomplete
+setMetadata(MetadataMode.ALLOW);  // Flexible metadata loading (default)
+const flexible = await loadPrompt("prompt.txt");  // Loads any metadata found
+
+// 2. IGNORE: Treat as simple text file, use filename as title
 setMetadata(MetadataMode.IGNORE);  // Super simple file loading
 const simple = await loadPrompt("prompt.txt");  // No metadata parsing
 console.log(simple.meta?.title);  // "prompt" (from filename)
-
-// 2. ALLOW: Load metadata if present, don't worry if it's incomplete
-setMetadata(MetadataMode.ALLOW);  // Flexible metadata loading
-const flexible = await loadPrompt("prompt.txt");  // Loads any metadata found
 
 // 3. STRICT: Require complete metadata for production use
 setMetadata(MetadataMode.STRICT);  // Prevent errors in production
@@ -214,8 +215,8 @@ const override = await loadPrompt("prompt.txt", { meta: "strict" });
 ```
 
 **Why this design?**
-- **Default = Simple**: No configuration needed, just load files
-- **Flexible**: Add metadata when you want structure
+- **Default = Flexible**: Parse metadata if present, no friction if absent
+- **No configuration needed**: Just load files and it works
 - **Production-Safe**: Use strict mode to catch missing metadata before deployment
 
 ## Real-World Examples
@@ -342,8 +343,8 @@ Use {variables} for templating.
 
 Choose the right level of strictness for your use case:
 
-1. **IGNORE** (default) - Simple text file loading, filename becomes title
-2. **ALLOW** - Load metadata if present, don't worry about completeness
+1. **ALLOW** (default) - Load metadata if present, don't worry about completeness
+2. **IGNORE** - Simple text file loading, filename becomes title
 3. **STRICT** - Require complete metadata (title, description, version) for production safety
 
 You can also set the environment variable `TEXTPROMPTS_METADATA_MODE` to one of
@@ -354,8 +355,8 @@ default mode.
 import { setMetadata, MetadataMode } from "textprompts";
 
 // Set globally
-setMetadata(MetadataMode.IGNORE);   // Default: simple file loading
-setMetadata(MetadataMode.ALLOW);    // Flexible: load any metadata
+setMetadata(MetadataMode.ALLOW);    // Default: flexible metadata loading
+setMetadata(MetadataMode.IGNORE);   // Simple: no metadata parsing
 setMetadata(MetadataMode.STRICT);   // Production: require complete metadata
 
 // Or override per prompt
