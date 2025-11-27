@@ -23,8 +23,8 @@ prompt = load_prompt("prompts/greeting.txt")
 println(prompt.prompt)        # The prompt text
 println(prompt.meta.title)    # Metadata title
 
-# Format with placeholders
-result = format(prompt; name="World", day="Monday")
+# Format with placeholders - call the prompt as a function
+result = prompt(; name="World", day="Monday")
 ```
 
 ## File Format
@@ -92,8 +92,8 @@ system_template = load_prompt("prompts/system.txt")
 user_template = load_prompt("prompts/task.txt")
 
 # Format and create messages
-system_msg = SystemMessage(format(system_template; role="Julia expert"))
-user_msg = UserMessage(format(user_template; task="explain macros"))
+system_msg = system_template(; role="Julia expert") |> SystemMessage
+user_msg = user_template(; task="explain macros") |> UserMessage
 
 # Call the LLM with a vector of messages
 response = aigenerate([system_msg, user_msg])
@@ -102,8 +102,8 @@ response = aigenerate([system_msg, user_msg])
 Or as a shorter alternative:
 ```julia
 response = aigenerate([
-    load_prompt("prompts/system.txt") |> x -> SystemMessage(format(x; role="Julia expert")),
-    load_prompt("prompts/task.txt") |> x -> UserMessage(format(x; task="explain macros"))])
+    load_prompt("prompts/system.txt")(; role="Julia expert") |> SystemMessage,
+    load_prompt("prompts/task.txt")(; task="explain macros") |> UserMessage])
 ```
 
 Example prompt files:

@@ -77,7 +77,8 @@ Load a single prompt file.
   `String` ("strict", "allow", "ignore"), or `nothing` (uses global default)
 
 # Returns
-A `Prompt` object with parsed metadata and content.
+A `Prompt` object with parsed metadata and content. The returned `Prompt` is callable -
+use `prompt(; kwargs...)` to substitute placeholders.
 
 # Throws
 - `FileMissingError`: If file doesn't exist
@@ -98,8 +99,12 @@ prompt = load_prompt("prompts/simple.txt"; meta=:ignore)
 println(prompt.prompt)
 println(prompt.meta.title)
 
-# Format with placeholders
-result = format(prompt; name="World")
+# Format with placeholders - call the prompt as a function
+result = prompt(; name="World")
+
+# Use with PromptingTools
+using PromptingTools
+msg = prompt(; name="World") |> SystemMessage
 ```
 """
 function load_prompt(path; meta = nothing)::Prompt

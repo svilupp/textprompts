@@ -1,0 +1,11 @@
+---
+title = "Greeting Prompt"
+version = "1.0"
+author = "TextPrompts"
+description = "A friendly greeting template"
+created = "2024-01-15"
+---
+Hello, {name}!
+
+Today is {day} and the weather is {weather}.
+Welcome to TextPrompts.jl!

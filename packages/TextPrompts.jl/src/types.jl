@@ -40,11 +40,17 @@ end
 A string type that tracks placeholders for safe formatting.
 
 PromptString wraps a string and extracts placeholder names from it.
-The `format` method validates that all placeholders are provided.
+Call it as a function or use `TextPrompts.format` to substitute placeholders.
 
 # Fields
 - `content::String`: The string content
 - `placeholders::Set{String}`: Set of placeholder names extracted from content
+
+# Examples
+```julia
+ps = PromptString("Hello, {name}!")
+ps(; name="World")  # "Hello, World!"
+```
 """
 struct PromptString <: AbstractString
     content::String
@@ -83,12 +89,15 @@ function Base.show(io::IO, ::MIME"text/plain", s::PromptString)
 end
 
 """
+    (s::PromptString)(; skip_validation::Bool=false, kwargs...) -> String
     format(s::PromptString; skip_validation::Bool=false, kwargs...) -> String
 
-Format the prompt string with the given keyword arguments.
+Format the prompt string by substituting placeholders with the given values.
+
+The recommended way is to call the PromptString as a function. The `format`
+function is also available but not exported to avoid clashes with other packages.
 
 # Arguments
-- `s::PromptString`: The prompt string to format
 - `skip_validation::Bool=false`: If true, allows partial formatting with missing placeholders
 - `kwargs...`: Keyword arguments matching placeholder names
 
@@ -101,10 +110,16 @@ A formatted string with placeholders replaced.
 # Examples
 ```julia
 ps = PromptString("Hello, {name}!")
-format(ps; name="World")  # "Hello, World!"
 
+# Recommended: call as a function
+ps(; name="World")  # "Hello, World!"
+
+# Alternative: use format (not exported, use TextPrompts.format)
+TextPrompts.format(ps; name="World")  # "Hello, World!"
+
+# Partial formatting
 ps2 = PromptString("Hello, {name}! Today is {day}.")
-format(ps2; name="World", skip_validation=true)  # "Hello, World! Today is {day}."
+ps2(; name="World", skip_validation=true)  # "Hello, World! Today is {day}."
 ```
 """
 function format(s::PromptString; skip_validation::Bool = false, kwargs...)
@@ -118,15 +133,38 @@ function format(s::PromptString; skip_validation::Bool = false, kwargs...)
     return _substitute_placeholders(s.content, provided)
 end
 
+# Make PromptString callable
+(s::PromptString)(; skip_validation::Bool = false, kwargs...) = format(s; skip_validation, kwargs...)
+
 """
     Prompt
 
 A loaded prompt with metadata and content.
 
+`Prompt` is callable - call it with keyword arguments to substitute placeholders
+and get a formatted string.
+
 # Fields
 - `path::String`: Path to the source file
 - `meta::PromptMeta`: Metadata extracted from front-matter
 - `prompt::PromptString`: The prompt content
+
+# Convenience Properties
+- `placeholders`: Set of placeholder names (delegates to `prompt.placeholders`)
+- `content`: Raw string content (delegates to `prompt.content`)
+
+# Examples
+```julia
+prompt = load_prompt("greeting.txt")
+
+# Call as a function to format (recommended)
+result = prompt(; name="World", day="Monday")
+
+# Access properties
+prompt.placeholders  # Set(["name", "day"])
+prompt.content       # Raw template string
+prompt.meta.title    # Metadata
+```
 """
 struct Prompt
     path::String
@@ -158,14 +196,42 @@ function Base.propertynames(::Prompt)
 end
 
 """
+    (p::Prompt)(; skip_validation::Bool=false, kwargs...) -> String
     format(p::Prompt; skip_validation::Bool=false, kwargs...) -> String
 
-Format the prompt with the given keyword arguments.
-See `format(::PromptString; ...)` for details.
+Format the prompt by substituting placeholders with the given values.
+
+The recommended way is to call the Prompt as a function. The `format`
+function is also available but not exported to avoid clashes with other packages.
+
+# Arguments
+- `skip_validation::Bool=false`: If true, allows partial formatting with missing placeholders
+- `kwargs...`: Keyword arguments matching placeholder names
+
+# Returns
+A formatted string with placeholders replaced.
+
+# Examples
+```julia
+prompt = load_prompt("greeting.txt")  # Contains "Hello, {name}!"
+
+# Recommended: call as a function
+prompt(; name="World")  # "Hello, World!"
+
+# Alternative: use format (not exported)
+TextPrompts.format(prompt; name="World")  # "Hello, World!"
+
+# Use with PromptingTools
+using PromptingTools
+msg = prompt(; name="World") |> SystemMessage
+```
 """
 function format(p::Prompt; skip_validation::Bool = false, kwargs...)
     return format(p.prompt; skip_validation = skip_validation, kwargs...)
 end
+
+# Make Prompt callable
+(p::Prompt)(; skip_validation::Bool = false, kwargs...) = format(p; skip_validation, kwargs...)
 
 function Base.show(io::IO, p::Prompt)
     print(io, "Prompt(path=$(repr(p.path)), meta=$(p.meta))")

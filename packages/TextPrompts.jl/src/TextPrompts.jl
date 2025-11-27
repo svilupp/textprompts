@@ -18,8 +18,8 @@ prompt = load_prompt("prompts/greeting.txt")
 println(prompt.prompt)  # The prompt text
 println(prompt.meta.title)  # Metadata title
 
-# Format with placeholders
-result = format(prompt; name="World", day="Monday")
+# Format with placeholders - call the prompt as a function
+result = prompt(; name="World", day="Monday")
 ```
 
 # Metadata Modes
@@ -63,7 +63,8 @@ export PromptMeta, PromptString, Prompt
 # Export functions
 export from_path, from_string
 export load_prompt, load_prompts, save_prompt
-export format
+# Note: `format` is intentionally NOT exported to avoid clashes with Dates.format etc.
+# Use the callable syntax instead: prompt(; name="value") or TextPrompts.format(...)
 export set_metadata, get_metadata, skip_metadata, warn_on_ignored_metadata
 export extract_placeholders, get_placeholder_info, validate_format_args
 

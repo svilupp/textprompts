@@ -1,0 +1,6 @@
+---
+title = "System Prompt"
+version = "1.0"
+description = "A system prompt for a helpful assistant"
+---
+You are a {role}. Be concise and helpful.

@@ -163,29 +163,34 @@ const FIXTURES_DIR = joinpath(@__DIR__, "fixtures")
             @test SubString(ps, 1, 5) == "Hello"
         end
 
-        @testset "format" begin
+        @testset "callable syntax" begin
             ps = PromptString("Hello, {name}!")
-            @test format(ps; name = "World") == "Hello, World!"
+            @test ps(; name = "World") == "Hello, World!"
 
             ps = PromptString("{greeting}, {name}!")
-            @test format(ps; greeting = "Hi", name = "Julia") == "Hi, Julia!"
+            @test ps(; greeting = "Hi", name = "Julia") == "Hi, Julia!"
+        end
+
+        @testset "TextPrompts.format (not exported)" begin
+            ps = PromptString("Hello, {name}!")
+            @test TextPrompts.format(ps; name = "World") == "Hello, World!"
         end
 
         @testset "format validation" begin
             ps = PromptString("Hello, {name}!")
-            @test_throws TextPrompts.PlaceholderError format(ps)
-            @test_throws TextPrompts.PlaceholderError format(ps; wrong = "value")
+            @test_throws TextPrompts.PlaceholderError ps()
+            @test_throws TextPrompts.PlaceholderError ps(; wrong = "value")
         end
 
         @testset "format skip_validation" begin
             ps = PromptString("Hello, {name}! Today is {day}.")
-            result = format(ps; name = "World", skip_validation = true)
+            result = ps(; name = "World", skip_validation = true)
             @test result == "Hello, World! Today is {day}."
         end
 
         @testset "format with escaped braces" begin
             ps = PromptString("JSON: {{\"key\": \"{value}\"}}")
-            result = format(ps; value = "test")
+            result = ps(; value = "test")
             @test result == "JSON: {\"key\": \"test\"}"
         end
 
@@ -259,11 +264,18 @@ const FIXTURES_DIR = joinpath(@__DIR__, "fixtures")
             @test occursin("Line 2", plain)
         end
 
-        @testset "format" begin
+        @testset "callable syntax" begin
             meta = PromptMeta(title = "Test")
             prompt = Prompt("path.txt", meta, "Hello, {name}!")
 
-            @test format(prompt; name = "World") == "Hello, World!"
+            @test prompt(; name = "World") == "Hello, World!"
+        end
+
+        @testset "TextPrompts.format (not exported)" begin
+            meta = PromptMeta(title = "Test")
+            prompt = Prompt("path.txt", meta, "Hello, {name}!")
+
+            @test TextPrompts.format(prompt; name = "World") == "Hello, World!"
         end
     end
 
@@ -430,7 +442,7 @@ const FIXTURES_DIR = joinpath(@__DIR__, "fixtures")
             @test "name" in prompt.placeholders
             @test !("key" in prompt.placeholders)  # {{key}} is escaped
 
-            result = format(prompt; value = "test", name = "World")
+            result = prompt(; value = "test", name = "World")
             @test occursin("{\"key\":", result)  # Escaped braces become single braces
         end
     end
@@ -503,7 +515,7 @@ const FIXTURES_DIR = joinpath(@__DIR__, "fixtures")
             @test prompt.path == "<string>"
             @test prompt.meta.title == "untitled"
             @test "name" in prompt.placeholders
-            @test format(prompt; name="World") == "Hello, World!"
+            @test prompt(; name="World") == "Hello, World!"
         end
 
         @testset "string with TOML front-matter" begin
