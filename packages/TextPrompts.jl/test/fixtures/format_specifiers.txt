@@ -1,0 +1,9 @@
+---
+title = "Format Specifiers"
+version = "1.0.0"
+description = "Test format specifiers in placeholders"
+---
+
+The price is {price:.2f} dollars.
+You have {count:03d} items.
+Your name is {name}.

@@ -1,0 +1,11 @@
+---
+title = "Good Prompt"
+version = "1.0.0"
+author = "Test Author"
+created = "2024-01-15"
+description = "A well-formed test prompt"
+---
+
+Hello, {name}!
+
+Today is {day} and the weather is {weather}.

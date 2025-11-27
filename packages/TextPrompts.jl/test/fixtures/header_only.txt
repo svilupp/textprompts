@@ -1,0 +1,5 @@
+---
+title = "Header Only"
+version = "1.0.0"
+description = "This file has metadata but no body"
+---

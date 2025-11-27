@@ -1,0 +1,8 @@
+---
+title = "Escaped Braces"
+version = "1.0.0"
+description = "Test escaped braces"
+---
+
+This is a JSON template: {{"key": "{value}"}}
+And this is a real placeholder: {name}

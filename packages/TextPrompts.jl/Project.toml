@@ -1,0 +1,22 @@
+name = "TextPrompts"
+uuid = "c04547c9-bcc9-415a-98e0-c28ab642efa6"
+authors = ["J S @svilupp and contributors"]
+version = "0.1.0"
+
+[deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+
+[compat]
+Aqua = "0.8"
+Dates = "1"
+TOML = "1"
+Test = "1"
+julia = "1.10"
+
+[extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test", "Aqua"]

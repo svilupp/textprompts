@@ -1,0 +1,4 @@
+--- This line starts with dashes but is not front-matter
+because there's no closing delimiter.
+
+The content continues here.

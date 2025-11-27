@@ -1,0 +1,5 @@
+---
+title = "Only Title"
+---
+
+This prompt only has a title, missing description and version.

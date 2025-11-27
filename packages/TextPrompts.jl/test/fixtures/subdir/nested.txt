@@ -1,0 +1,7 @@
+---
+title = "Nested Prompt"
+version = "1.0.0"
+description = "A prompt in a subdirectory"
+---
+
+This is a nested prompt for testing recursive loading.
