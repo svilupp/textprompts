@@ -27,12 +27,12 @@ function parse_metadata_mode(mode::MetadataMode)
 end
 
 function parse_metadata_mode(mode::Symbol)
-    mode_lower = lowercase(string(mode))
-    if mode_lower == "strict"
+    mode_lower = Symbol(lowercase(string(mode)))
+    if mode_lower === :strict
         return STRICT
-    elseif mode_lower == "allow"
+    elseif mode_lower === :allow
         return ALLOW
-    elseif mode_lower == "ignore"
+    elseif mode_lower === :ignore
         return IGNORE
     else
         throw(ArgumentError("Invalid metadata mode: $(mode). Use :strict, :allow, or :ignore."))

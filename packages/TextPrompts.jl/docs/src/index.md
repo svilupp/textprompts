@@ -79,3 +79,50 @@ prompt = load_prompt("simple.txt"; meta=:ignore)
 - **Bulk loading**: Load entire directories of prompts
 - **Git-friendly**: Text files work well with version control
 
+## Using with PromptingTools.jl
+
+TextPrompts integrates seamlessly with [PromptingTools.jl](https://github.com/svilupp/PromptingTools.jl) for building LLM applications:
+
+```julia
+using TextPrompts
+using PromptingTools
+
+# Load prompt templates
+system_prompt = load_prompt("prompts/system.txt")
+user_prompt = load_prompt("prompts/task.txt")
+
+# Format and create messages
+system_msg = SystemMessage(format(system_prompt; role="Julia expert"))
+user_msg = UserMessage(format(user_prompt; task="explain macros"))
+
+# Call the LLM with a vector of messages
+response = aigenerate([system_msg, user_msg])
+```
+
+Or as a shorter alternative:
+```julia
+response = aigenerate([
+    load_prompt("prompts/system.txt") |> x -> SystemMessage(format(x; role="Julia expert")),
+    load_prompt("prompts/task.txt") |> x -> UserMessage(format(x; task="explain macros"))])
+```
+
+Example prompt files:
+
+**prompts/system.txt**:
+```
+---
+title = "System Prompt"
+version = "1.0"
+---
+You are a {role}. Be concise and helpful.
+```
+
+**prompts/task.txt**:
+```
+---
+title = "Task Prompt"
+version = "1.0"
+---
+Please help me with the following task: {task}
+```
+

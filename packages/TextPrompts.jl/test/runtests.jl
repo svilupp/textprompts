@@ -475,6 +475,76 @@ const FIXTURES_DIR = joinpath(@__DIR__, "fixtures")
         end
     end
 
+    @testset "from_path" begin
+        good_path = joinpath(FIXTURES_DIR, "good.txt")
+
+        @testset "basic usage" begin
+            prompt = from_path(good_path)
+            @test prompt.meta.title == "Good Prompt"
+            @test prompt.meta.version == "1.0.0"
+        end
+
+        @testset "with meta argument" begin
+            prompt = from_path(good_path; meta=:ignore)
+            @test prompt.meta.title == "good"  # Filename stem when ignoring metadata
+        end
+
+        @testset "equivalent to load_prompt" begin
+            p1 = from_path(good_path; meta=:allow)
+            p2 = load_prompt(good_path; meta=:allow)
+            @test p1.meta.title == p2.meta.title
+            @test String(p1) == String(p2)
+        end
+    end
+
+    @testset "from_string" begin
+        @testset "simple string without metadata" begin
+            prompt = from_string("Hello, {name}!")
+            @test prompt.path == "<string>"
+            @test prompt.meta.title == "untitled"
+            @test "name" in prompt.placeholders
+            @test format(prompt; name="World") == "Hello, World!"
+        end
+
+        @testset "string with TOML front-matter" begin
+            content = """
+            ---
+            title = "Greeting"
+            version = "1.0.0"
+            description = "A greeting prompt"
+            ---
+            Hello, {name}!
+            """
+            prompt = from_string(content)
+            @test prompt.meta.title == "Greeting"
+            @test prompt.meta.version == "1.0.0"
+            @test prompt.meta.description == "A greeting prompt"
+            @test "name" in prompt.placeholders
+        end
+
+        @testset "with meta argument" begin
+            content = """
+            ---
+            title = "Test"
+            ---
+            Body content
+            """
+            # IGNORE mode treats everything as body
+            prompt = from_string(content; meta=:ignore)
+            @test prompt.meta.title == "untitled"
+            @test occursin("---", String(prompt))
+        end
+
+        @testset "error on empty content" begin
+            @test_throws TextPrompts.EmptyContentError from_string("")
+            @test_throws TextPrompts.EmptyContentError from_string("   \n\t  ")
+        end
+
+        @testset "strict mode requires metadata" begin
+            @test_throws TextPrompts.MissingMetadataError from_string("Just body"; meta=:strict)
+        end
+    end
+
     @testset "save_prompt" begin
         mktempdir() do tmpdir
             @testset "save string" begin

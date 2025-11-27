@@ -300,3 +300,94 @@ function parse_file(path::AbstractString; metadata_mode::MetadataMode)::Prompt
 
     return Prompt(path_str, meta, body)
 end
+
+"""
+    parse_string(content::AbstractString; path::AbstractString="<string>", metadata_mode::MetadataMode) -> Prompt
+
+Parse a prompt from string content.
+
+# Arguments
+- `content::AbstractString`: The prompt content to parse
+- `path::AbstractString="<string>"`: Optional path for error messages and identification
+- `metadata_mode::MetadataMode`: How to handle metadata
+
+# Returns
+A `Prompt` object with parsed metadata and content.
+
+# Throws
+- `EmptyContentError`: If content is empty
+- `MalformedHeaderError`: If front-matter is malformed
+- `InvalidMetadataError`: If TOML parsing fails
+- `MissingMetadataError`: If required fields missing in strict mode
+"""
+function parse_string(content::AbstractString; path::AbstractString="<string>", metadata_mode::MetadataMode)::Prompt
+    # Check for empty content
+    if isempty(strip(content))
+        throw(EmptyContentError(path))
+    end
+
+    # Get filename stem for default title
+    filename_stem = path == "<string>" ? "untitled" : splitext(basename(path))[1]
+
+    # Handle based on metadata mode
+    if metadata_mode == IGNORE
+        # Treat entire content as body
+        body = _dedent(strip(content))
+        meta = PromptMeta(title=filename_stem)
+        return Prompt(path, meta, body)
+    end
+
+    # Try to split front-matter
+    header, body = _split_front_matter(content)
+
+    # Check for malformed header (starts with --- but no closing)
+    if isnothing(header) && startswith(content, FRONT_MATTER_DELIMITER)
+        lines = split(content, '\n')
+        if length(lines) > 1
+            has_closing = any(startswith(strip(line), FRONT_MATTER_DELIMITER)
+                             for line in lines[2:end])
+            if !has_closing && metadata_mode == STRICT
+                throw(MalformedHeaderError(path))
+            end
+        end
+    end
+
+    body = _dedent(strip(body))
+
+    # Check for empty body after extracting metadata
+    if isempty(body)
+        throw(EmptyContentError(path))
+    end
+
+    if isnothing(header)
+        # No front-matter found
+        if metadata_mode == STRICT
+            throw(MissingMetadataError(path))
+        end
+        # ALLOW mode: use defaults
+        meta = PromptMeta(title=filename_stem)
+        return Prompt(path, meta, body)
+    end
+
+    # Parse TOML header
+    header_dict = _parse_toml_header(header, path)
+    meta = _dict_to_meta(header_dict, path)
+
+    # Use filename as title if not specified
+    if isnothing(meta.title) || isempty(meta.title)
+        meta = PromptMeta(
+            title=filename_stem,
+            version=meta.version,
+            author=meta.author,
+            created=meta.created,
+            description=meta.description
+        )
+    end
+
+    # Validate in strict mode
+    if metadata_mode == STRICT
+        _validate_strict_meta(meta, path)
+    end
+
+    return Prompt(path, meta, body)
+end

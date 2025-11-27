@@ -3,6 +3,70 @@ File loading utilities for TextPrompts.
 """
 
 """
+    from_path(path; meta=nothing) -> Prompt
+
+Load a prompt from a file path.
+
+This is a convenience function equivalent to `load_prompt`.
+
+# Arguments
+- `path`: Path to the prompt file
+- `meta`: Metadata mode (see `load_prompt` for details)
+
+# Returns
+A `Prompt` object.
+
+# Examples
+```julia
+prompt = from_path("prompts/greeting.txt")
+prompt = from_path("prompts/simple.txt"; meta=:ignore)
+```
+"""
+function from_path(path; meta=nothing)::Prompt
+    return load_prompt(path; meta=meta)
+end
+
+"""
+    from_string(content; meta=nothing) -> Prompt
+
+Parse a prompt from string content.
+
+# Arguments
+- `content`: The prompt content as a string
+- `meta`: Metadata mode - can be `MetadataMode`, `Symbol` (`:strict`, `:allow`, `:ignore`),
+  `String` ("strict", "allow", "ignore"), or `nothing` (uses global default)
+
+# Returns
+A `Prompt` object with `path="<string>"` and `title="untitled"` (unless specified in metadata).
+
+# Examples
+```julia
+# Simple prompt without metadata
+prompt = from_string("Hello, {name}!")
+prompt.path  # "<string>"
+prompt.meta.title  # "untitled"
+
+# Prompt with TOML front-matter
+content = \"\"\"
+---
+title = "Greeting"
+version = "1.0.0"
+---
+Hello, {name}!
+\"\"\"
+prompt = from_string(content)
+prompt.meta.title  # "Greeting"
+
+# With specific metadata mode
+prompt = from_string("Just the body"; meta=:ignore)
+```
+"""
+function from_string(content; meta=nothing)::Prompt
+    metadata_mode = parse_metadata_mode(meta)
+    return parse_string(string(content); path="<string>", metadata_mode=metadata_mode)
+end
+
+"""
     load_prompt(path; meta=nothing) -> Prompt
 
 Load a single prompt file.

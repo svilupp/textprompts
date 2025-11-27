@@ -61,6 +61,7 @@ export MetadataMode, STRICT, ALLOW, IGNORE
 export PromptMeta, PromptString, Prompt
 
 # Export functions
+export from_path, from_string
 export load_prompt, load_prompts, save_prompt
 export format
 export set_metadata, get_metadata, skip_metadata, warn_on_ignored_metadata
