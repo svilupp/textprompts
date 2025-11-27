@@ -1,6 +1,7 @@
 # TextPrompts.jl
 
 [![CI](https://github.com/svilupp/textprompts/actions/workflows/julia-ci.yml/badge.svg)](https://github.com/svilupp/textprompts/actions/workflows/julia-ci.yml)
+[![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://svilupp.github.io/textprompts/julia/)
 
 A minimal, zero-complexity prompt loader with TOML front-matter metadata for Julia.
 
@@ -223,7 +224,7 @@ using PromptingTools
 system_template = load_prompt("prompts/system.txt")
 user_template = load_prompt("prompts/task.txt")
 
-# Format and create messages
+# Format and create messages -- use as functors
 system_msg = system_template(; role="Julia expert") |> SystemMessage
 user_msg = user_template(; task="explain macros") |> UserMessage
 
@@ -270,16 +271,6 @@ JSON template: {{"key": "{value}"}}
 ```
 
 Formats to: `{"key": "actual_value"}`
-
-### Format Specifiers
-
-Format specifiers are recognized but passed through:
-
-```
-The price is {price:.2f} dollars.
-```
-
-The placeholder `price` is extracted; formatting is done by your application.
 
 ## License
 
