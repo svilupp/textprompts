@@ -88,12 +88,12 @@ using TextPrompts
 using PromptingTools
 
 # Load prompt templates
-system_prompt = load_prompt("prompts/system.txt")
-user_prompt = load_prompt("prompts/task.txt")
+system_template = load_prompt("prompts/system.txt")
+user_template = load_prompt("prompts/task.txt")
 
 # Format and create messages
-system_msg = SystemMessage(format(system_prompt; role="Julia expert"))
-user_msg = UserMessage(format(user_prompt; task="explain macros"))
+system_msg = SystemMessage(format(system_template; role="Julia expert"))
+user_msg = UserMessage(format(user_template; task="explain macros"))
 
 # Call the LLM with a vector of messages
 response = aigenerate([system_msg, user_msg])
