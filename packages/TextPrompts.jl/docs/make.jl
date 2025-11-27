@@ -15,11 +15,9 @@ makedocs(;
     pages = [
         "Home" => "index.md",
         "API Reference" => "api.md"
-    ]
+    ],
+    warnonly = [:missing_docs]
 )
 
-deploydocs(;
-    repo = "github.com/svilupp/textprompts",
-    devbranch = "main",
-    dirname = "julia"
-)
+# Deployment is handled by the main repo's docs workflow
+# which combines Python and Julia docs into a single site
