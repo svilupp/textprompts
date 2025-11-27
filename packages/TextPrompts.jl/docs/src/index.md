@@ -79,6 +79,3 @@ prompt = load_prompt("simple.txt"; meta=:ignore)
 - **Bulk loading**: Load entire directories of prompts
 - **Git-friendly**: Text files work well with version control
 
-## Integration
-
-TextPrompts.jl is designed to integrate with [PromptingTools.jl](https://github.com/svilupp/PromptingTools.jl) for GenAI operations in Julia.

@@ -130,16 +130,6 @@ function warn_on_ignored_metadata()
     return _WARN_ON_IGNORED[]
 end
 
-"""
-    set_warn_on_ignored_metadata(warn::Bool)
-
-Set whether to warn when metadata is ignored.
-"""
-function set_warn_on_ignored_metadata(warn::Bool)
-    _WARN_ON_IGNORED[] = warn
-    return nothing
-end
-
 # Initialize from environment variable
 function __init_config__()
     env_mode = get(ENV, "TEXTPROMPTS_METADATA_MODE", nothing)

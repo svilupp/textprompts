@@ -143,7 +143,7 @@ function load_prompts(
             if e isa TextPromptsError
                 rethrow()
             else
-                throw(LoadError(file, string(e)))
+                throw(PromptLoadError(file, string(e)))
             end
         end
     end

@@ -34,20 +34,30 @@ function _split_front_matter(text::AbstractString)::Tuple{Union{String, Nothing}
 
     # Search for closing delimiter starting after first line
     rest = text[first_line_end+1:end]
-    closing_match = findfirst(FRONT_MATTER_DELIMITER, rest)
 
-    if isnothing(closing_match)
-        # Started with --- but no closing delimiter
-        return (nothing, text)  # Will be handled by caller based on mode
-    end
+    # Loop to find a valid closing delimiter (must be at start of line)
+    search_start = 1
+    closing_start = nothing
+    while true
+        closing_match = findnext(FRONT_MATTER_DELIMITER, rest, search_start)
 
-    # Check that --- is at the start of a line
-    closing_start = first(closing_match)
-    if closing_start > 1
-        # Check if previous character is newline
-        prev_char = rest[prevind(rest, closing_start)]
-        if prev_char != '\n'
-            # --- is not at start of line, not a valid delimiter
+        if isnothing(closing_match)
+            # No more --- found
+            return (nothing, text)
+        end
+
+        match_start = first(closing_match)
+
+        # Check that --- is at the start of a line
+        if match_start == 1 || rest[prevind(rest, match_start)] == '\n'
+            # Valid closing delimiter found
+            closing_start = match_start
+            break
+        end
+
+        # Not at start of line, continue searching after this match
+        search_start = last(closing_match) + 1
+        if search_start > lastindex(rest)
             return (nothing, text)
         end
     end

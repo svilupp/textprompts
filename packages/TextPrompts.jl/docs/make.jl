@@ -8,7 +8,7 @@ makedocs(;
     authors = "svilupp",
     sitename = "TextPrompts.jl",
     format = Documenter.HTML(;
-        canonical = "https://svilupp.github.io/TextPrompts.jl",
+        canonical = "https://svilupp.github.io/textprompts/julia",
         edit_link = "main",
         assets = String[]
     ),
@@ -19,6 +19,7 @@ makedocs(;
 )
 
 deploydocs(;
-    repo = "github.com/svilupp/TextPrompts.jl",
-    devbranch = "main"
+    repo = "github.com/svilupp/textprompts",
+    devbranch = "main",
+    dirname = "julia"
 )

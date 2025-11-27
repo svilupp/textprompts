@@ -60,19 +60,11 @@ using TOML
 export MetadataMode, STRICT, ALLOW, IGNORE
 export PromptMeta, PromptString, Prompt
 
-# Export errors
-export TextPromptsError, FileMissingError, MissingMetadataError
-export InvalidMetadataError, MalformedHeaderError, PlaceholderError, EmptyContentError
-export FileReadError, LoadError
-
 # Export functions
 export load_prompt, load_prompts, save_prompt
 export format
 export set_metadata, get_metadata, skip_metadata, warn_on_ignored_metadata
 export extract_placeholders, get_placeholder_info, validate_format_args
-
-# Export type alias for backward compatibility
-export SafeString
 
 # Include source files in dependency order
 include("errors.jl")
@@ -82,9 +74,6 @@ include("types.jl")
 include("parser.jl")
 include("loaders.jl")
 include("savers.jl")
-
-# Backward compatibility alias
-const SafeString = PromptString
 
 # Initialize from environment on module load
 function __init__()

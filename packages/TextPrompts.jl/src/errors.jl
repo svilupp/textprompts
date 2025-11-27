@@ -131,16 +131,16 @@ end
 Base.showerror(io::IO, e::FileReadError) = print(io, "FileReadError: ", e.message)
 
 """
-    LoadError <: TextPromptsError
+    PromptLoadError <: TextPromptsError
 
 Raised when loading a prompt fails for an unexpected reason.
 """
-struct LoadError <: TextPromptsError
+struct PromptLoadError <: TextPromptsError
     path::String
     message::String
-    function LoadError(path::AbstractString, reason::AbstractString)
+    function PromptLoadError(path::AbstractString, reason::AbstractString)
         new(string(path), "Failed to load $(path): $(reason)")
     end
 end
 
-Base.showerror(io::IO, e::LoadError) = print(io, "LoadError: ", e.message)
+Base.showerror(io::IO, e::PromptLoadError) = print(io, "PromptLoadError: ", e.message)

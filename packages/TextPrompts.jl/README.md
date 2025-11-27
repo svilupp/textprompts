@@ -1,7 +1,6 @@
 # TextPrompts.jl
 
-[![CI](https://github.com/svilupp/TextPrompts.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/svilupp/TextPrompts.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/svilupp/TextPrompts.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/svilupp/TextPrompts.jl)
+[![CI](https://github.com/svilupp/textprompts/actions/workflows/julia-ci.yml/badge.svg)](https://github.com/svilupp/textprompts/actions/workflows/julia-ci.yml)
 
 A minimal, zero-complexity prompt loader with TOML front-matter metadata for Julia.
 
@@ -228,10 +227,6 @@ The price is {price:.2f} dollars.
 ```
 
 The placeholder `price` is extracted; formatting is done by your application.
-
-## Integration with PromptingTools.jl
-
-TextPrompts.jl is designed to integrate with [PromptingTools.jl](https://github.com/svilupp/PromptingTools.jl) for GenAI operations. Future versions will provide an extension for seamless prompt management.
 
 ## License
 

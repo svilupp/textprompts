@@ -40,14 +40,3 @@ get_placeholder_info
 validate_format_args
 ```
 
-## Errors
-
-```@docs
-TextPromptsError
-FileMissingError
-MissingMetadataError
-InvalidMetadataError
-MalformedHeaderError
-PlaceholderError
-EmptyContentError
-```
