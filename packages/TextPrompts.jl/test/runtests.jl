@@ -32,6 +32,25 @@ const FIXTURES_DIR = joinpath(@__DIR__, "fixtures")
             @test_throws ArgumentError TextPrompts.parse_metadata_mode(:invalid)
             @test_throws ArgumentError TextPrompts.parse_metadata_mode("bad")
         end
+
+        @testset "convert from Symbol and String" begin
+            # Test Base.convert methods
+            @test convert(MetadataMode, :strict) == STRICT
+            @test convert(MetadataMode, :allow) == ALLOW
+            @test convert(MetadataMode, :ignore) == IGNORE
+
+            @test convert(MetadataMode, "strict") == STRICT
+            @test convert(MetadataMode, "allow") == ALLOW
+            @test convert(MetadataMode, "ignore") == IGNORE
+
+            # Case insensitive
+            @test convert(MetadataMode, :STRICT) == STRICT
+            @test convert(MetadataMode, "ALLOW") == ALLOW
+
+            # Invalid conversions should throw
+            @test_throws ArgumentError convert(MetadataMode, :invalid)
+            @test_throws ArgumentError convert(MetadataMode, "bad")
+        end
     end
 
     @testset "Global Configuration" begin
@@ -519,6 +538,20 @@ const FIXTURES_DIR = joinpath(@__DIR__, "fixtures")
             err = EmptyContentError("test.txt")
             @test err.path == "test.txt"
             @test occursin("no content", err.message)
+        end
+
+        @testset "FileReadError" begin
+            err = FileReadError("test.txt", "permission denied")
+            @test err.path == "test.txt"
+            @test occursin("permission denied", err.message)
+            @test occursin("test.txt", sprint(showerror, err))
+        end
+
+        @testset "LoadError" begin
+            err = LoadError("test.txt", "unexpected error")
+            @test err.path == "test.txt"
+            @test occursin("unexpected error", err.message)
+            @test occursin("test.txt", sprint(showerror, err))
         end
     end
 

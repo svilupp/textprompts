@@ -216,7 +216,7 @@ function parse_file(path::AbstractString; metadata_mode::MetadataMode)::Prompt
     content = try
         read(path, String)
     catch e
-        throw(TextPromptsError("Failed to read file $(path): $(e)"))
+        throw(FileReadError(path, string(e)))
     end
 
     # Check for empty content

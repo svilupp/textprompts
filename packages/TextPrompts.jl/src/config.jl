@@ -43,6 +43,11 @@ function parse_metadata_mode(mode::AbstractString)
     return parse_metadata_mode(Symbol(mode))
 end
 
+# Enable conversion from Symbol and String to MetadataMode
+# This allows using symbols directly where MetadataMode is expected
+Base.convert(::Type{MetadataMode}, s::Symbol) = parse_metadata_mode(s)
+Base.convert(::Type{MetadataMode}, s::AbstractString) = parse_metadata_mode(s)
+
 # Global state for metadata mode
 # Default is ALLOW as requested by user
 const _METADATA_MODE = Ref{MetadataMode}(ALLOW)

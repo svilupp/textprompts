@@ -63,6 +63,7 @@ export PromptMeta, PromptString, Prompt
 # Export errors
 export TextPromptsError, FileMissingError, MissingMetadataError
 export InvalidMetadataError, MalformedHeaderError, PlaceholderError, EmptyContentError
+export FileReadError, LoadError
 
 # Export functions
 export load_prompt, load_prompts, save_prompt

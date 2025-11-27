@@ -143,7 +143,7 @@ function load_prompts(
             if e isa TextPromptsError
                 rethrow()
             else
-                throw(TextPromptsError("Failed to load $(file): $(e)"))
+                throw(LoadError(file, string(e)))
             end
         end
     end

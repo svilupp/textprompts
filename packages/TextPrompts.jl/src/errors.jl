@@ -114,3 +114,33 @@ struct EmptyContentError <: TextPromptsError
 end
 
 Base.showerror(io::IO, e::EmptyContentError) = print(io, "EmptyContentError: ", e.message)
+
+"""
+    FileReadError <: TextPromptsError
+
+Raised when a file cannot be read.
+"""
+struct FileReadError <: TextPromptsError
+    path::String
+    message::String
+    function FileReadError(path::AbstractString, reason::AbstractString)
+        new(string(path), "Failed to read file $(path): $(reason)")
+    end
+end
+
+Base.showerror(io::IO, e::FileReadError) = print(io, "FileReadError: ", e.message)
+
+"""
+    LoadError <: TextPromptsError
+
+Raised when loading a prompt fails for an unexpected reason.
+"""
+struct LoadError <: TextPromptsError
+    path::String
+    message::String
+    function LoadError(path::AbstractString, reason::AbstractString)
+        new(string(path), "Failed to load $(path): $(reason)")
+    end
+end
+
+Base.showerror(io::IO, e::LoadError) = print(io, "LoadError: ", e.message)
