@@ -1,0 +1,15 @@
+---
+title = "Has Dashes In Body"
+version = "1.0.0"
+description = "Test file with --- in body"
+---
+
+This is the body.
+
+---
+
+And this section has triple dashes, which should be preserved.
+
+---
+
+End of content.

@@ -1,0 +1,4 @@
+This is a simple prompt without any metadata.
+
+It just contains plain text content.
+Use {placeholder} for templating.

@@ -1,0 +1,45 @@
+name: Julia CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/TextPrompts.jl/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/TextPrompts.jl/**'
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: packages/TextPrompts.jl
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  test:
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    permissions:
+      actions: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.10'
+          - '1.12'
+        os:
+          - ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1

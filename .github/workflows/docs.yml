@@ -3,10 +3,19 @@ name: Documentation
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'README.md']
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - 'packages/TextPrompts.jl/docs/**'
+      - 'packages/TextPrompts.jl/src/**'
   pull_request:
     branches: [main]
-    paths: ['docs/**', 'README.md']
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - 'packages/TextPrompts.jl/docs/**'
+      - 'packages/TextPrompts.jl/src/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,43 +27,92 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  build-python-docs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
           bundler-cache: true
           working-directory: docs
-      
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v5
-      
+
       - name: Build with Jekyll
         run: |
           cd docs
-          bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
+          bundle exec jekyll build
         env:
           JEKYLL_ENV: production
-      
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+
+      - name: Upload Python docs artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: python-docs
           path: docs/_site
 
-  deploy:
+  build-julia-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+
+      - name: Install dependencies
+        run: |
+          julia --project=packages/TextPrompts.jl/docs -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path="packages/TextPrompts.jl"))
+            Pkg.instantiate()
+          '
+
+      - name: Build Julia docs
+        run: |
+          julia --project=packages/TextPrompts.jl/docs packages/TextPrompts.jl/docs/make.jl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+
+      - name: Upload Julia docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: julia-docs
+          path: packages/TextPrompts.jl/docs/build
+
+  combine-and-deploy:
     if: github.ref == 'refs/heads/main'
+    needs: [build-python-docs, build-julia-docs]
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
     steps:
+      - name: Download Python docs
+        uses: actions/download-artifact@v4
+        with:
+          name: python-docs
+          path: site
+
+      - name: Download Julia docs
+        uses: actions/download-artifact@v4
+        with:
+          name: julia-docs
+          path: site/julia
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload combined artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
