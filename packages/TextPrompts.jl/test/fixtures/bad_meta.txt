@@ -1,0 +1,6 @@
+---
+title = "Unclosed string
+version = 1.0.0
+---
+
+This has invalid TOML in the front-matter.
