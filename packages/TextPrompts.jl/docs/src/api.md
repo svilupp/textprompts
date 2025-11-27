@@ -20,7 +20,7 @@ save_prompt
 ## Formatting
 
 ```@docs
-format
+TextPrompts.format
 ```
 
 ## Configuration
