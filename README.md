@@ -1,5 +1,7 @@
 # textprompts
 
+[![Python Docs](https://img.shields.io/badge/docs-Python-blue?style=flat&logo=python&logoColor=white)](https://siml.earth/textprompts/)
+[![Julia Docs](https://img.shields.io/badge/docs-Julia-9558B2?style=flat&logo=julia&logoColor=white)](https://siml.earth/textprompts/julia/)
 [![PyPI version](https://img.shields.io/pypi/v/textprompts.svg)](https://pypi.org/project/textprompts/)
 [![Python versions](https://img.shields.io/pypi/pyversions/textprompts.svg)](https://pypi.org/project/textprompts/)
 [![CI status](https://github.com/svilupp/textprompts/workflows/CI/badge.svg)](https://github.com/svilupp/textprompts/actions)
