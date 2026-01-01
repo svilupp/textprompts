@@ -1,0 +1,10 @@
+---
+title = "Complex Template"
+version = "2.0.0"
+description = "Template with various placeholder patterns"
+---
+User: {user_name}
+Order ID: {order_id}
+Status: {status}
+Price: {price}
+Notes: {notes}

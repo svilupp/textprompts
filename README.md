@@ -2,6 +2,7 @@
 
 [![Python Docs](https://img.shields.io/badge/docs-Python-blue?style=flat&logo=python&logoColor=white)](https://siml.earth/textprompts/)
 [![Julia Docs](https://img.shields.io/badge/docs-Julia-9558B2?style=flat&logo=julia&logoColor=white)](https://siml.earth/textprompts/julia/)
+[![Go Docs](https://img.shields.io/badge/docs-Go-00ADD8?style=flat&logo=go&logoColor=white)](https://pkg.go.dev/github.com/svilupp/textprompts/packages/textprompts-go)
 [![PyPI version](https://img.shields.io/pypi/v/textprompts.svg)](https://pypi.org/project/textprompts/)
 [![Python versions](https://img.shields.io/pypi/pyversions/textprompts.svg)](https://pypi.org/project/textprompts/)
 [![CI status](https://github.com/svilupp/textprompts/workflows/CI/badge.svg)](https://github.com/svilupp/textprompts/actions)
@@ -32,8 +33,9 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 **textprompts** uses a cross-language compatible prompt template format:
 
 - **Python** (this package): Available on PyPI as `textprompts`
-- **Node/TypeScript**: Identical package available in `packages/textprompts-ts` folder
-- **Julia**: Version currently in development
+- **Node/TypeScript**: Available in `packages/textprompts-ts` folder
+- **Julia**: Available in `packages/TextPrompts.jl` folder
+- **Go**: Available in `packages/textprompts-go` folder ([docs](https://pkg.go.dev/github.com/svilupp/textprompts/packages/textprompts-go))
 
 This means you can share prompt files across different parts of your stack without any conversion or compatibility issues.
 

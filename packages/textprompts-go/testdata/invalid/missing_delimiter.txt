@@ -1,0 +1,4 @@
+---
+title = "Missing Closing Delimiter"
+version = "1.0.0"
+This file is missing the closing --- delimiter.

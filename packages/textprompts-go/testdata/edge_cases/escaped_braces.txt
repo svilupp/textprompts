@@ -1,0 +1,8 @@
+---
+title = "Escaped Braces"
+version = "1.0.0"
+description = "Contains escaped braces"
+---
+This has {{literal braces}} and also {placeholder} values.
+JSON example: {{"key": "value"}}
+Format: {{name}} vs {name}
