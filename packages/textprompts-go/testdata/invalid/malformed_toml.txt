@@ -1,0 +1,5 @@
+---
+title = "Missing Quote
+version = 1.0.0
+---
+This has invalid TOML.

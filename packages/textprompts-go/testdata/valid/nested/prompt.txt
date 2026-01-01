@@ -1,0 +1,6 @@
+---
+title = "Nested Prompt"
+version = "1.0.0"
+description = "A prompt in a nested directory"
+---
+This is a nested prompt with {variable}.

@@ -1,0 +1,5 @@
+---
+title = "Partial Metadata"
+---
+This prompt only has a title, no other metadata fields.
+Hello {name}!

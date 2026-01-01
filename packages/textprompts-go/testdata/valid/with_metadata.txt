@@ -1,0 +1,13 @@
+---
+title = "Customer Greeting"
+version = "1.0.0"
+description = "A friendly greeting for customers"
+author = "Test Author"
+created = 2024-01-15
+---
+Hello {customer_name}!
+
+Welcome to {company_name}. We're here to help you with {issue_type}.
+
+Best regards,
+{agent_name}
