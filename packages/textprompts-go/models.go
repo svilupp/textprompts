@@ -74,6 +74,7 @@ func (m PromptMeta) Validate() error {
 	if len(missing) > 0 {
 		return fmt.Errorf("missing required metadata fields: %v", missing)
 	}
+
 	return nil
 }
 
@@ -82,6 +83,7 @@ func (m PromptMeta) GetTitle() string {
 	if m.Title == nil {
 		return ""
 	}
+
 	return *m.Title
 }
 
@@ -90,6 +92,7 @@ func (m PromptMeta) GetVersion() string {
 	if m.Version == nil {
 		return ""
 	}
+
 	return *m.Version
 }
 
@@ -98,6 +101,7 @@ func (m PromptMeta) GetAuthor() string {
 	if m.Author == nil {
 		return ""
 	}
+
 	return *m.Author
 }
 
@@ -106,6 +110,7 @@ func (m PromptMeta) GetDescription() string {
 	if m.Description == nil {
 		return ""
 	}
+
 	return *m.Description
 }
 
@@ -114,6 +119,7 @@ func (m PromptMeta) GetCreated() time.Time {
 	if m.Created == nil {
 		return time.Time{}
 	}
+
 	return m.Created.Time
 }
 
@@ -157,5 +163,6 @@ func DatePtr(dateStr string) *TomlDate {
 	if err != nil {
 		return nil
 	}
+
 	return &TomlDate{Time: t}
 }

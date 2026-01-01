@@ -8,13 +8,13 @@ import (
 
 func TestLoadPrompt(t *testing.T) {
 	tests := []struct {
-		name        string
-		file        string
-		mode        MetadataMode
-		wantTitle   string
-		wantBody    string
-		wantErr     bool
-		errType     string
+		name      string
+		file      string
+		mode      MetadataMode
+		wantTitle string
+		wantBody  string
+		wantErr   bool
+		errType   string
 	}{
 		{
 			name:      "simple file",
@@ -76,6 +76,7 @@ func TestLoadPrompt(t *testing.T) {
 			prompt, err := LoadPrompt(tt.file, WithMetadataMode(tt.mode))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LoadPrompt() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 
@@ -290,7 +291,7 @@ func TestLoadPromptAbsolutePath(t *testing.T) {
 		t.Fatalf("os.Getwd() error = %v", err)
 	}
 
-	absPath := filepath.Join(wd, "testdata/valid/simple.txt")
+	absPath := filepath.Join(wd, "testdata", "valid", "simple.txt")
 	prompt, err := LoadPrompt(absPath, WithMetadataMode(ModeAllow))
 	if err != nil {
 		t.Fatalf("LoadPrompt() error = %v", err)

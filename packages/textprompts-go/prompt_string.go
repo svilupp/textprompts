@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Markers for escaped braces during formatting
+// Markers for escaped braces during formatting.
 const (
 	escapedOpenMarker  = "\x00OPEN\x00"
 	escapedCloseMarker = "\x00CLOSE\x00"
@@ -44,6 +44,7 @@ func (ps PromptString) Placeholders() []string {
 	}
 	result := make([]string, len(ps.placeholders))
 	copy(result, ps.placeholders)
+
 	return result
 }
 
@@ -105,6 +106,7 @@ func (ps PromptString) MustFormat(values map[string]interface{}, opts ...FormatO
 	if err != nil {
 		panic(err)
 	}
+
 	return result
 }
 

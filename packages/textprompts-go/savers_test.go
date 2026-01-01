@@ -14,7 +14,7 @@ func TestSavePrompt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	t.Run("save with metadata", func(t *testing.T) {
 		prompt := NewPromptFull(
@@ -121,7 +121,7 @@ func TestSavePromptContent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	meta := PromptMeta{
 		Title:   StringPtr("Content Test"),
@@ -129,8 +129,8 @@ func TestSavePromptContent(t *testing.T) {
 	}
 
 	path := filepath.Join(tmpDir, "content.txt")
-	if err := SavePromptContent(path, meta, "Test content"); err != nil {
-		t.Fatalf("SavePromptContent() error = %v", err)
+	if saveErr := SavePromptContent(path, meta, "Test content"); saveErr != nil {
+		t.Fatalf("SavePromptContent() error = %v", saveErr)
 	}
 
 	content, err := os.ReadFile(path)

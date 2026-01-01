@@ -20,7 +20,7 @@ linters:
     - dupl
     - errorlint
     - exhaustive
-    - exportloopref
+    - copyloopvar
     - goconst
     - gocritic
     - godot

@@ -1,6 +1,7 @@
 package textprompts
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -140,8 +141,8 @@ func TestValidateFormatArgs(t *testing.T) {
 				return
 			}
 			if tt.wantErr && err != nil {
-				formatErr, ok := err.(*FormatError)
-				if !ok {
+				var formatErr *FormatError
+				if !errors.As(err, &formatErr) {
 					t.Errorf("ValidateFormatArgs() error type = %T, want *FormatError", err)
 					return
 				}

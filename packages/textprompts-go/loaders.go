@@ -9,10 +9,10 @@ import (
 
 // loadOptions holds configuration for loading prompts.
 type loadOptions struct {
-	mode      *MetadataMode
-	recursive bool
 	glob      string
+	mode      *MetadataMode
 	maxFiles  int
+	recursive bool
 }
 
 func defaultLoadOptions() *loadOptions {
@@ -135,7 +135,8 @@ func resolvePath(path string, options *loadOptions) ([]string, error) {
 			// Try as glob pattern
 			return resolveGlob(path)
 		}
-		return nil, &TextPromptsError{
+
+		return nil, &Error{
 			Message: "failed to access path",
 			Cause:   err,
 		}
@@ -146,7 +147,6 @@ func resolvePath(path string, options *loadOptions) ([]string, error) {
 		return []string{path}, nil
 	}
 
-	// Directory - find matching files
 	return findFilesInDir(path, options)
 }
 
@@ -162,7 +162,7 @@ func findFilesInDir(dir string, options *loadOptions) ([]string, error) {
 	// Use doublestar for glob matching
 	matches, err := doublestar.FilepathGlob(pattern)
 	if err != nil {
-		return nil, &TextPromptsError{
+		return nil, &Error{
 			Message: "invalid glob pattern",
 			Cause:   err,
 		}
@@ -187,7 +187,7 @@ func findFilesInDir(dir string, options *loadOptions) ([]string, error) {
 func resolveGlob(pattern string) ([]string, error) {
 	matches, err := doublestar.FilepathGlob(pattern)
 	if err != nil {
-		return nil, &TextPromptsError{
+		return nil, &Error{
 			Message: "invalid glob pattern",
 			Cause:   err,
 		}

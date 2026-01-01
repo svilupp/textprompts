@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-func TestTextPromptsError(t *testing.T) {
+func TestError(t *testing.T) {
 	cause := errors.New("underlying error")
-	err := &TextPromptsError{
+	err := &Error{
 		Message: "test error",
 		Cause:   cause,
 	}
@@ -16,13 +16,13 @@ func TestTextPromptsError(t *testing.T) {
 		t.Errorf("Error() = %q, want %q", got, "test error: underlying error")
 	}
 
-	if unwrapped := err.Unwrap(); unwrapped != cause {
+	if unwrapped := err.Unwrap(); !errors.Is(unwrapped, cause) {
 		t.Errorf("Unwrap() = %v, want %v", unwrapped, cause)
 	}
 }
 
-func TestTextPromptsErrorNoCause(t *testing.T) {
-	err := &TextPromptsError{
+func TestErrorNoCause(t *testing.T) {
+	err := &Error{
 		Message: "test error",
 	}
 

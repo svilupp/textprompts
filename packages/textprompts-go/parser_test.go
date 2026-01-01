@@ -6,10 +6,10 @@ import (
 
 func TestSplitFrontMatter(t *testing.T) {
 	tests := []struct {
-		name             string
-		content          string
-		wantToml         string
-		wantBody         string
+		name               string
+		content            string
+		wantToml           string
+		wantBody           string
 		wantHasFrontmatter bool
 	}{
 		{

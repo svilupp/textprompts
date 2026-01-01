@@ -7,26 +7,27 @@ import (
 	"strings"
 )
 
-// TextPromptsError is the base error type for all textprompts errors.
-type TextPromptsError struct {
+// Error is the base error type for all textprompts errors.
+type Error struct {
 	Message string
 	Cause   error
 }
 
-func (e *TextPromptsError) Error() string {
+func (e *Error) Error() string {
 	if e.Cause != nil {
 		return fmt.Sprintf("%s: %v", e.Message, e.Cause)
 	}
+
 	return e.Message
 }
 
-func (e *TextPromptsError) Unwrap() error {
+func (e *Error) Unwrap() error {
 	return e.Cause
 }
 
 // FileMissingError indicates the specified file was not found.
 type FileMissingError struct {
-	TextPromptsError
+	Base Error
 	Path string
 }
 
@@ -34,10 +35,14 @@ func (e *FileMissingError) Error() string {
 	return fmt.Sprintf("file not found: %s", e.Path)
 }
 
+func (e *FileMissingError) Unwrap() error {
+	return e.Base.Cause
+}
+
 // NewFileMissingError creates a new FileMissingError.
 func NewFileMissingError(path string, cause error) *FileMissingError {
 	return &FileMissingError{
-		TextPromptsError: TextPromptsError{
+		Base: Error{
 			Message: fmt.Sprintf("file not found: %s", path),
 			Cause:   cause,
 		},
@@ -47,7 +52,7 @@ func NewFileMissingError(path string, cause error) *FileMissingError {
 
 // MissingMetadataError indicates required metadata is missing in strict mode.
 type MissingMetadataError struct {
-	TextPromptsError
+	Base Error
 	Path string
 }
 
@@ -55,13 +60,18 @@ func (e *MissingMetadataError) Error() string {
 	if e.Path != "" {
 		return fmt.Sprintf("missing required metadata in file: %s", e.Path)
 	}
+
 	return "missing required metadata"
+}
+
+func (e *MissingMetadataError) Unwrap() error {
+	return e.Base.Cause
 }
 
 // NewMissingMetadataError creates a new MissingMetadataError.
 func NewMissingMetadataError(path string) *MissingMetadataError {
 	return &MissingMetadataError{
-		TextPromptsError: TextPromptsError{
+		Base: Error{
 			Message: fmt.Sprintf("missing required metadata in file: %s", path),
 		},
 		Path: path,
@@ -70,7 +80,7 @@ func NewMissingMetadataError(path string) *MissingMetadataError {
 
 // InvalidMetadataError indicates malformed or invalid TOML metadata.
 type InvalidMetadataError struct {
-	TextPromptsError
+	Base   Error
 	Path   string
 	Detail string
 }
@@ -79,13 +89,18 @@ func (e *InvalidMetadataError) Error() string {
 	if e.Path != "" {
 		return fmt.Sprintf("invalid metadata in file %s: %s", e.Path, e.Detail)
 	}
+
 	return fmt.Sprintf("invalid metadata: %s", e.Detail)
+}
+
+func (e *InvalidMetadataError) Unwrap() error {
+	return e.Base.Cause
 }
 
 // NewInvalidMetadataError creates a new InvalidMetadataError.
 func NewInvalidMetadataError(path, detail string, cause error) *InvalidMetadataError {
 	return &InvalidMetadataError{
-		TextPromptsError: TextPromptsError{
+		Base: Error{
 			Message: fmt.Sprintf("invalid metadata: %s", detail),
 			Cause:   cause,
 		},
@@ -96,7 +111,7 @@ func NewInvalidMetadataError(path, detail string, cause error) *InvalidMetadataE
 
 // MalformedHeaderError indicates the frontmatter structure is invalid.
 type MalformedHeaderError struct {
-	TextPromptsError
+	Base Error
 	Path string
 }
 
@@ -104,13 +119,18 @@ func (e *MalformedHeaderError) Error() string {
 	if e.Path != "" {
 		return fmt.Sprintf("malformed header in file: %s", e.Path)
 	}
+
 	return "malformed header"
+}
+
+func (e *MalformedHeaderError) Unwrap() error {
+	return e.Base.Cause
 }
 
 // NewMalformedHeaderError creates a new MalformedHeaderError.
 func NewMalformedHeaderError(path string) *MalformedHeaderError {
 	return &MalformedHeaderError{
-		TextPromptsError: TextPromptsError{
+		Base: Error{
 			Message: fmt.Sprintf("malformed header in file: %s", path),
 		},
 		Path: path,
@@ -119,7 +139,7 @@ func NewMalformedHeaderError(path string) *MalformedHeaderError {
 
 // FormatError indicates a placeholder formatting error.
 type FormatError struct {
-	TextPromptsError
+	Base     Error
 	Missing  []string
 	Provided []string
 }
@@ -128,10 +148,14 @@ func (e *FormatError) Error() string {
 	return fmt.Sprintf("missing format variables: [%s]", strings.Join(e.Missing, ", "))
 }
 
+func (e *FormatError) Unwrap() error {
+	return e.Base.Cause
+}
+
 // NewFormatError creates a new FormatError.
 func NewFormatError(missing, provided []string) *FormatError {
 	return &FormatError{
-		TextPromptsError: TextPromptsError{
+		Base: Error{
 			Message: fmt.Sprintf("missing format variables: [%s]", strings.Join(missing, ", ")),
 		},
 		Missing:  missing,

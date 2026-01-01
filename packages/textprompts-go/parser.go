@@ -60,7 +60,8 @@ func parseFile(path string, mode MetadataMode) (*Prompt, error) {
 		if os.IsNotExist(err) {
 			return nil, NewFileMissingError(path, err)
 		}
-		return nil, &TextPromptsError{
+
+		return nil, &Error{
 			Message: "failed to read file",
 			Cause:   err,
 		}
@@ -91,6 +92,7 @@ func parseString(content string, mode MetadataMode, sourcePath string) (*Prompt,
 			title := strings.TrimSuffix(baseName, ext)
 			prompt.Meta.Title = &title
 		}
+
 		return prompt, nil
 	}
 
@@ -110,6 +112,7 @@ func parseString(content string, mode MetadataMode, sourcePath string) (*Prompt,
 			title := strings.TrimSuffix(baseName, ext)
 			prompt.Meta.Title = &title
 		}
+
 		return prompt, nil
 	}
 

@@ -40,6 +40,7 @@ func ExtractPlaceholders(text string) []string {
 
 	// Sort for consistent ordering
 	sort.Strings(placeholders)
+
 	return placeholders
 }
 
@@ -47,7 +48,7 @@ func ExtractPlaceholders(text string) []string {
 // Returns a FormatError if any placeholders are missing.
 func ValidateFormatArgs(placeholders []string, values map[string]interface{}) error {
 	var missing []string
-	var provided []string
+	provided := make([]string, 0, len(values))
 
 	for k := range values {
 		provided = append(provided, k)
@@ -62,7 +63,9 @@ func ValidateFormatArgs(placeholders []string, values map[string]interface{}) er
 
 	if len(missing) > 0 {
 		sort.Strings(missing)
+
 		return NewFormatError(missing, provided)
 	}
+
 	return nil
 }

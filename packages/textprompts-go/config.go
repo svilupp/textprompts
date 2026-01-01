@@ -48,7 +48,7 @@ func ParseMetadataMode(s string) (MetadataMode, error) {
 	}
 }
 
-// Global configuration state
+// Global configuration state.
 var (
 	globalMode            = ModeAllow
 	globalModeMu          sync.RWMutex
@@ -80,6 +80,7 @@ func SetMetadataFromString(s string) error {
 		return err
 	}
 	SetMetadata(mode)
+
 	return nil
 }
 
@@ -87,6 +88,7 @@ func SetMetadataFromString(s string) error {
 func GetMetadata() MetadataMode {
 	globalModeMu.RLock()
 	defer globalModeMu.RUnlock()
+
 	return globalMode
 }
 
@@ -99,6 +101,7 @@ func SkipMetadata() {
 func WarnOnIgnoredMetadata() bool {
 	warnMu.RLock()
 	defer warnMu.RUnlock()
+
 	return warnOnIgnoredMetadata
 }
 
