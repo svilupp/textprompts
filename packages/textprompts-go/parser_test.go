@@ -87,7 +87,7 @@ Line 3`,
 }
 
 func TestFromString(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet // table field order is for readability
 		name        string
 		content     string
 		mode        MetadataMode

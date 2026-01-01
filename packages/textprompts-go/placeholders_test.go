@@ -85,7 +85,7 @@ func TestExtractPlaceholders(t *testing.T) {
 }
 
 func TestValidateFormatArgs(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet // table field order is for readability
 		name         string
 		placeholders []string
 		values       map[string]interface{}

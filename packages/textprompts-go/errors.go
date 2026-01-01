@@ -8,6 +8,8 @@ import (
 )
 
 // Error is the base error type for all textprompts errors.
+//
+//nolint:govet // Field layout is acceptable for this small error type.
 type Error struct {
 	Message string
 	Cause   error

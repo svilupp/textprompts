@@ -45,7 +45,7 @@ func TestNewPromptString(t *testing.T) {
 }
 
 func TestPromptStringFormat(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet // table field order is for readability
 		name     string
 		content  string
 		values   map[string]interface{}

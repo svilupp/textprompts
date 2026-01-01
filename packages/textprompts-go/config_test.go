@@ -5,7 +5,7 @@ import (
 )
 
 func TestMetadataModeString(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet // table field order is for readability
 		mode     MetadataMode
 		expected string
 	}{

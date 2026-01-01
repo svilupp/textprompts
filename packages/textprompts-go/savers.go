@@ -18,7 +18,7 @@ func SavePrompt(path string, prompt *Prompt) error {
 
 	// Ensure directory exists
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0750); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return &Error{
 			Message: "failed to create directory",
 			Cause:   err,
@@ -26,7 +26,7 @@ func SavePrompt(path string, prompt *Prompt) error {
 	}
 
 	// Write file
-	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		return &Error{
 			Message: "failed to write file",
 			Cause:   err,
@@ -45,7 +45,7 @@ func SavePromptContent(path string, meta PromptMeta, content string) error {
 
 	// Ensure directory exists
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0750); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return &Error{
 			Message: "failed to create directory",
 			Cause:   err,
@@ -53,7 +53,7 @@ func SavePromptContent(path string, meta PromptMeta, content string) error {
 	}
 
 	// Write file
-	if err := os.WriteFile(path, []byte(formatted), 0600); err != nil {
+	if err := os.WriteFile(path, []byte(formatted), 0o600); err != nil {
 		return &Error{
 			Message: "failed to write file",
 			Cause:   err,

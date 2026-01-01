@@ -8,6 +8,8 @@ import (
 )
 
 // loadOptions holds configuration for loading prompts.
+//
+//nolint:govet // Field layout is fine; keep options readable.
 type loadOptions struct {
 	glob      string
 	mode      *MetadataMode

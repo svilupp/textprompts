@@ -6,7 +6,7 @@ import (
 )
 
 func TestPromptMetaIsEmpty(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet // table field order is for readability
 		name     string
 		meta     PromptMeta
 		expected bool
@@ -59,7 +59,7 @@ func TestPromptMetaIsEmpty(t *testing.T) {
 }
 
 func TestPromptMetaValidate(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet // table field order is for readability
 		name    string
 		meta    PromptMeta
 		wantErr bool

@@ -7,7 +7,7 @@ import (
 )
 
 func TestLoadPrompt(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet // table field order is for readability
 		name      string
 		file      string
 		mode      MetadataMode
@@ -95,6 +95,7 @@ func TestLoadPrompt(t *testing.T) {
 						t.Errorf("LoadPrompt() error type = %T, want MissingMetadataError", err)
 					}
 				}
+
 				return
 			}
 
