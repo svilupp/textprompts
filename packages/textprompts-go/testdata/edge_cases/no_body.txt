@@ -1,0 +1,5 @@
+---
+title = "No Body"
+version = "1.0.0"
+description = "This prompt has metadata but no body"
+---

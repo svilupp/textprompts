@@ -1,0 +1,14 @@
+---
+title = "Unicode Test"
+version = "1.0.0"
+description = "Contains unicode characters"
+author = "作者名"
+---
+Hello {name}! 你好！
+
+Emojis: 🎉 🚀 ✨
+Special chars: café, naïve, résumé
+Greek: αβγδ
+Math: ∑∏∫√
+
+Welcome to {place}, {name}!
