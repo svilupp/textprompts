@@ -511,7 +511,7 @@ title = "Example"
 ---
 ```
 
-### Invalid TOML
+### Invalid TOML/YAML
 
 ❌ **Wrong:**
 ```
