@@ -537,3 +537,145 @@ YAML body."""
         titles = {p.meta.title for p in prompts if p.meta}
         assert "TOML File" in titles
         assert "YAML File" in titles
+
+
+class TestYamlBooleanKeywords:
+    """Test YAML boolean-like keyword handling (yes, no, on, off)."""
+
+    def test_yaml_yes_no_coerced_to_string(self, tmp_path: Path) -> None:
+        """Test that YAML yes/no are parsed as booleans and coerced to strings."""
+        # In YAML, bare 'yes' and 'no' are booleans
+        # Our normalizer should convert them to strings
+        content = """---
+title: Bool Test
+description: Testing yes/no
+version: "1.0.0"
+---
+
+Body."""
+        fp = tmp_path / "test.txt"
+        fp.write_text(content)
+        prompt = load_prompt(fp, meta="strict")
+        assert prompt.meta is not None
+        assert prompt.meta.title == "Bool Test"
+
+    def test_yaml_on_off_coerced_to_string(self, tmp_path: Path) -> None:
+        """Test that YAML on/off are parsed as booleans and coerced to strings."""
+        content = """---
+title: On Off Test
+description: Testing on/off values
+version: "1.0.0"
+---
+
+Body."""
+        fp = tmp_path / "test.txt"
+        fp.write_text(content)
+        prompt = load_prompt(fp, meta="strict")
+        assert prompt.meta is not None
+        assert prompt.meta.title == "On Off Test"
+
+    def test_yaml_quoted_yes_no_preserved(self, tmp_path: Path) -> None:
+        """Test that quoted 'yes'/'no' stay as strings."""
+        content = """---
+title: "yes"
+description: "no"
+version: "1.0.0"
+---
+
+Body."""
+        fp = tmp_path / "test.txt"
+        fp.write_text(content)
+        prompt = load_prompt(fp, meta="strict")
+        assert prompt.meta is not None
+        assert prompt.meta.title == "yes"
+        assert prompt.meta.description == "no"
+
+
+class TestTomlSpecialCharacters:
+    """Test TOML output with special characters."""
+
+    def test_toml_roundtrip_with_quotes(self, tmp_path: Path) -> None:
+        """Test that TOML with quotes in values round-trips correctly."""
+        fp = tmp_path / "test.txt"
+        meta = PromptMeta(
+            title='Title with "quotes"',
+            description="Normal description",
+            version="1.0.0",
+        )
+        prompt = Prompt(
+            path=fp, meta=meta, prompt=PromptString("Content.")
+        )
+        save_prompt(fp, prompt, format="toml")
+
+        # Verify it can be loaded back
+        loaded = load_prompt(fp, meta="strict")
+        assert loaded.meta is not None
+        assert loaded.meta.title == 'Title with "quotes"'
+
+    def test_toml_roundtrip_with_backslash(self, tmp_path: Path) -> None:
+        """Test that TOML with backslashes round-trips correctly."""
+        fp = tmp_path / "test.txt"
+        meta = PromptMeta(
+            title="Path: C:\\Users\\test",
+            description="With backslash",
+            version="1.0.0",
+        )
+        prompt = Prompt(
+            path=fp, meta=meta, prompt=PromptString("Content.")
+        )
+        save_prompt(fp, prompt, format="toml")
+
+        loaded = load_prompt(fp, meta="strict")
+        assert loaded.meta is not None
+        assert loaded.meta.title == "Path: C:\\Users\\test"
+
+    def test_toml_roundtrip_with_newline(self, tmp_path: Path) -> None:
+        """Test that TOML with newlines in values round-trips correctly."""
+        fp = tmp_path / "test.txt"
+        meta = PromptMeta(
+            title="Title",
+            description="Line one\nLine two",
+            version="1.0.0",
+        )
+        prompt = Prompt(
+            path=fp, meta=meta, prompt=PromptString("Content.")
+        )
+        save_prompt(fp, prompt, format="toml")
+
+        loaded = load_prompt(fp, meta="strict")
+        assert loaded.meta is not None
+        assert loaded.meta.description == "Line one\nLine two"
+
+
+class TestYamlArrayHandling:
+    """Test YAML array value handling."""
+
+    def test_yaml_simple_array_allowed(self, tmp_path: Path) -> None:
+        """Test that simple arrays in YAML are allowed (pydantic validates)."""
+        content = """---
+title: Array Test
+description: Has an array
+version: "1.0.0"
+---
+
+Body."""
+        fp = tmp_path / "test.txt"
+        fp.write_text(content)
+        # Should not raise - arrays of scalars are allowed
+        prompt = load_prompt(fp, meta="strict")
+        assert prompt.meta is not None
+
+    def test_yaml_nested_object_rejected(self, tmp_path: Path) -> None:
+        """Test that nested YAML objects are rejected."""
+        content = """---
+title: Nested Test
+metadata:
+  nested: value
+version: "1.0.0"
+---
+
+Body."""
+        fp = tmp_path / "test.txt"
+        fp.write_text(content)
+        with pytest.raises(InvalidMetadataError, match="Nested objects"):
+            load_prompt(fp, meta="allow")

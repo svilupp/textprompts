@@ -4,6 +4,20 @@ from typing import Literal, Union
 from .models import Prompt, PromptMeta
 
 
+def _escape_toml(value: str) -> str:
+    """Escape a string for TOML output (for use inside double quotes)."""
+    if not value:
+        return ""
+    # TOML escape sequences: backslash, quotes, and control characters
+    return (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+    )
+
+
 def _quote_yaml(value: str) -> str:
     """Quote a string for YAML output if it contains special characters."""
     if not value:
@@ -118,13 +132,13 @@ def save_prompt(
             lines.append(str(content.prompt))
         else:
             lines = ["---"]
-            lines.append(f'title = "{meta.title or ""}"')
-            lines.append(f'description = "{meta.description or ""}"')
-            lines.append(f'version = "{meta.version or ""}"')
+            lines.append(f'title = "{_escape_toml(meta.title or "")}"')
+            lines.append(f'description = "{_escape_toml(meta.description or "")}"')
+            lines.append(f'version = "{_escape_toml(meta.version or "")}"')
             if meta.author:
-                lines.append(f'author = "{meta.author}"')
+                lines.append(f'author = "{_escape_toml(meta.author)}"')
             if meta.created:
-                lines.append(f'created = "{meta.created.isoformat()}"')
+                lines.append(f'created = "{_escape_toml(meta.created.isoformat())}"')
             lines.append("---")
             lines.append("")
             lines.append(str(content.prompt))

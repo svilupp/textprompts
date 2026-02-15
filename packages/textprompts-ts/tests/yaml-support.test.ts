@@ -376,3 +376,111 @@ describe("mixed format directory loading", () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 });
+
+describe("YAML boolean keywords", () => {
+  test("quoted yes/no preserved as strings", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "textprompts-bool-"));
+    const filePath = join(tempDir, "bool.txt");
+    await writeFile(
+      filePath,
+      '---\ntitle: "yes"\ndescription: "no"\nversion: "1.0.0"\n---\n\nBody.',
+    );
+
+    const prompt = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    expect(prompt.meta?.title).toBe("yes");
+    expect(prompt.meta?.description).toBe("no");
+
+    await rm(tempDir, { recursive: true, force: true });
+  });
+});
+
+describe("TOML special characters", () => {
+  test("TOML round-trip with quotes", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "textprompts-toml-"));
+    const filePath = join(tempDir, "quotes.txt");
+    const prompt = new Prompt({
+      path: filePath,
+      meta: {
+        title: 'Title with "quotes"',
+        description: "Normal",
+        version: "1.0.0",
+      },
+      prompt: new PromptString("Content."),
+    });
+
+    await savePrompt(filePath, prompt);
+    const loaded = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    expect(loaded.meta?.title).toBe('Title with "quotes"');
+
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  test("TOML round-trip with backslash", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "textprompts-toml-"));
+    const filePath = join(tempDir, "backslash.txt");
+    const prompt = new Prompt({
+      path: filePath,
+      meta: {
+        title: "Path: C:\\Users\\test",
+        description: "With backslash",
+        version: "1.0.0",
+      },
+      prompt: new PromptString("Content."),
+    });
+
+    await savePrompt(filePath, prompt);
+    const loaded = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    expect(loaded.meta?.title).toBe("Path: C:\\Users\\test");
+
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  test("TOML round-trip with newline", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "textprompts-toml-"));
+    const filePath = join(tempDir, "newline.txt");
+    const prompt = new Prompt({
+      path: filePath,
+      meta: {
+        title: "Title",
+        description: "Line one\nLine two",
+        version: "1.0.0",
+      },
+      prompt: new PromptString("Content."),
+    });
+
+    await savePrompt(filePath, prompt);
+    const loaded = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    expect(loaded.meta?.description).toBe("Line one\nLine two");
+
+    await rm(tempDir, { recursive: true, force: true });
+  });
+});
+
+describe("YAML nested object validation", () => {
+  test("nested objects are rejected with clear error", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "textprompts-nested-"));
+    const filePath = join(tempDir, "nested.txt");
+    await writeFile(
+      filePath,
+      '---\ntitle: Test\nmetadata:\n  nested: value\nversion: "1.0.0"\n---\n\nBody.',
+    );
+
+    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(InvalidMetadataError);
+    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(/Nested objects/);
+
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  test("arrays with objects are rejected", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "textprompts-arr-"));
+    const filePath = join(tempDir, "array-obj.txt");
+    await writeFile(
+      filePath,
+      '---\ntitle: Test\nitems:\n  - name: item1\nversion: "1.0.0"\n---\n\nBody.',
+    );
+
+    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(InvalidMetadataError);
+
+    await rm(tempDir, { recursive: true, force: true });
+  });
+});
