@@ -255,9 +255,8 @@ Test content here."""
         file_path.write_text(content)
 
         set_metadata(MetadataMode.ALLOW)
-        with pytest.raises(InvalidMetadataError) as exc_info:
+        with pytest.raises(InvalidMetadataError):
             load_prompt(file_path)
-        assert "Invalid TOML" in str(exc_info.value)
 
 
 class TestIgnoreMode:

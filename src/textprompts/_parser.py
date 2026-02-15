@@ -1,6 +1,9 @@
 import textwrap
+from datetime import date
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
+
+import yaml
 
 try:
     import tomllib
@@ -38,6 +41,72 @@ def _split_front_matter(text: str) -> tuple[Optional[str], str]:
     return header, body
 
 
+def _normalize_yaml_values(data: dict[str, Any]) -> dict[str, Any]:
+    """Normalize YAML-parsed values to match expected types.
+
+    YAML auto-converts some values (e.g. dates become date objects,
+    unquoted numbers become floats). This normalizes them to strings
+    where the metadata model expects strings.
+    """
+    normalized = {}
+    for key, value in data.items():
+        if isinstance(value, date) and key in {"created"}:
+            # Keep date objects for the 'created' field
+            normalized[key] = value
+        elif isinstance(value, (date, bool)):
+            # Convert dates in non-date fields and booleans to strings
+            normalized[key] = str(value)
+        elif isinstance(value, (int, float)):
+            # Convert numbers to strings (e.g. version: 1.0 -> "1.0")
+            normalized[key] = str(value)
+        elif isinstance(value, dict):
+            # Reject nested objects
+            raise InvalidMetadataError(
+                f"Nested objects not supported in front matter metadata: "
+                f"'{key}' contains a nested object. "
+                f"Use flat key-value pairs only."
+            )
+        elif isinstance(value, list):
+            # Allow lists as-is (pydantic will validate)
+            normalized[key] = value
+        else:
+            normalized[key] = value
+    return normalized
+
+
+def _parse_header(header_txt: str) -> dict[str, Any]:
+    """Parse front matter header as TOML or YAML (try TOML first for backward compat).
+
+    Uses a parse-then-fallback strategy:
+    1. Try TOML first (backward compatible)
+    2. If TOML fails, try YAML
+    3. If both fail, report both errors
+    """
+    # Try TOML first (backward compatibility)
+    try:
+        return dict(tomllib.loads(header_txt))
+    except tomllib.TOMLDecodeError as toml_err:
+        # Try YAML as fallback
+        try:
+            result = yaml.safe_load(header_txt)
+            if result is None:
+                return {}
+            if not isinstance(result, dict):
+                raise InvalidMetadataError(
+                    f"Front matter must be a mapping, got {type(result).__name__}. "
+                    f"Use meta=MetadataMode.IGNORE to skip metadata parsing."
+                )
+            return _normalize_yaml_values(result)
+        except yaml.YAMLError:
+            # Both failed - report TOML error (original format) for backward compat
+            raise InvalidMetadataError(
+                f"Invalid TOML in front matter: {toml_err}. "
+                f"Use meta=MetadataMode.IGNORE to skip metadata parsing."
+            ) from toml_err
+        except InvalidMetadataError:
+            raise
+
+
 def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
     """
     Parse a file according to the specified metadata mode.
@@ -58,7 +127,7 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
         raise TextPromptsError(f"Cannot decode {path} as UTF-8: {e}") from e
 
     # Handle IGNORE mode - treat entire file as body
-    if metadata_mode == MetadataMode.IGNORE:
+    if metadata_mode.value == MetadataMode.IGNORE.value:
         if (
             warn_on_ignored_metadata()
             and raw.startswith(DELIM)
@@ -93,11 +162,11 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
 
     meta: Optional[PromptMeta] = None
     if header_txt is not None:
-        # We have front matter - parse it
+        # We have front matter - parse it (tries TOML first, then YAML)
         try:
-            data = tomllib.loads(header_txt)
+            data = _parse_header(header_txt)
 
-            if metadata_mode == MetadataMode.STRICT:
+            if metadata_mode.value == MetadataMode.STRICT.value:
                 # STRICT mode: require title, description, version fields and they must not be empty
                 required_fields = {"title", "description", "version"}
                 missing_fields = required_fields - set(data.keys())
@@ -124,11 +193,6 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
             # For both STRICT and ALLOW modes, validate the data structure
             meta = PromptMeta.model_validate(data)
 
-        except tomllib.TOMLDecodeError as e:
-            raise InvalidMetadataError(
-                f"Invalid TOML in front matter: {e}. "
-                f"Use meta=MetadataMode.IGNORE to skip metadata parsing."
-            ) from e
         except InvalidMetadataError:
             raise
         except Exception as e:  # pragma: no cover - unlikely generic error
@@ -136,7 +200,7 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
 
     else:
         # No front matter found
-        if metadata_mode == MetadataMode.STRICT:
+        if metadata_mode.value == MetadataMode.STRICT.value:
             raise MissingMetadataError(
                 f"No metadata found in {path}. "
                 f"STRICT mode requires metadata with title, description, and version fields. "

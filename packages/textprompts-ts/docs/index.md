@@ -83,13 +83,24 @@ Your prompts live in `.txt` files (or any text file) alongside your code. This m
 
 ### Metadata is Optional
 
-You can include TOML front-matter for metadata:
+You can include TOML or YAML front-matter for metadata:
 
 ```
 ---
 title = "My Prompt"
 version = "1.0.0"
 description = "What this does"
+---
+Prompt content here...
+```
+
+Or equivalently with YAML:
+
+```
+---
+title: My Prompt
+version: "1.0.0"
+description: What this does
 ---
 Prompt content here...
 ```

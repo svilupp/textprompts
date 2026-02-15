@@ -58,13 +58,14 @@ prompts = load_prompts("file1.txt", "file2.txt")
 prompts = load_prompts("prompts/", meta="allow")
 ```
 
-### `save_prompt(path, content)`
+### `save_prompt(path, content, *, format="toml")`
 
 Save a prompt to a file.
 
 **Parameters:**
 - `path` (str | Path): File path to save the prompt to
 - `content` (str | Prompt): Either a string (creates template with required fields) or a Prompt object
+- `format` (str): Front-matter format to use - `"toml"` (default) or `"yaml"`
 
 **Example:**
 ```python
@@ -74,6 +75,9 @@ from textprompts import Prompt, PromptMeta, save_prompt
 
 # Save a simple prompt with metadata template
 save_prompt("my_prompt.txt", "You are a helpful assistant.")
+
+# Save with YAML front-matter
+save_prompt("my_prompt.txt", "You are a helpful assistant.", format="yaml")
 
 # Save a Prompt object with full metadata
 meta = PromptMeta(title="Assistant", version="1.0.0", description="A helpful AI")
@@ -104,7 +108,7 @@ print(prompt.prompt)  # PromptString("Hello {name}!")
 
 ### `PromptMeta`
 
-Metadata extracted from the TOML frontmatter.
+Metadata extracted from the TOML or YAML frontmatter.
 
 **Fields:**
 - `title` (str | None): Human-readable name (required in front-matter, or filename if no front-matter)

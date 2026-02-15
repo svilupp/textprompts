@@ -5,7 +5,7 @@ Complete specification for textprompts file format.
 ## Overview
 
 A textprompts file consists of:
-1. **Optional TOML front-matter** (metadata)
+1. **Optional front-matter** in TOML (default) or YAML format (metadata)
 2. **Prompt content** (the actual prompt text)
 
 ## File Structure
@@ -52,11 +52,13 @@ prompt content goes here
 **Rules:**
 - Opening `---` must be the very first line (no whitespace before it)
 - Closing `---` must be on its own line
-- Content between delimiters must be valid TOML
+- Content between delimiters must be valid TOML or YAML
+
+The library auto-detects the format: if the front-matter contains `=` assignments it is parsed as TOML; if it contains `:` key-value pairs it is parsed as YAML. Both formats use the same `---` delimiters.
 
 ### TOML Syntax
 
-The front-matter uses [TOML](https://toml.io/) syntax.
+The front-matter uses [TOML](https://toml.io/) syntax by default.
 
 **Strings:**
 ```toml
@@ -85,6 +87,36 @@ title = "My Prompt"
 custom_field = "custom value"
 tags = ["support", "greeting"]
 priority = 1
+```
+
+### YAML Syntax
+
+Alternatively, the front-matter can use [YAML](https://yaml.org/) syntax:
+
+**Strings:**
+```yaml
+title: My Prompt
+description: A description
+```
+
+**Quoted strings (required when values contain special characters):**
+```yaml
+title: "My Prompt: with colon"
+description: "A description with \"quotes\""
+```
+
+**Complete YAML example:**
+```
+---
+title: Customer Greeting
+version: "1.0.0"
+author: Support Team
+created: "2024-01-15"
+description: Friendly greeting for customer support interactions
+---
+Hello {customer_name}!
+
+Welcome to {company_name}.
 ```
 
 ### Standard Fields
@@ -561,3 +593,4 @@ const message = prompt.format({ name: "Alice", company: "ACME" });
 - [Examples](./examples.md) - Real-world usage examples
 - [Usage Guide](./guide.md) - Best practices and patterns
 - [TOML Specification](https://toml.io/) - Official TOML documentation
+- [YAML Specification](https://yaml.org/) - Official YAML documentation

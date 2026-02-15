@@ -43,6 +43,10 @@ Integration example with Pydantic AI:
 ## Key Concepts Demonstrated
 
 ### 1. Prompt File Format
+
+TextPrompts supports both TOML and YAML front matter, delimited by `---`:
+
+**TOML front matter:**
 ```
 ---
 title = "Example Prompt"
@@ -52,6 +56,19 @@ description = "What this prompt does"
 ---
 Your prompt content with {variables} goes here.
 ```
+
+**YAML front matter:**
+```
+---
+title: "Example Prompt"
+version: "1.0.0"
+author: "Your Name"
+description: "What this prompt does"
+---
+Your prompt content with {variables} goes here.
+```
+
+The parser auto-detects the format based on syntax (`:` for YAML, `=` for TOML).
 
 ### 2. Safe String Formatting
 ```python
@@ -115,7 +132,7 @@ print(f"Successfully validated {len(prompts)} prompts")
 
 1. **Organize prompts by domain** - customer/, internal/, etc.
 2. **Use semantic versioning** - Track prompt changes over time
-3. **Include descriptive metadata** - Document purpose and usage
+3. **Include descriptive metadata** - Use TOML or YAML front matter to document purpose and usage
 4. **Validate variables** - Use PromptString to catch errors early
 5. **Handle errors gracefully** - Provide fallbacks and clear messages
 

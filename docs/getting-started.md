@@ -15,12 +15,22 @@ uv add textprompts
 
 ## Your First Prompt
 
-1. Create a simple prompt file `hello.txt`:
+1. Create a simple prompt file `hello.txt` with TOML front-matter (default):
 
 ```
 ---
 title = "Hello World"
 description = "A simple greeting prompt"
+---
+Hello {name}! Welcome to TextPrompts.
+```
+
+YAML front-matter is also supported. The format is auto-detected:
+
+```
+---
+title: "Hello World"
+description: "A simple greeting prompt"
 ---
 Hello {name}! Welcome to TextPrompts.
 ```
