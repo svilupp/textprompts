@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go implementation of textprompts (`packages/textprompts-go`)
 - Go CI workflow with tests across Go 1.21, 1.22, 1.23
 
+## [1.2.0] - 2026-02-14
+
+### Added
+- **YAML front matter support**: Prompts can now use YAML syntax (`key: value`) in addition to TOML (`key = "value"`) for front matter metadata
+- Parse-then-fallback detection: tries TOML first (backward compatible), falls back to YAML automatically
+- YAML value normalization: dates, booleans, and numbers are automatically coerced to expected types
+- Nested object validation: YAML nested structures are rejected with clear error messages
+- `save_prompt()` now accepts a `format` keyword argument (`"toml"` or `"yaml"`) to choose output format
+- New dependency: `pyyaml>=6.0`
+- Comprehensive test suite for YAML parsing, saving, round-trip, and edge cases (44 new tests)
+
+### Fixed
+- Enum identity comparison in parser now uses `.value` to be resilient to module reloads
+
 ## [1.1.0] - 2025-10-12
 
 ### Removed

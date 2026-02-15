@@ -57,7 +57,7 @@ describe("parser edge cases", () => {
     await writeFile(filePath, '---\ntitle = "Missing quote\n---\nContent');
 
     await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(InvalidMetadataError);
-    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(/Invalid metadata/);
+    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(/Invalid TOML/);
 
     await cleanupTempDir();
   });

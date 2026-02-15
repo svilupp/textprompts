@@ -1,5 +1,6 @@
 export { loadPrompt, loadPrompts } from "./loaders";
 export { savePrompt } from "./savers";
+export type { FrontMatterFormat } from "./savers";
 export { Prompt } from "./models";
 export type { PromptMeta } from "./models";
 export { PromptString } from "./prompt-string";

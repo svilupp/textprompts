@@ -1,0 +1,5 @@
+---
+title: Minimal YAML
+---
+
+Just a minimal YAML header prompt.
