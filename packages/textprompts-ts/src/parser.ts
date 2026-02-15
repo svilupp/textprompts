@@ -1,5 +1,5 @@
-import { basename, extname } from "node:path";
 import { readFile } from "node:fs/promises";
+import { basename, extname } from "node:path";
 
 import { MetadataMode, warnOnIgnoredMetadata } from "./config";
 import {
