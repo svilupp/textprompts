@@ -1,0 +1,9 @@
+---
+title: Example Unquoted
+version: "2.0.0"
+description: A prompt with unquoted YAML strings
+---
+
+Hello, {name}!
+
+This prompt uses unquoted YAML strings.

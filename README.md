@@ -23,7 +23,7 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 - ✅ **Prompts live next to your code** - no external systems to manage
 - ✅ **Git is your version control** - diff, branch, and experiment with ease
 - ✅ **No formatter headaches** - your prompts stay exactly as you wrote them
-- ✅ **Minimal markup** - just TOML front-matter when you need metadata (or no metadata if you prefer!)
+- ✅ **Minimal markup** - just TOML or YAML front-matter when you need metadata (or no metadata if you prefer!)
 - ✅ **Zero dependencies** - well, almost (just Pydantic)
 - ✅ **Safe formatting** - catch missing variables before they cause problems
 - ✅ **Works with everything** - OpenAI, Anthropic, local models, function calls
@@ -292,8 +292,10 @@ prompt = load_prompt(f"prompts/{prompt_version}/system.txt")
 
 ## File Format
 
-TextPrompts uses TOML front-matter (optional) followed by your prompt content:
+TextPrompts uses TOML front-matter (optional) followed by your prompt content.
+YAML front-matter is also supported as an alternative.
 
+**TOML (default):**
 ```
 ---
 title = "My Prompt"
@@ -307,6 +309,25 @@ Your prompt content goes here.
 
 Use {variables} for templating.
 ```
+
+**YAML alternative:**
+```
+---
+title: "My Prompt"
+version: "1.0.0"
+author: "Your Name"
+description: "What this prompt does"
+created: "2024-01-15"
+tags:
+  - customer-support
+  - greeting
+---
+Your prompt content goes here.
+
+Use {variables} for templating.
+```
+
+Both formats are auto-detected based on the front-matter content.
 
 ### Metadata Modes
 
@@ -340,7 +361,7 @@ Load a single prompt file.
 - `meta`: Metadata handling mode - `MetadataMode.STRICT`, `MetadataMode.ALLOW`, `MetadataMode.IGNORE`, or string equivalents. None uses global config.
 
 Returns a `Prompt` object with:
-- `prompt.meta`: Metadata from TOML front-matter (always present)
+- `prompt.meta`: Metadata from TOML/YAML front-matter (always present)
 - `prompt.prompt`: The prompt content as a `PromptString`
 - `prompt.path`: Path to the original file
 
@@ -371,18 +392,22 @@ textprompts.set_metadata("allow")  # String also works
 current_mode = textprompts.get_metadata()
 ```
 
-### `save_prompt(path, content)`
+### `save_prompt(path, content, *, format="toml")`
 
 Save a prompt to a file.
 
 - `path`: Path to save the prompt file
 - `content`: Either a string (creates template with required fields) or a `Prompt` object
+- `format`: Front-matter format to use - `"toml"` (default) or `"yaml"`
 
 ```python
 from textprompts import save_prompt
 
 # Save a simple prompt with metadata template
 save_prompt("my_prompt.txt", "You are a helpful assistant.")
+
+# Save with YAML front-matter
+save_prompt("my_prompt.txt", "You are a helpful assistant.", format="yaml")
 
 # Save a Prompt object with full metadata
 save_prompt("my_prompt.txt", prompt_object)

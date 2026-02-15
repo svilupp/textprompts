@@ -324,24 +324,37 @@ from textprompts import load_prompts
 def test_prompt_loading():
     """Test prompt loading in isolated environment."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Create test prompts
+        # Create test prompts (TOML front-matter)
         prompt_content = """---
 title = "Test Prompt"
 version = "1.0.0"
 ---
 
 Hello {name}!"""
-        
+
         prompt_path = os.path.join(temp_dir, "test.txt")
         with open(prompt_path, "w") as f:
             f.write(prompt_content)
-        
+
         # Load and test
         prompts = load_prompts(temp_dir)
         assert len(prompts) == 1
         assert prompts[0].meta.title == "Test Prompt"
-        
+
         # Test formatting
         result = prompts[0].prompt.format(name="Test")
         assert result == "Hello Test!"
+```
+
+### Saving with YAML Front-Matter
+
+```python
+from textprompts import save_prompt, load_prompt
+
+# Save a prompt with YAML front-matter instead of the default TOML
+save_prompt("my_prompt.txt", "Analyze this: {data}", format="yaml")
+
+# Loading auto-detects the format, no special handling needed
+prompt = load_prompt("my_prompt.txt")
+result = prompt.prompt.format(data="quarterly sales")
 ```

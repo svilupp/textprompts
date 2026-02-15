@@ -25,7 +25,7 @@ async function loadPrompt(
 **Throws:**
 - `FileMissingError` - File does not exist or is not accessible
 - `MissingMetadataError` - Metadata required but not found (in STRICT mode)
-- `InvalidMetadataError` - TOML syntax error or invalid metadata
+- `InvalidMetadataError` - TOML/YAML syntax error or invalid metadata
 - `MalformedHeaderError` - Front-matter structure is incorrect
 
 **Example:**
@@ -107,7 +107,8 @@ Save a prompt to a file.
 ```typescript
 async function savePrompt(
   path: string,
-  content: string | Prompt
+  content: string | Prompt,
+  options?: { format?: "toml" | "yaml" }
 ): Promise<void>
 ```
 
@@ -116,6 +117,7 @@ async function savePrompt(
 - `content: string | Prompt` - Content to save
   - If `string`: Creates a template with empty metadata fields
   - If `Prompt`: Saves with full metadata
+- `options?.format?: "toml" | "yaml"` - Front-matter format to use (default: `"toml"`)
 
 **Returns:** `Promise<void>`
 
@@ -123,8 +125,11 @@ async function savePrompt(
 ```typescript
 import { savePrompt, Prompt, PromptString } from "textprompts";
 
-// Save simple string (creates template)
+// Save simple string (creates template with TOML front-matter)
 await savePrompt("new.txt", "Hello {name}!");
+
+// Save with YAML front-matter
+await savePrompt("new.txt", "Hello {name}!", { format: "yaml" });
 
 // Save Prompt object
 const prompt = new Prompt({
@@ -137,6 +142,9 @@ const prompt = new Prompt({
   prompt: new PromptString("Hello {name}!")
 });
 await savePrompt("greeting.txt", prompt);
+
+// Save Prompt object with YAML front-matter
+await savePrompt("greeting.txt", prompt, { format: "yaml" });
 ```
 
 ---
@@ -447,7 +455,7 @@ Same as `Prompt` methods: `toString()`, `valueOf()`, `strip()`, `slice()`, `leng
 
 ### `PromptMeta`
 
-Metadata extracted from TOML front-matter.
+Metadata extracted from TOML or YAML front-matter.
 
 ```typescript
 interface PromptMeta {
@@ -608,7 +616,7 @@ class MissingMetadataError extends TextPromptsError {
 
 ### `InvalidMetadataError`
 
-Thrown when metadata TOML is invalid or incomplete.
+Thrown when metadata (TOML or YAML) is invalid or incomplete.
 
 ```typescript
 class InvalidMetadataError extends TextPromptsError {
@@ -651,7 +659,7 @@ try {
   } else if (error instanceof MissingMetadataError) {
     console.error("Missing required metadata");
   } else if (error instanceof InvalidMetadataError) {
-    console.error("Invalid TOML syntax");
+    console.error("Invalid TOML/YAML syntax");
   } else if (error instanceof MalformedHeaderError) {
     console.error("Malformed front-matter");
   } else if (error instanceof TextPromptsError) {

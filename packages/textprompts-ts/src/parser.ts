@@ -1,5 +1,5 @@
-import { basename, extname } from "node:path";
 import { readFile } from "node:fs/promises";
+import { basename, extname } from "node:path";
 
 import { MetadataMode, warnOnIgnoredMetadata } from "./config";
 import {
@@ -11,6 +11,7 @@ import {
 import { Prompt, type PromptMeta } from "./models";
 import { PromptString } from "./prompt-string";
 import { parseToml } from "./toml";
+import { parseYaml } from "./yaml";
 
 const DELIM = "---";
 
@@ -88,9 +89,34 @@ const enforceStrictRequirements = (meta: PromptMeta): void => {
 };
 
 /**
- * Parse a prompt from a string with optional TOML front-matter.
+ * Parse front matter header as TOML or YAML (try TOML first for backward compat).
+ * Uses a parse-then-fallback strategy.
+ */
+const parseHeader = (headerText: string): Record<string, unknown> => {
+  try {
+    return parseToml(headerText);
+  } catch (tomlError) {
+    // TOML failed, try YAML as fallback
+    try {
+      return parseYaml(headerText);
+    } catch (yamlError) {
+      // If YAML threw an InvalidMetadataError (e.g. nested objects), propagate it
+      if (yamlError instanceof InvalidMetadataError) {
+        throw yamlError;
+      }
+      // Both failed — report TOML error for backward compat
+      const tomlMsg = tomlError instanceof Error ? tomlError.message : String(tomlError);
+      throw new InvalidMetadataError(
+        `Invalid TOML in front matter: ${tomlMsg}. Use meta=MetadataMode.IGNORE to skip metadata parsing.`,
+      );
+    }
+  }
+};
+
+/**
+ * Parse a prompt from a string with optional TOML/YAML front-matter.
  *
- * @param content - The raw content to parse (may include TOML front-matter)
+ * @param content - The raw content to parse (may include TOML/YAML front-matter)
  * @param sourcePath - The source path for metadata and error messages
  * @param metadataMode - How to handle metadata (IGNORE, ALLOW, or STRICT)
  * @returns A Prompt instance
@@ -135,7 +161,7 @@ export const parseString = (
 
   if (header !== null) {
     try {
-      const data = parseToml(header);
+      const data = parseHeader(header);
       meta = ensurePromptMeta(data);
       if (metadataMode === MetadataMode.STRICT) {
         enforceStrictRequirements(meta);
@@ -148,11 +174,6 @@ export const parseString = (
         throw error;
       }
       const message = error instanceof Error ? error.message : String(error);
-      if (/TOML/i.test(message)) {
-        throw new InvalidMetadataError(
-          `Invalid TOML in front matter: ${message}. Use meta=MetadataMode.IGNORE to skip metadata parsing.`,
-        );
-      }
       throw new InvalidMetadataError(`Invalid metadata: ${message}`);
     }
   } else {

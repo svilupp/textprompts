@@ -125,7 +125,7 @@ setMetadata(MetadataMode.STRICT);
 
 ### Semantic Versioning
 
-Use semantic versioning for prompts:
+Use semantic versioning for prompts (shown here in TOML; YAML front-matter is also supported):
 
 ```
 ---
@@ -139,7 +139,7 @@ version = "1.2.3"
 
 ### Metadata Best Practices
 
-Include enough information for future you:
+Include enough information for future you. You can use either TOML or YAML front-matter:
 
 ```
 ---
@@ -148,6 +148,18 @@ version = "2.1.0"
 author = "Support Team"
 description = "Greeting for premium tier customers. Requires: customer_name, tier, agent_name"
 created = "2024-01-15"
+---
+```
+
+The same metadata in YAML:
+
+```
+---
+title: Customer Support Greeting
+version: "2.1.0"
+author: Support Team
+description: "Greeting for premium tier customers. Requires: customer_name, tier, agent_name"
+created: "2024-01-15"
 ---
 ```
 
@@ -368,7 +380,7 @@ async function loadPromptSafe(path: string) {
     } else if (error instanceof MissingMetadataError) {
       console.error("Missing required metadata:", path);
     } else if (error instanceof InvalidMetadataError) {
-      console.error("Invalid TOML:", path);
+      console.error("Invalid TOML/YAML:", path);
     } else if (error instanceof TextPromptsError) {
       console.error("Prompt error:", error.message);
     } else {

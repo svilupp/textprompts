@@ -1,0 +1,8 @@
+---
+title: "Date Test"
+version: "1.0.0"
+description: "Testing YAML date handling"
+created: 2024-01-15
+---
+
+This prompt tests YAML date handling.

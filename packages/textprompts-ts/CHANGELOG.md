@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-14
+
+### Added
+- **YAML front matter support**: Prompts can now use YAML syntax (`key: value`) in addition to TOML (`key = "value"`) for front matter metadata
+- Parse-then-fallback detection in `parser.ts`: tries TOML first (backward compatible), falls back to YAML automatically
+- `savePrompt()` now accepts an optional `{ format: "toml" | "yaml" }` options parameter
+- New dependency: `yaml` (^2.4.0)
 
 ## [0.3.0] - 2025-11-12
 

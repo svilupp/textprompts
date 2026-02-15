@@ -1,0 +1,8 @@
+---
+title: YAML Assistant
+description: A helpful assistant with YAML metadata
+version: "1.0.0"
+author: Example
+---
+
+Hello {name}, welcome!

@@ -502,7 +502,7 @@ async function safeLoadPrompt(path: string) {
       // Try loading with ALLOW mode instead
       return await loadPrompt(path, { meta: "allow" });
     } else if (error instanceof InvalidMetadataError) {
-      console.error(`Invalid TOML in: ${path}`);
+      console.error(`Invalid TOML/YAML in: ${path}`);
       // Log for fixing
     } else if (error instanceof MalformedHeaderError) {
       console.error(`Malformed front-matter in: ${path}`);
