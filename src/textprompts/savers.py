@@ -50,14 +50,19 @@ def _quote_yaml(value: str) -> str:
             '"',
         )
     )
-    if needs_quoting or value != value.strip() or value.lower() in (
-        "true",
-        "false",
-        "yes",
-        "no",
-        "null",
-        "on",
-        "off",
+    if (
+        needs_quoting
+        or value != value.strip()
+        or value.lower()
+        in (
+            "true",
+            "false",
+            "yes",
+            "no",
+            "null",
+            "on",
+            "off",
+        )
     ):
         escaped = (
             value.replace("\\", "\\\\")

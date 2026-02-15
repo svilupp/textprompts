@@ -127,9 +127,7 @@ Content."""
         prompt = load_prompt(fp, meta="allow")
         assert prompt.meta is not None
         assert prompt.meta.title == "Quoted Title"
-        assert (
-            prompt.meta.description == "Description with: colons and #special chars"
-        )
+        assert prompt.meta.description == "Description with: colons and #special chars"
 
     def test_yaml_boolean_coercion(self, tmp_path: Path) -> None:
         """Test that YAML booleans are coerced to strings in non-date fields."""
@@ -366,9 +364,7 @@ class TestYamlSaver:
             author="Tester",
             created=date(2024, 3, 20),
         )
-        prompt = Prompt(
-            path=fp, meta=meta, prompt=PromptString("Hello {name}!")
-        )
+        prompt = Prompt(path=fp, meta=meta, prompt=PromptString("Hello {name}!"))
         save_prompt(fp, prompt, format="yaml")
         saved = fp.read_text()
         assert "title:" in saved
@@ -386,9 +382,7 @@ class TestYamlSaver:
             description="Testing round-trip",
             version="2.0.0",
         )
-        prompt = Prompt(
-            path=fp, meta=meta, prompt=PromptString("Roundtrip content.")
-        )
+        prompt = Prompt(path=fp, meta=meta, prompt=PromptString("Roundtrip content."))
         save_prompt(fp, prompt, format="yaml")
 
         # Load it back
@@ -407,9 +401,7 @@ class TestYamlSaver:
             description="Still works",
             version="1.0.0",
         )
-        prompt = Prompt(
-            path=fp, meta=meta, prompt=PromptString("TOML content.")
-        )
+        prompt = Prompt(path=fp, meta=meta, prompt=PromptString("TOML content."))
         save_prompt(fp, prompt, format="toml")
 
         loaded = load_prompt(fp, meta="strict")
@@ -436,9 +428,7 @@ class TestYamlSaver:
             description="Has #hash and {braces}",
             version="1.0.0",
         )
-        prompt = Prompt(
-            path=fp, meta=meta, prompt=PromptString("Content.")
-        )
+        prompt = Prompt(path=fp, meta=meta, prompt=PromptString("Content."))
         save_prompt(fp, prompt, format="yaml")
 
         # Verify it can be loaded back correctly
@@ -602,9 +592,7 @@ class TestTomlSpecialCharacters:
             description="Normal description",
             version="1.0.0",
         )
-        prompt = Prompt(
-            path=fp, meta=meta, prompt=PromptString("Content.")
-        )
+        prompt = Prompt(path=fp, meta=meta, prompt=PromptString("Content."))
         save_prompt(fp, prompt, format="toml")
 
         # Verify it can be loaded back
@@ -620,9 +608,7 @@ class TestTomlSpecialCharacters:
             description="With backslash",
             version="1.0.0",
         )
-        prompt = Prompt(
-            path=fp, meta=meta, prompt=PromptString("Content.")
-        )
+        prompt = Prompt(path=fp, meta=meta, prompt=PromptString("Content."))
         save_prompt(fp, prompt, format="toml")
 
         loaded = load_prompt(fp, meta="strict")
@@ -637,9 +623,7 @@ class TestTomlSpecialCharacters:
             description="Line one\nLine two",
             version="1.0.0",
         )
-        prompt = Prompt(
-            path=fp, meta=meta, prompt=PromptString("Content.")
-        )
+        prompt = Prompt(path=fp, meta=meta, prompt=PromptString("Content."))
         save_prompt(fp, prompt, format="toml")
 
         loaded = load_prompt(fp, meta="strict")
