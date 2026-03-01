@@ -105,13 +105,10 @@ def _serialize_extras_toml(key: str, value: Any) -> Union[str, None]:
     if isinstance(value, (int, float)):
         return f"{key} = {value}"
     if isinstance(value, list):
-        all_primitives = all(
-            isinstance(v, (str, int, float, bool)) for v in value
-        )
+        all_primitives = all(isinstance(v, (str, int, float, bool)) for v in value)
         if all_primitives:
             items = ", ".join(
-                f'"{_escape_toml(v)}"' if isinstance(v, str) else str(v)
-                for v in value
+                f'"{_escape_toml(v)}"' if isinstance(v, str) else str(v) for v in value
             )
             return f"{key} = [{items}]"
         return None  # Complex arrays need YAML

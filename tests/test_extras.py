@@ -552,9 +552,7 @@ class TestExtrasKnownFieldCoercion:
 
     def test_numeric_known_field_coerced(self, tmp_path: Path) -> None:
         fp = tmp_path / "test.txt"
-        fp.write_text(
-            "---\ntitle: Test\ndescription: test\nversion: 2.0\n---\n\nBody."
-        )
+        fp.write_text("---\ntitle: Test\ndescription: test\nversion: 2.0\n---\n\nBody.")
         prompt = load_prompt(fp, meta="allow")
         assert prompt.meta is not None
         assert prompt.meta.version == "2.0"
