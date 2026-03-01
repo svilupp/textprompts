@@ -56,13 +56,43 @@ const splitFrontMatter = (text: string): { header: string | null; body: string }
   return { header, body };
 };
 
+const KNOWN_FIELDS = new Set(["title", "description", "version", "author", "created"]);
+
+/**
+ * Coerce a value to string for known PromptMeta fields.
+ * Handles strings, booleans, numbers, and Date instances.
+ */
+const coerceToString = (value: unknown): string | null => {
+  if (typeof value === "string") return value;
+  if (value instanceof Date) return value.toISOString().split("T")[0];
+  if (value == null) return null;
+  return String(value);
+};
+
 const ensurePromptMeta = (data: Record<string, unknown>): PromptMeta => {
   const meta: PromptMeta = {};
-  if (typeof data.title === "string") meta.title = data.title;
-  if (typeof data.description === "string") meta.description = data.description;
-  if (typeof data.version === "string") meta.version = data.version;
-  if (typeof data.author === "string") meta.author = data.author;
-  if (typeof data.created === "string") meta.created = data.created;
+
+  // Extract known fields with string coercion
+  for (const key of KNOWN_FIELDS) {
+    const value = data[key];
+    if (value == null) continue;
+    const str = coerceToString(value);
+    if (str != null) {
+      (meta as Record<string, unknown>)[key] = str;
+    }
+  }
+
+  // Collect all non-standard fields into extras, preserving original types
+  const extras: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (!KNOWN_FIELDS.has(key)) {
+      extras[key] = value;
+    }
+  }
+  if (Object.keys(extras).length > 0) {
+    meta.extras = extras;
+  }
+
   return meta;
 };
 
@@ -100,7 +130,7 @@ const parseHeader = (headerText: string): Record<string, unknown> => {
     try {
       return parseYaml(headerText);
     } catch (yamlError) {
-      // If YAML threw an InvalidMetadataError (e.g. nested objects), propagate it
+      // If YAML threw an InvalidMetadataError, propagate it
       if (yamlError instanceof InvalidMetadataError) {
         throw yamlError;
       }

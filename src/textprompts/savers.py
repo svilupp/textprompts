@@ -1,5 +1,7 @@
 from pathlib import Path
-from typing import Literal, Union
+from typing import Any, Literal, Union
+
+import yaml as yaml_lib
 
 from .models import Prompt, PromptMeta
 
@@ -74,6 +76,48 @@ def _quote_yaml(value: str) -> str:
     return value
 
 
+def _serialize_extras_yaml(key: str, value: Any) -> str:
+    """Serialize a single extras value for YAML frontmatter."""
+    if value is None:
+        return f"{key}: null"
+    if isinstance(value, str):
+        return f"{key}: {_quote_yaml(value)}"
+    if isinstance(value, bool):
+        return f"{key}: {str(value).lower()}"
+    if isinstance(value, (int, float)):
+        return f"{key}: {value}"
+    # For arrays and objects, use the yaml library
+    serialized = yaml_lib.dump({key: value}, default_flow_style=False).strip()
+    return serialized
+
+
+def _serialize_extras_toml(key: str, value: Any) -> Union[str, None]:
+    """Serialize a single extras value for TOML frontmatter.
+
+    Only supports simple types. Complex values return None (skipped).
+    """
+    if value is None:
+        return None  # TOML has no null
+    if isinstance(value, str):
+        return f'{key} = "{_escape_toml(value)}"'
+    if isinstance(value, bool):
+        return f"{key} = {str(value).lower()}"
+    if isinstance(value, (int, float)):
+        return f"{key} = {value}"
+    if isinstance(value, list):
+        all_primitives = all(
+            isinstance(v, (str, int, float, bool)) for v in value
+        )
+        if all_primitives:
+            items = ", ".join(
+                f'"{_escape_toml(v)}"' if isinstance(v, str) else str(v)
+                for v in value
+            )
+            return f"{key} = [{items}]"
+        return None  # Complex arrays need YAML
+    return None  # Nested objects need YAML
+
+
 def save_prompt(
     path: Union[str, Path],
     content: Union[str, Prompt],
@@ -132,6 +176,10 @@ def save_prompt(
                 lines.append(f"author: {_quote_yaml(meta.author)}")
             if meta.created:
                 lines.append(f"created: {_quote_yaml(meta.created.isoformat())}")
+            # Serialize extras
+            if meta.extras:
+                for key, value in meta.extras.items():
+                    lines.append(_serialize_extras_yaml(key, value))
             lines.append("---")
             lines.append("")
             lines.append(str(content.prompt))
@@ -144,6 +192,12 @@ def save_prompt(
                 lines.append(f'author = "{_escape_toml(meta.author)}"')
             if meta.created:
                 lines.append(f'created = "{_escape_toml(meta.created.isoformat())}"')
+            # Serialize extras (simple types only for TOML)
+            if meta.extras:
+                for key, value in meta.extras.items():
+                    line = _serialize_extras_toml(key, value)
+                    if line is not None:
+                        lines.append(line)
             lines.append("---")
             lines.append("")
             lines.append(str(content.prompt))

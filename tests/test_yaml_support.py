@@ -276,10 +276,10 @@ class TestParseHeaderUnit:
         with pytest.raises(InvalidMetadataError, match="Invalid TOML"):
             _parse_header("{{invalid: [both formats")
 
-    def test_nested_yaml_object_rejected(self) -> None:
-        """Nested YAML objects are rejected."""
-        with pytest.raises(InvalidMetadataError, match="Nested objects"):
-            _parse_header("metadata:\n  title: nested")
+    def test_nested_yaml_object_preserved(self) -> None:
+        """Nested YAML objects are preserved in parsed data."""
+        data = _parse_header("metadata:\n  title: nested")
+        assert data["metadata"] == {"title": "nested"}
 
     def test_yaml_non_mapping_rejected(self) -> None:
         """YAML that parses to a non-mapping is rejected."""
@@ -306,21 +306,21 @@ class TestNormalizeYamlValues:
         assert result["version"] == "2024-01-15"
         assert isinstance(result["version"], str)
 
-    def test_boolean_stringified(self) -> None:
+    def test_boolean_preserved(self) -> None:
         result = _normalize_yaml_values({"flag": True})
-        assert result["flag"] == "True"
+        assert result["flag"] is True
 
-    def test_int_stringified(self) -> None:
+    def test_int_preserved(self) -> None:
         result = _normalize_yaml_values({"count": 42})
-        assert result["count"] == "42"
+        assert result["count"] == 42
 
-    def test_float_stringified(self) -> None:
+    def test_float_preserved(self) -> None:
         result = _normalize_yaml_values({"version": 1.0})
-        assert result["version"] == "1.0"
+        assert result["version"] == 1.0
 
-    def test_nested_dict_rejected(self) -> None:
-        with pytest.raises(InvalidMetadataError, match="Nested objects"):
-            _normalize_yaml_values({"meta": {"title": "nested"}})
+    def test_nested_dict_preserved(self) -> None:
+        result = _normalize_yaml_values({"meta": {"title": "nested"}})
+        assert result["meta"] == {"title": "nested"}
 
     def test_list_passthrough(self) -> None:
         result = _normalize_yaml_values({"tags": ["a", "b"]})
@@ -649,8 +649,8 @@ Body."""
         prompt = load_prompt(fp, meta="strict")
         assert prompt.meta is not None
 
-    def test_yaml_nested_object_rejected(self, tmp_path: Path) -> None:
-        """Test that nested YAML objects are rejected."""
+    def test_yaml_nested_object_in_extras(self, tmp_path: Path) -> None:
+        """Test that nested YAML objects are captured in extras."""
         content = """---
 title: Nested Test
 metadata:
@@ -661,5 +661,7 @@ version: "1.0.0"
 Body."""
         fp = tmp_path / "test.txt"
         fp.write_text(content)
-        with pytest.raises(InvalidMetadataError, match="Nested objects"):
-            load_prompt(fp, meta="allow")
+        prompt = load_prompt(fp, meta="allow")
+        assert prompt.meta is not None
+        assert prompt.meta.extras is not None
+        assert prompt.meta.extras["metadata"] == {"nested": "value"}

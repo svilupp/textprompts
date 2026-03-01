@@ -14,6 +14,11 @@ class PromptMeta(BaseModel):
     author: Union[str, None] = Field(default=None)
     created: Union[date, None] = Field(default=None)
     description: Union[str, None] = Field(default=None)
+    extras: Union[dict[str, Any], None] = Field(
+        default=None,
+        description="Additional frontmatter fields not part of the standard set. "
+        "Preserves original types (booleans, numbers, arrays, nested objects).",
+    )
 
 
 class Prompt(BaseModel):

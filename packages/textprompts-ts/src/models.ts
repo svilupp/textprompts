@@ -9,6 +9,13 @@ export interface PromptMeta {
   author?: string | null;
   created?: string | null;
   description?: string | null;
+  /**
+   * Additional frontmatter fields not part of the standard set.
+   * Preserves original types (booleans, numbers, arrays, nested objects).
+   * Populated automatically when frontmatter contains fields beyond
+   * title, description, version, author, and created.
+   */
+  extras?: Record<string, unknown>;
 }
 
 export interface PromptInit {
