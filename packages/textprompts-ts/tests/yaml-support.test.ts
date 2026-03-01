@@ -52,7 +52,10 @@ describe("YAML front matter parsing", () => {
   test("basic YAML front matter", async () => {
     await setup();
     const filePath = join(tempDir, "basic.txt");
-    await writeFile(filePath, "---\ntitle: My Prompt\ndescription: A test\nversion: \"1.0.0\"\n---\n\nHello world!");
+    await writeFile(
+      filePath,
+      "---\ntitle: My Prompt\ndescription: A test\nversion: \"1.0.0\"\n---\n\nHello world!",
+    );
 
     const prompt = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
     expect(prompt.meta?.title).toBe("My Prompt");
@@ -98,7 +101,10 @@ describe("YAML front matter parsing", () => {
   test("YAML with numeric version gets stringified", async () => {
     await setup();
     const filePath = join(tempDir, "numeric.txt");
-    await writeFile(filePath, "---\ntitle: Numeric\ndescription: Test\nversion: 1.0\n---\n\nContent.");
+    await writeFile(
+      filePath,
+      "---\ntitle: Numeric\ndescription: Test\nversion: 1.0\n---\n\nContent.",
+    );
 
     const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
     expect(prompt.meta?.version).toBe("1");
@@ -136,8 +142,12 @@ describe("YAML front matter parsing", () => {
     const filePath = join(tempDir, "minimal.txt");
     await writeFile(filePath, "---\ntitle: Only Title\n---\n\nBody.");
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(InvalidMetadataError);
-    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(/Missing required/);
+    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(
+      InvalidMetadataError,
+    );
+    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(
+      /Missing required/,
+    );
 
     await cleanup();
   });
@@ -145,10 +155,17 @@ describe("YAML front matter parsing", () => {
   test("YAML empty required fields fails in STRICT mode", async () => {
     await setup();
     const filePath = join(tempDir, "empty-fields.txt");
-    await writeFile(filePath, '---\ntitle: ""\ndescription: ""\nversion: ""\n---\n\nBody.');
+    await writeFile(
+      filePath,
+      '---\ntitle: ""\ndescription: ""\nversion: ""\n---\n\nBody.',
+    );
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(InvalidMetadataError);
-    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(/Empty required/);
+    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(
+      InvalidMetadataError,
+    );
+    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(
+      /Empty required/,
+    );
 
     await cleanup();
   });
@@ -208,18 +225,35 @@ describe("parseYaml unit tests", () => {
     expect(() => parseYaml("- item1\n- item2")).toThrow(/must be a mapping/);
   });
 
-  test("rejects nested objects", () => {
-    expect(() => parseYaml("metadata:\n  title: nested")).toThrow(/Nested objects/);
+  test("preserves nested objects", () => {
+    const result = parseYaml("metadata:\n  title: nested");
+    expect(result.metadata).toEqual({ title: "nested" });
   });
 
-  test("stringifies booleans", () => {
+  test("preserves booleans", () => {
     const result = parseYaml("flag: true");
-    expect(result.flag).toBe("true");
+    expect(result.flag).toBe(true);
   });
 
-  test("stringifies numbers", () => {
+  test("preserves numbers", () => {
     const result = parseYaml("count: 42");
-    expect(result.count).toBe("42");
+    expect(result.count).toBe(42);
+  });
+
+  test("converts dates to strings", () => {
+    const result = parseYaml("created: 2024-01-15");
+    expect(typeof result.created).toBe("string");
+    expect(result.created).toBe("2024-01-15");
+  });
+
+  test("preserves arrays of strings", () => {
+    const result = parseYaml("tags:\n  - alpha\n  - beta");
+    expect(result.tags).toEqual(["alpha", "beta"]);
+  });
+
+  test("preserves arrays of objects", () => {
+    const result = parseYaml("triggers:\n  - cron: daily\n  - voice: check");
+    expect(result.triggers).toEqual([{ cron: "daily" }, { voice: "check" }]);
   });
 });
 
@@ -360,8 +394,10 @@ describe("YAML saver", () => {
 describe("mixed format directory loading", () => {
   test("loads directory with both TOML and YAML files", async () => {
     const tempDir = await mkdtemp(join(tmpdir(), "textprompts-mixed-"));
-    const tomlContent = '---\ntitle = "TOML File"\ndescription = "In TOML"\nversion = "1.0.0"\n---\n\nTOML body.';
-    const yamlContent = '---\ntitle: YAML File\ndescription: In YAML\nversion: "1.0.0"\n---\n\nYAML body.';
+    const tomlContent =
+      '---\ntitle = "TOML File"\ndescription = "In TOML"\nversion = "1.0.0"\n---\n\nTOML body.';
+    const yamlContent =
+      '---\ntitle: YAML File\ndescription: In YAML\nversion: "1.0.0"\n---\n\nYAML body.';
 
     await writeFile(join(tempDir, "toml.txt"), tomlContent);
     await writeFile(join(tempDir, "yaml.txt"), yamlContent);
@@ -456,8 +492,8 @@ describe("TOML special characters", () => {
   });
 });
 
-describe("YAML nested object validation", () => {
-  test("nested objects are rejected with clear error", async () => {
+describe("YAML nested object and array support", () => {
+  test("nested objects are captured in extras", async () => {
     const tempDir = await mkdtemp(join(tmpdir(), "textprompts-nested-"));
     const filePath = join(tempDir, "nested.txt");
     await writeFile(
@@ -465,13 +501,14 @@ describe("YAML nested object validation", () => {
       '---\ntitle: Test\nmetadata:\n  nested: value\nversion: "1.0.0"\n---\n\nBody.',
     );
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(InvalidMetadataError);
-    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(/Nested objects/);
+    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    expect(prompt.meta?.title).toBe("Test");
+    expect(prompt.meta?.extras?.metadata).toEqual({ nested: "value" });
 
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  test("arrays with objects are rejected", async () => {
+  test("arrays with objects are captured in extras", async () => {
     const tempDir = await mkdtemp(join(tmpdir(), "textprompts-arr-"));
     const filePath = join(tempDir, "array-obj.txt");
     await writeFile(
@@ -479,7 +516,9 @@ describe("YAML nested object validation", () => {
       '---\ntitle: Test\nitems:\n  - name: item1\nversion: "1.0.0"\n---\n\nBody.',
     );
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(InvalidMetadataError);
+    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    expect(prompt.meta?.title).toBe("Test");
+    expect(prompt.meta?.extras?.items).toEqual([{ name: "item1" }]);
 
     await rm(tempDir, { recursive: true, force: true });
   });

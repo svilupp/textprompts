@@ -37,6 +37,16 @@ export interface LoadPromptsOptions extends LoadPromptOptions {
   maxFiles?: number | null;
 }
 
+const toFastGlobPattern = (pattern: string, recursive: boolean): string => {
+  if (!recursive || pattern.includes("**") || pattern.includes("/")) {
+    return pattern;
+  }
+  if (pattern.startsWith("!")) {
+    return `!**/${pattern.slice(1)}`;
+  }
+  return `**/${pattern}`;
+};
+
 const extractPathsAndOptions = (
   first: string | string[] | undefined,
   rest: Array<string | LoadPromptsOptions>,
@@ -81,6 +91,7 @@ export async function loadPrompts(
 
   const { recursive = false, glob = "*.txt", meta = null, maxFiles = 1000 } = options;
   const resolvedMode = resolveMetadataMode(meta ?? null);
+  const globPattern = toFastGlobPattern(glob, recursive);
 
   const prompts: Prompt[] = [];
   let processed = 0;
@@ -94,7 +105,7 @@ export async function loadPrompts(
     }
 
     if (stats.isDirectory()) {
-      const matches = await fg(glob, {
+      const matches = await fg(globPattern, {
         cwd: entry,
         absolute: true,
         onlyFiles: true,

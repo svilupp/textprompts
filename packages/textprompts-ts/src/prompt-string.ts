@@ -1,5 +1,5 @@
 import { extractPlaceholders, validateFormatArgs } from "./placeholder-utils";
-import { PLACEHOLDER_PATTERN } from "./constants";
+import { ESCAPED_CLOSE, ESCAPED_OPEN, PLACEHOLDER_PATTERN } from "./constants";
 
 export interface FormatCallOptions {
   skipValidation?: boolean;
@@ -10,7 +10,19 @@ export interface FormatOptions extends FormatCallOptions {
   kwargs?: Record<string, unknown>;
 }
 
-const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const countEmptyPlaceholders = (text: string): number => {
+  const temp = text.replaceAll("{{", ESCAPED_OPEN).replaceAll("}}", ESCAPED_CLOSE);
+  let count = 0;
+  let match: RegExpExecArray | null = PLACEHOLDER_PATTERN.exec(temp);
+  while (match) {
+    if (match[1] === "") {
+      count += 1;
+    }
+    match = PLACEHOLDER_PATTERN.exec(temp);
+  }
+  PLACEHOLDER_PATTERN.lastIndex = 0;
+  return count;
+};
 
 export class PromptString {
   readonly value: string;
@@ -54,6 +66,12 @@ export class PromptString {
       return this.partialFormat(args, kwargs, source);
     }
     validateFormatArgs(this.placeholders, args, kwargs, false);
+    const emptyPlaceholderCount = countEmptyPlaceholders(source);
+    if (emptyPlaceholderCount > args.length) {
+      throw new Error(
+        `Missing positional format variables for empty placeholders: expected ${emptyPlaceholderCount}, received ${args.length}`,
+      );
+    }
 
     // Track position for empty placeholders
     let emptyPlaceholderIndex = 0;
@@ -80,18 +98,24 @@ export class PromptString {
     args.forEach((value, index) => {
       merged[String(index)] = value;
     });
-    let result = source;
-    for (const placeholder of this.placeholders) {
-      if (Object.hasOwn(merged, placeholder)) {
-        const value = merged[placeholder];
-        // Skip null/undefined values - leave placeholder unreplaced
-        if (value != null) {
-          const pattern = new RegExp(`\\{${escapeRegExp(placeholder)}(?::[^}]*)?\\}`, "g");
-          result = result.replace(pattern, String(value));
+    let emptyPlaceholderIndex = 0;
+    return source.replace(PLACEHOLDER_PATTERN, (match, key: string) => {
+      if (key === "") {
+        if (emptyPlaceholderIndex >= args.length) {
+          return match;
         }
+        const value = args[emptyPlaceholderIndex];
+        emptyPlaceholderIndex += 1;
+        return value == null ? match : String(value);
       }
-    }
-    return result;
+
+      if (!Object.hasOwn(merged, key)) {
+        return match;
+      }
+
+      const value = merged[key];
+      return value == null ? match : String(value);
+    });
   }
 
   toString(): string {

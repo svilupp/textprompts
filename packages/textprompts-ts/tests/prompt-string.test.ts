@@ -15,4 +15,17 @@ describe("PromptString", () => {
     expect(result).toContain("Bob");
     expect(result).toContain("{status}");
   });
+
+  test("requires enough positional args for repeated empty placeholders", () => {
+    const prompt = new PromptString("{} {}");
+    expect(() => prompt.format(["Alice"])).toThrow(
+      /Missing positional format variables for empty placeholders/,
+    );
+  });
+
+  test("partial formatting fills empty placeholders from args in order", () => {
+    const prompt = new PromptString("{} {} {name}");
+    const result = prompt.format(["Alice"], { name: "Bob" }, { skipValidation: true });
+    expect(result).toBe("Alice {} Bob");
+  });
 });

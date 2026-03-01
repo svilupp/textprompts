@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Optional
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 try:
     import tomllib
@@ -16,6 +16,8 @@ from .models import Prompt, PromptMeta
 from .prompt_string import PromptString
 
 DELIM = "---"
+
+_KNOWN_FIELDS = frozenset({"title", "description", "version", "author", "created"})
 
 
 def _split_front_matter(text: str) -> tuple[Optional[str], str]:
@@ -42,36 +44,64 @@ def _split_front_matter(text: str) -> tuple[Optional[str], str]:
 
 
 def _normalize_yaml_values(data: dict[str, Any]) -> dict[str, Any]:
-    """Normalize YAML-parsed values to match expected types.
+    """Normalize YAML-parsed values.
 
-    YAML auto-converts some values (e.g. dates become date objects,
-    unquoted numbers become floats). This normalizes them to strings
-    where the metadata model expects strings.
+    Converts Date instances to appropriate types. All other values
+    (strings, booleans, numbers, arrays, nested objects) are preserved
+    as-is — type coercion for known fields happens downstream in
+    _ensure_prompt_meta.
     """
-    normalized = {}
+    normalized: dict[str, Any] = {}
     for key, value in data.items():
         if isinstance(value, date) and key in {"created"}:
             # Keep date objects for the 'created' field
             normalized[key] = value
-        elif isinstance(value, (date, bool)):
-            # Convert dates in non-date fields and booleans to strings
+        elif isinstance(value, date):
+            # Convert dates in non-date fields to strings
             normalized[key] = str(value)
-        elif isinstance(value, (int, float)):
-            # Convert numbers to strings (e.g. version: 1.0 -> "1.0")
-            normalized[key] = str(value)
-        elif isinstance(value, dict):
-            # Reject nested objects
-            raise InvalidMetadataError(
-                f"Nested objects not supported in front matter metadata: "
-                f"'{key}' contains a nested object. "
-                f"Use flat key-value pairs only."
-            )
-        elif isinstance(value, list):
-            # Allow lists as-is (pydantic will validate)
-            normalized[key] = value
         else:
             normalized[key] = value
     return normalized
+
+
+def _coerce_to_string(value: Any) -> Optional[str]:
+    """Coerce a value to string for known PromptMeta fields."""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, date):
+        return str(value)
+    if value is None:
+        return None
+    return str(value)
+
+
+def _ensure_prompt_meta(data: dict[str, Any]) -> PromptMeta:
+    """Extract known fields (with coercion) and collect extras."""
+    known: dict[str, Any] = {}
+
+    # Extract known fields with string coercion
+    for key in _KNOWN_FIELDS:
+        value = data.get(key)
+        if value is None:
+            continue
+        if key == "created":
+            # Keep date objects for the created field
+            if isinstance(value, date):
+                known[key] = value
+            else:
+                known[key] = _coerce_to_string(value)
+        else:
+            known[key] = _coerce_to_string(value)
+
+    # Collect all non-standard fields into extras, preserving original types
+    extras: dict[str, Any] = {}
+    for key, value in data.items():
+        if key not in _KNOWN_FIELDS:
+            extras[key] = value
+    if extras:
+        known["extras"] = extras
+
+    return PromptMeta.model_validate(known)
 
 
 def _parse_header(header_txt: str) -> dict[str, Any]:
@@ -190,8 +220,8 @@ def parse_file(path: Path, *, metadata_mode: MetadataMode) -> Prompt:
                         f"Use meta=MetadataMode.ALLOW for less strict validation."
                     )
 
-            # For both STRICT and ALLOW modes, validate the data structure
-            meta = PromptMeta.model_validate(data)
+            # Extract known fields + extras
+            meta = _ensure_prompt_meta(data)
 
         except InvalidMetadataError:
             raise

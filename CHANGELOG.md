@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go implementation of textprompts (`packages/textprompts-go`)
 - Go CI workflow with tests across Go 1.21, 1.22, 1.23
 
+## [1.3.0] - 2026-03-01
+
+### Added
+- Custom frontmatter fields preserved in `prompt.meta.extras` dict (previously dropped silently)
+
 ## [1.2.0] - 2026-02-14
 
 ### Added
