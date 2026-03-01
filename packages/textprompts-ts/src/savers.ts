@@ -22,19 +22,12 @@ const quoteYaml = (value: string | null | undefined): string => {
   if (value == null || value === "") {
     return '""';
   }
-  const needsQuoting =
-    /[:#{}[\],&*?|<>=!%@\\\n\r"]/.test(value) ||
-    value !== value.trim() ||
-    ["true", "false", "yes", "no", "null", "on", "off"].includes(value.toLowerCase());
-  if (needsQuoting) {
-    const escaped = value
-      .replace(/\\/g, "\\\\")
-      .replace(/"/g, '\\"')
-      .replace(/\n/g, "\\n")
-      .replace(/\r/g, "\\r");
-    return `"${escaped}"`;
-  }
-  return value;
+  const escaped = value
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r");
+  return `"${escaped}"`;
 };
 
 /**
@@ -76,21 +69,19 @@ const serializeExtrasForToml = (key: string, value: unknown): string | null => {
     return `${key} = ${value}`;
   }
   if (Array.isArray(value)) {
-    const allStrings = value.every((v) => typeof v === "string");
-    if (allStrings) {
+    if (value.every((v) => typeof v === "string")) {
       const items = value.map((v) => `"${serializeMetaValue(v)}"`).join(", ");
       return `${key} = [${items}]`;
     }
-    const allPrimitives = value.every(
-      (v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean",
-    );
-    if (allPrimitives) {
-      const items = value
-        .map((v) => (typeof v === "string" ? `"${serializeMetaValue(v)}"` : String(v)))
-        .join(", ");
+    if (value.every((v) => typeof v === "number")) {
+      const items = value.map((v) => String(v)).join(", ");
       return `${key} = [${items}]`;
     }
-    // Complex arrays — skip for TOML, these need YAML format
+    if (value.every((v) => typeof v === "boolean")) {
+      const items = value.map((v) => String(v)).join(", ");
+      return `${key} = [${items}]`;
+    }
+    // Mixed-type or complex arrays — skip for TOML, these need YAML format
     return null;
   }
   // Nested objects — skip for TOML

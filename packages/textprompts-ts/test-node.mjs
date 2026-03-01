@@ -73,7 +73,7 @@ Hello {user}!`);
   try {
     const { rmSync } = await import("fs");
     rmSync(testDir, { recursive: true, force: true });
-  } catch (e) {
+  } catch {
     // Ignore cleanup errors
   }
 }

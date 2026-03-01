@@ -3,6 +3,10 @@ import { resolve } from "node:path";
 import type { MetadataMode } from "./config";
 import { PromptString } from "./prompt-string";
 
+const isFormatCallOptions = (value: unknown): value is Parameters<PromptString["format"]>[1] => {
+  return typeof value === "object" && value !== null && "skipValidation" in value;
+};
+
 export interface PromptMeta {
   title?: string | null;
   version?: string | null;
@@ -78,7 +82,15 @@ export class Prompt {
     arg1?: Record<string, unknown> | Parameters<PromptString["format"]>[1],
     arg2?: Parameters<PromptString["format"]>[2],
   ): string {
-    return this.prompt.format(arg0 as any, arg1 as any, arg2);
+    if (Array.isArray(arg0)) {
+      const kwargs = arg1 && !isFormatCallOptions(arg1) ? arg1 : undefined;
+      const options = isFormatCallOptions(arg1) ? arg1 : arg2;
+      return this.prompt.format(arg0, kwargs, options);
+    }
+    if (arg0 === undefined) {
+      return this.prompt.format({});
+    }
+    return this.prompt.format(arg0, arg1 as Parameters<PromptString["format"]>[1]);
   }
 
   get length(): number {

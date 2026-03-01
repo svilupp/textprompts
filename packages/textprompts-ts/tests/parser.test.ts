@@ -5,7 +5,7 @@ import { tmpdir } from "os";
 
 import { loadPrompt } from "../src/loaders";
 import { MetadataMode } from "../src/config";
-import { InvalidMetadataError, MalformedHeaderError } from "../src/errors";
+import { InvalidMetadataError } from "../src/errors";
 
 describe("parser edge cases", () => {
   let tempDir: string;
@@ -80,6 +80,36 @@ describe("parser edge cases", () => {
     const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
     expect(prompt.prompt.toString()).toContain("---");
     expect(prompt.prompt.toString()).toContain("More dashes");
+
+    await cleanupTempDir();
+  });
+
+  test("front-matter supports TOML values containing delimiter text", async () => {
+    await createTempDir();
+    const filePath = join(tempDir, "delimiter-in-toml-value.txt");
+    await writeFile(
+      filePath,
+      '---\ntitle = "A --- B"\ndescription = "Contains delimiter"\nversion = "1.0.0"\n---\n\nBody.',
+    );
+
+    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    expect(prompt.meta?.title).toBe("A --- B");
+    expect(prompt.prompt.toString()).toBe("Body.");
+
+    await cleanupTempDir();
+  });
+
+  test("front-matter supports YAML values containing delimiter text", async () => {
+    await createTempDir();
+    const filePath = join(tempDir, "delimiter-in-yaml-value.txt");
+    await writeFile(
+      filePath,
+      '---\ntitle: "A --- B"\ndescription: Contains delimiter\nversion: "1.0.0"\n---\n\nBody.',
+    );
+
+    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    expect(prompt.meta?.title).toBe("A --- B");
+    expect(prompt.prompt.toString()).toBe("Body.");
 
     await cleanupTempDir();
   });

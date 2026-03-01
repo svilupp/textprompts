@@ -43,16 +43,23 @@ const dedent = (input: string): string => {
 };
 
 const splitFrontMatter = (text: string): { header: string | null; body: string } => {
-  if (!text.startsWith(DELIM)) {
-    return { header: null, body: text };
+  const normalized = text.replace(/\r\n?/g, "\n");
+  if (!normalized.startsWith(DELIM)) {
+    return { header: null, body: normalized };
   }
-  const secondIndex = text.indexOf(DELIM, DELIM.length);
-  if (secondIndex === -1) {
+  if (normalized.length > DELIM.length && normalized[DELIM.length] !== "\n") {
+    throw new MalformedHeaderError("Opening delimiter '---' must be on its own line");
+  }
+  const lines = normalized.split("\n");
+  const closingLineIndex = lines.findIndex((line, index) => index > 0 && line === DELIM);
+  if (closingLineIndex === -1) {
     throw new MalformedHeaderError("Missing closing delimiter '---' for front matter");
   }
-  const header = text.slice(DELIM.length, secondIndex).trim();
-  let body = text.slice(secondIndex + DELIM.length);
-  body = body.replace(/^\r?\n/, "");
+  const header = lines.slice(1, closingLineIndex).join("\n").trim();
+  let body = lines.slice(closingLineIndex + 1).join("\n");
+  if (body.startsWith("\n")) {
+    body = body.slice(1);
+  }
   return { header, body };
 };
 

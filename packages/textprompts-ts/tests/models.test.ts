@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "path";
 
-import { Prompt, PromptMeta } from "../src/models";
+import { Prompt } from "../src/models";
 import { PromptString } from "../src/prompt-string";
 import { MetadataMode } from "../src/config";
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import { mkdtemp, rm, writeFile } from "fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 
 import { MetadataMode } from "../src/config";
@@ -47,9 +47,15 @@ describe("loaders", () => {
   test("loadPrompts enforces recursive depth", async () => {
     const tempDir = await mkdtemp(join(tmpdir(), "textprompts-test-"));
     await writeFile(join(tempDir, "root.txt"), "Root content");
+    const nestedDir = join(tempDir, "nested");
+    await mkdir(nestedDir, { recursive: true });
+    await writeFile(join(nestedDir, "child.txt"), "Child content");
 
     const nonRecursive = await loadPrompts(tempDir, { recursive: false, meta: MetadataMode.IGNORE });
     expect(nonRecursive.length).toBe(1);
+
+    const recursive = await loadPrompts(tempDir, { recursive: true, meta: MetadataMode.IGNORE });
+    expect(recursive.length).toBe(2);
 
     await rm(tempDir, { recursive: true, force: true });
   });

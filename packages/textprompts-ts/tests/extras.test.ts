@@ -548,6 +548,36 @@ describe("extras: YAML save round-trip", () => {
     await cleanup();
   });
 
+  test("string extras that look numeric stay strings in YAML round-trip", async () => {
+    await setup();
+    const filePath = join(tempDir, "test.txt");
+    const prompt = new Prompt({
+      path: filePath,
+      meta: {
+        title: "Skill",
+        description: "A skill",
+        version: "1.0.0",
+        extras: {
+          code: "42",
+          zip: "00123",
+          decimal: "3.14",
+        },
+      },
+      prompt: new PromptString("Body."),
+    });
+
+    await savePrompt(filePath, prompt, { format: "yaml" });
+    const loaded = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    expect(loaded.meta?.extras?.code).toBe("42");
+    expect(loaded.meta?.extras?.zip).toBe("00123");
+    expect(loaded.meta?.extras?.decimal).toBe("3.14");
+    expect(typeof loaded.meta?.extras?.code).toBe("string");
+    expect(typeof loaded.meta?.extras?.zip).toBe("string");
+    expect(typeof loaded.meta?.extras?.decimal).toBe("string");
+
+    await cleanup();
+  });
+
   test("nested object extras round-trip via YAML", async () => {
     await setup();
     const filePath = join(tempDir, "test.txt");
@@ -602,6 +632,31 @@ describe("extras: YAML save round-trip", () => {
     expect(loaded.meta?.extras?.flag).toBe(true);
     expect(loaded.meta?.extras?.count).toBe(42);
     expect(loaded.meta?.extras?.tags).toEqual(["a", "b"]);
+
+    await cleanup();
+  });
+
+  test("TOML save skips mixed-type extras arrays", async () => {
+    await setup();
+    const filePath = join(tempDir, "test.txt");
+    const prompt = new Prompt({
+      path: filePath,
+      meta: {
+        title: "Skill",
+        description: "A skill",
+        version: "1.0.0",
+        extras: {
+          mixed: ["alpha", 42, true],
+          keep: ["x", "y"],
+        },
+      },
+      prompt: new PromptString("Body."),
+    });
+
+    await savePrompt(filePath, prompt); // default TOML format
+    const loaded = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    expect(loaded.meta?.extras?.mixed).toBeUndefined();
+    expect(loaded.meta?.extras?.keep).toEqual(["x", "y"]);
 
     await cleanup();
   });
