@@ -1,8 +1,10 @@
+from pathlib import Path
+
 from textprompts.models import Prompt, PromptMeta
 from textprompts.prompt_string import PromptString
 
 
-def test_prompt_dunder_methods(tmp_path):
+def test_prompt_dunder_methods(tmp_path: Path) -> None:
     path = tmp_path / "test.txt"
     prompt = Prompt(
         path=path, meta=PromptMeta(title="T"), prompt=PromptString("Hello {name}")
@@ -31,6 +33,6 @@ def test_prompt_dunder_methods(tmp_path):
     assert prompt.format(name="Bob") == "Hello Bob"
 
 
-def test_prompt_repr_path_only(tmp_path):
+def test_prompt_repr_path_only(tmp_path: Path) -> None:
     p = Prompt(path=tmp_path / "x.txt", meta=None, prompt=PromptString("hi"))
     assert "path" in repr(p)

@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Optional
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 try:
     import tomllib
@@ -51,7 +51,7 @@ def _normalize_yaml_values(data: dict[str, Any]) -> dict[str, Any]:
     as-is — type coercion for known fields happens downstream in
     _ensure_prompt_meta.
     """
-    normalized = {}
+    normalized: dict[str, Any] = {}
     for key, value in data.items():
         if isinstance(value, date) and key in {"created"}:
             # Keep date objects for the 'created' field

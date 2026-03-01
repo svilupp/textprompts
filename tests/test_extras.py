@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from textprompts import PromptString, load_prompt, save_prompt
 from textprompts.models import Prompt, PromptMeta
 
@@ -196,6 +194,7 @@ Run tests."""
         )
         prompt = load_prompt(fp, meta="allow")
         assert prompt.meta is not None
+        assert prompt.meta.extras is not None
         hooks = prompt.meta.extras["hooks"]
         assert hooks["pre-tool-use"] == {"command": "echo before"}
         assert hooks["post-tool-use"] == {"command": "echo after"}
@@ -216,6 +215,7 @@ Check inventory levels."""
         )
         prompt = load_prompt(fp, meta="allow")
         assert prompt.meta is not None
+        assert prompt.meta.extras is not None
         assert prompt.meta.extras["permissions"] == [
             "shopify:read_products",
             "shopify:read_inventory",
@@ -237,6 +237,7 @@ Instructions here."""
         )
         prompt = load_prompt(fp, meta="allow")
         assert prompt.meta is not None
+        assert prompt.meta.extras is not None
         assert prompt.meta.extras["triggers"] == [
             {"cron": "0 9 * * 1"},
             {"voice": "check my inventory"},

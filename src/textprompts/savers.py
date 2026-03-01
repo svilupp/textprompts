@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Any, Literal, Union
+from typing import Any, Literal, Union, cast
 
-import yaml as yaml_lib
+import yaml as yaml_lib  # type: ignore[import-untyped]
 
 from .models import Prompt, PromptMeta
 
@@ -88,7 +88,7 @@ def _serialize_extras_yaml(key: str, value: Any) -> str:
         return f"{key}: {value}"
     # For arrays and objects, use the yaml library
     serialized = yaml_lib.dump({key: value}, default_flow_style=False).strip()
-    return serialized
+    return cast(str, serialized)
 
 
 def _serialize_extras_toml(key: str, value: Any) -> Union[str, None]:

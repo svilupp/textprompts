@@ -1,7 +1,7 @@
 import importlib
 from pathlib import Path
 
-import pytest  # type: ignore
+import pytest
 
 from textprompts.models import Prompt
 
