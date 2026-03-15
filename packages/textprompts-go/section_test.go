@@ -823,12 +823,7 @@ func normalizeLinks(links []Link) []sharedLink {
 
 	normalized := make([]sharedLink, 0, len(links))
 	for _, link := range links {
-		normalized = append(normalized, sharedLink{
-			Target:   link.Target,
-			Fragment: link.Fragment,
-			Label:    link.Label,
-			Line:     link.Line,
-		})
+		normalized = append(normalized, sharedLink(link))
 	}
 
 	return normalized
