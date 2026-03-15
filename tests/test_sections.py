@@ -14,7 +14,9 @@ from textprompts.sections import (
 
 
 def _shared_cases() -> list[dict[str, Any]]:
-    fixture_path = Path(__file__).resolve().parents[1] / "testdata" / "sections" / "cases.json"
+    fixture_path = (
+        Path(__file__).resolve().parents[1] / "testdata" / "sections" / "cases.json"
+    )
     return json.loads(fixture_path.read_text(encoding="utf-8"))
 
 
@@ -175,7 +177,7 @@ def test_parse_sections_adversarial_corpus() -> None:
     cases = [
         {
             "doc": (
-                "<a id=\"explicit-one\"></a>\n"
+                '<a id="explicit-one"></a>\n'
                 "## First\n\n"
                 "## Second {#attr-two}\n\n"
                 "<!-- @id:comment-three -->\n"
@@ -194,7 +196,7 @@ def test_parse_sections_adversarial_corpus() -> None:
             "doc": (
                 "<prompt>\n"
                 "## Overview\n"
-                "<examples id=\"worked-examples\">\n"
+                '<examples id="worked-examples">\n'
                 "Example.\n"
                 "</examples>\n"
                 "</prompt>"

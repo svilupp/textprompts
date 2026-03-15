@@ -97,7 +97,9 @@ _RE_HEADING = re.compile(r"^\s{0,3}(#{1,6})[ \t]+(.+?)\s*$")
 _RE_ATTR_ID = re.compile(r"\s+\{#([a-zA-Z0-9._-]+)\}\s*$")
 _RE_XML_COMMENT = re.compile(r"^\s*<!--\s*@id:([a-zA-Z0-9._-]+)\s*-->\s*$")
 _RE_OPEN_TAG = re.compile(r"^\s*<([A-Za-z][A-Za-z0-9:._-]*)([^>]*)>")
-_RE_TAG_ATTR = re.compile(r"([A-Za-z_:][A-Za-z0-9:._-]*)\s*=\s*(\"([^\"]*)\"|'([^']*)')")
+_RE_TAG_ATTR = re.compile(
+    r"([A-Za-z_:][A-Za-z0-9:._-]*)\s*=\s*(\"([^\"]*)\"|'([^']*)')"
+)
 _RE_MARKDOWN_LINK = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
 _RE_MD_FORMATTING = re.compile(r"[*_~`]")
 _RE_LINK_INLINE = re.compile(r"\[([^\]]*)\]\([^)]+\)")
@@ -232,7 +234,9 @@ def parse_sections(text: str | bytes | bytearray) -> ParseResult:
                         parent_idx=parent_idx,
                     ),
                 )
-                _register_anchor(result, used_anchor_ids, anchor_id, section_idx, explicit)
+                _register_anchor(
+                    result, used_anchor_ids, anchor_id, section_idx, explicit
+                )
                 stack.append(
                     _SectionState(
                         idx=section_idx,
@@ -323,7 +327,9 @@ def parse_sections(text: str | bytes | bytearray) -> ParseResult:
         )
 
     if not result.sections:
-        _maybe_append_preamble(result, lines, body_start_line, len(lines), anchor_only_lines)
+        _maybe_append_preamble(
+            result, lines, body_start_line, len(lines), anchor_only_lines
+        )
     elif gap_start <= len(lines):
         _maybe_append_preamble(result, lines, gap_start, len(lines), anchor_only_lines)
 
@@ -359,15 +365,17 @@ def inject_anchors(text: str | bytes | bytearray) -> tuple[str, ParseResult]:
         if section.kind != SECTION_KIND_MARKDOWN:
             continue
 
-        heading_idx = _find_markdown_heading_line(lines, section.start_line, section.end_line)
+        heading_idx = _find_markdown_heading_line(
+            lines, section.start_line, section.end_line
+        )
         if heading_idx < 0:
             continue
 
         if heading_idx > 0:
             prev_line = lines[heading_idx - 1].strip()
-            if _parse_standalone_anchor_tag(prev_line)[1] or _extract_xml_comment_anchor(
-                prev_line
-            ):
+            if _parse_standalone_anchor_tag(prev_line)[
+                1
+            ] or _extract_xml_comment_anchor(prev_line):
                 continue
 
         _, _, attr_id, ok = _parse_markdown_heading(lines[heading_idx])
@@ -492,7 +500,9 @@ def _collect_xml_blocks(
         search_from = 0
         while stack:
             top = stack[-1]
-            close_start, found = _find_closing_tag_start(line, top.tag_name, search_from)
+            close_start, found = _find_closing_tag_start(
+                line, top.tag_name, search_from
+            )
             if not found:
                 break
             blocks.append(
@@ -509,7 +519,9 @@ def _collect_xml_blocks(
             stack.pop()
             search_from = close_start + 1
 
-    blocks.sort(key=lambda block: (block.start_line, -block.end_line, block.open_end_col))
+    blocks.sort(
+        key=lambda block: (block.start_line, -block.end_line, block.open_end_col)
+    )
     return blocks, unclosed
 
 
@@ -630,7 +642,9 @@ def _merge_pending_anchor(
 ) -> _PendingAnchor:
     if existing is None:
         return _PendingAnchor(id=anchor_id, start_line=line_num, end_line=line_num)
-    return _PendingAnchor(id=anchor_id, start_line=existing.start_line, end_line=line_num)
+    return _PendingAnchor(
+        id=anchor_id, start_line=existing.start_line, end_line=line_num
+    )
 
 
 def _resolve_section_anchor(
@@ -978,7 +992,9 @@ def _window_has_content(
     return False
 
 
-def _find_closing_tag_start(line: str, tag_name: str, from_col: int) -> tuple[int, bool]:
+def _find_closing_tag_start(
+    line: str, tag_name: str, from_col: int
+) -> tuple[int, bool]:
     start, _, found = _find_closing_tag_range(line, tag_name, from_col)
     return start, found
 
@@ -1011,7 +1027,9 @@ def _section_depth(sections: list[Section], idx: int) -> int:
 
 
 def _count_renderable_sections(result: ParseResult) -> int:
-    return sum(1 for section in result.sections if section.kind != SECTION_KIND_PREAMBLE)
+    return sum(
+        1 for section in result.sections if section.kind != SECTION_KIND_PREAMBLE
+    )
 
 
 def _find_markdown_heading_line(

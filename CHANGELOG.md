@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2026-03-15
 
 ### Added
-- Go package and CI
 - Python section parsing APIs: `parse_sections()`, `generate_slug()`, `inject_anchors()`, and `render_toc()`
 - Shared cross-language section parser corpus under `testdata/sections`
 
