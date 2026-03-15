@@ -156,6 +156,32 @@ partial = template.format(name="Alice", skip_validation=True)
 print(partial)  # "Hello Alice, you are {age} years old"
 ```
 
+### Section Parsing APIs
+
+Parse prompt structure directly from text without loading a `Prompt`.
+
+**Functions:**
+- `parse_sections(text: str | bytes) -> ParseResult`
+- `generate_slug(heading: str) -> str`
+- `inject_anchors(text: str | bytes) -> tuple[str, ParseResult]`
+- `render_toc(result: ParseResult, path: str) -> str`
+
+**ParseResult fields:**
+- `sections`: Ordered section tree with `kind`, `tag_name`, `heading`, `anchor_id`, `level`, `start_line`, `end_line`, `char_count`, `parent_idx`, `children`, and `links`
+- `anchors`: Canonical anchor id to first section index
+- `duplicate_anchors`: Explicit duplicate anchors preserved by the parser
+- `frontmatter`: Detected YAML/TOML frontmatter block, if present
+- `total_chars`: UTF-8 byte count of the body after frontmatter
+
+**Example:**
+```python
+from textprompts import parse_sections, render_toc
+
+result = parse_sections("## Intro\n\nSee [Docs](#docs).")
+print(result.sections[0].links[0].fragment)  # "docs"
+print(render_toc(result, "prompt.txt"))
+```
+
 ## Exception Classes
 
 ### `TextPromptsError`

@@ -1,0 +1,456 @@
+[
+  {
+    "name": "markdown-hierarchy",
+    "document": "# Title\n\nSome intro text.\n\n## Section One\n\nContent of section one.\n\n## Section Two\n\nContent of section two.\n\n### Subsection\n\nNested content.",
+    "expected": {
+      "sections": [
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "Title",
+          "anchorId": "title",
+          "level": 1,
+          "startLine": 1,
+          "endLine": 15,
+          "parentIdx": -1,
+          "children": [1, 2],
+          "charCount": 132,
+          "links": []
+        },
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "Section One",
+          "anchorId": "section-one",
+          "level": 2,
+          "startLine": 5,
+          "endLine": 8,
+          "parentIdx": 0,
+          "children": [],
+          "charCount": 25,
+          "links": []
+        },
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "Section Two",
+          "anchorId": "section-two",
+          "level": 2,
+          "startLine": 9,
+          "endLine": 15,
+          "parentIdx": 0,
+          "children": [3],
+          "charCount": 57,
+          "links": []
+        },
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "Subsection",
+          "anchorId": "subsection",
+          "level": 3,
+          "startLine": 13,
+          "endLine": 15,
+          "parentIdx": 2,
+          "children": [],
+          "charCount": 16,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "title": 0,
+        "section-one": 1,
+        "section-two": 2,
+        "subsection": 3
+      },
+      "duplicateAnchors": {},
+      "frontmatter": null,
+      "totalChars": 140
+    }
+  },
+  {
+    "name": "preamble-before-first-section",
+    "document": "Some content before any heading.\n\nMore preamble.\n\n## First Heading\n\nContent.",
+    "expected": {
+      "sections": [
+        {
+          "kind": "preamble",
+          "tagName": "",
+          "heading": "",
+          "anchorId": "",
+          "level": 0,
+          "startLine": 1,
+          "endLine": 4,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 49,
+          "links": []
+        },
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "First Heading",
+          "anchorId": "first-heading",
+          "level": 2,
+          "startLine": 5,
+          "endLine": 7,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 9,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "first-heading": 1
+      },
+      "duplicateAnchors": {},
+      "frontmatter": null,
+      "totalChars": 76
+    }
+  },
+  {
+    "name": "explicit-anchor-char-count-excludes-heading",
+    "document": "<a id=\"custom-id\"></a>\n## My Section\n\nBody.",
+    "expected": {
+      "sections": [
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "My Section",
+          "anchorId": "custom-id",
+          "level": 2,
+          "startLine": 1,
+          "endLine": 4,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 6,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "custom-id": 0
+      },
+      "duplicateAnchors": {},
+      "frontmatter": null,
+      "totalChars": 43
+    }
+  },
+  {
+    "name": "closed-xml-sections-become-real-sections",
+    "document": "<section id=\"data-flow\">\n## Data Flow\n\nContent.\n</section>",
+    "expected": {
+      "sections": [
+        {
+          "kind": "xml",
+          "tagName": "section",
+          "heading": "Data Flow",
+          "anchorId": "data-flow",
+          "level": 1,
+          "startLine": 1,
+          "endLine": 5,
+          "parentIdx": -1,
+          "children": [1],
+          "charCount": 24,
+          "links": []
+        },
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "Data Flow",
+          "anchorId": "data-flow-2",
+          "level": 2,
+          "startLine": 2,
+          "endLine": 5,
+          "parentIdx": 0,
+          "children": [],
+          "charCount": 10,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "data-flow": 0,
+        "data-flow-2": 1
+      },
+      "duplicateAnchors": {},
+      "frontmatter": null,
+      "totalChars": 58
+    }
+  },
+  {
+    "name": "generic-xml-sections-support-derived-headings",
+    "document": "<instructions>\nFollow the instructions carefully.\n</instructions>\n\n<examples title=\"Worked Example\">Example.</examples>",
+    "expected": {
+      "sections": [
+        {
+          "kind": "xml",
+          "tagName": "instructions",
+          "heading": "Instructions",
+          "anchorId": "instructions",
+          "level": 1,
+          "startLine": 1,
+          "endLine": 3,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 36,
+          "links": []
+        },
+        {
+          "kind": "xml",
+          "tagName": "examples",
+          "heading": "Worked Example",
+          "anchorId": "worked-example",
+          "level": 1,
+          "startLine": 5,
+          "endLine": 5,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 8,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "instructions": 0,
+        "worked-example": 1
+      },
+      "duplicateAnchors": {},
+      "frontmatter": null,
+      "totalChars": 119
+    }
+  },
+  {
+    "name": "nested-xml-outer-first",
+    "document": "<prompt id=\"prompt-root\">\n<section id=\"inner-one\">\nInner one.\n</section>\n<section id=\"inner-two\">\nInner two.\n</section>\n</prompt>",
+    "expected": {
+      "sections": [
+        {
+          "kind": "xml",
+          "tagName": "prompt",
+          "heading": "Prompt Root",
+          "anchorId": "prompt-root",
+          "level": 1,
+          "startLine": 1,
+          "endLine": 8,
+          "parentIdx": -1,
+          "children": [1, 2],
+          "charCount": 95,
+          "links": []
+        },
+        {
+          "kind": "xml",
+          "tagName": "section",
+          "heading": "Inner One",
+          "anchorId": "inner-one",
+          "level": 2,
+          "startLine": 2,
+          "endLine": 4,
+          "parentIdx": 0,
+          "children": [],
+          "charCount": 12,
+          "links": []
+        },
+        {
+          "kind": "xml",
+          "tagName": "section",
+          "heading": "Inner Two",
+          "anchorId": "inner-two",
+          "level": 2,
+          "startLine": 5,
+          "endLine": 7,
+          "parentIdx": 0,
+          "children": [],
+          "charCount": 12,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "prompt-root": 0,
+        "inner-one": 1,
+        "inner-two": 2
+      },
+      "duplicateAnchors": {},
+      "frontmatter": null,
+      "totalChars": 129
+    }
+  },
+  {
+    "name": "unclosed-xml-falls-back-to-pending-anchor",
+    "document": "<section id=\"custom-id\">\n## Heading\n\nBody.",
+    "expected": {
+      "sections": [
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "Heading",
+          "anchorId": "custom-id",
+          "level": 2,
+          "startLine": 1,
+          "endLine": 4,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 6,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "custom-id": 0
+      },
+      "duplicateAnchors": {},
+      "frontmatter": null,
+      "totalChars": 42
+    }
+  },
+  {
+    "name": "ignores-code-fences",
+    "document": "```xml\n<section id=\"ignored\">\n## Also Ignored\n</section>\n```\n\n## Real Heading\n\nBody.",
+    "expected": {
+      "sections": [
+        {
+          "kind": "preamble",
+          "tagName": "",
+          "heading": "",
+          "anchorId": "",
+          "level": 0,
+          "startLine": 1,
+          "endLine": 6,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 61,
+          "links": []
+        },
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "Real Heading",
+          "anchorId": "real-heading",
+          "level": 2,
+          "startLine": 7,
+          "endLine": 9,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 6,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "real-heading": 1
+      },
+      "duplicateAnchors": {},
+      "frontmatter": null,
+      "totalChars": 84
+    }
+  },
+  {
+    "name": "alternate-anchor-syntax-and-heading-cleanup",
+    "document": "<a class=\"x\" name='named-anchor'></a>\n   ## Heading ##",
+    "expected": {
+      "sections": [
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "Heading",
+          "anchorId": "named-anchor",
+          "level": 2,
+          "startLine": 1,
+          "endLine": 2,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 0,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "named-anchor": 0
+      },
+      "duplicateAnchors": {},
+      "frontmatter": null,
+      "totalChars": 54
+    }
+  },
+  {
+    "name": "interstitial-top-level-gap-becomes-preamble",
+    "document": "<section id=\"outer\">\nBody.\n</section>\n\nLoose text.\n\n## Next\n\nBody.",
+    "expected": {
+      "sections": [
+        {
+          "kind": "xml",
+          "tagName": "section",
+          "heading": "Outer",
+          "anchorId": "outer",
+          "level": 1,
+          "startLine": 1,
+          "endLine": 3,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 7,
+          "links": []
+        },
+        {
+          "kind": "preamble",
+          "tagName": "",
+          "heading": "",
+          "anchorId": "",
+          "level": 0,
+          "startLine": 4,
+          "endLine": 6,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 13,
+          "links": []
+        },
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "Next",
+          "anchorId": "next",
+          "level": 2,
+          "startLine": 7,
+          "endLine": 9,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 6,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "outer": 0,
+        "next": 2
+      },
+      "duplicateAnchors": {},
+      "frontmatter": null,
+      "totalChars": 66
+    }
+  },
+  {
+    "name": "frontmatter-and-total-chars",
+    "document": "---\ntitle: My Document\ntags: [memory, retrieval]\n---\n\n## First Section\n\nContent.",
+    "expected": {
+      "sections": [
+        {
+          "kind": "markdown",
+          "tagName": "",
+          "heading": "First Section",
+          "anchorId": "first-section",
+          "level": 2,
+          "startLine": 6,
+          "endLine": 8,
+          "parentIdx": -1,
+          "children": [],
+          "charCount": 9,
+          "links": []
+        }
+      ],
+      "anchors": {
+        "first-section": 0
+      },
+      "duplicateAnchors": {},
+      "frontmatter": {
+        "raw": "title: My Document\ntags: [memory, retrieval]",
+        "format": "yaml",
+        "startLine": 1,
+        "endLine": 4,
+        "title": "My Document"
+      },
+      "totalChars": 27
+    }
+  }
+]

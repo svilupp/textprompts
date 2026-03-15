@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-03-15
+
 ### Added
-- Go implementation of textprompts (`packages/textprompts-go`)
-- Go CI workflow with tests across Go 1.21, 1.22, 1.23
+- Go package and CI
+- Python section parsing APIs: `parse_sections()`, `generate_slug()`, `inject_anchors()`, and `render_toc()`
+- Shared cross-language section parser corpus under `testdata/sections`
 
 ## [1.3.0] - 2026-03-01
 

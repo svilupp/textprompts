@@ -433,6 +433,27 @@ async function savePrompt(
 - `path`: Path to save the prompt file
 - `content`: Either a string (creates template with required fields) or a `Prompt` object
 
+### `parseSections(text)` and section utilities
+
+Parse mixed Markdown/XML prompt structure directly from a string or `Uint8Array`.
+
+- `parseSections(text)`: Returns a `ParseResult` with `sections`, `anchors`, `duplicateAnchors`, `frontmatter`, and `totalChars`
+- `generateSlug(heading)`: Creates the same auto-anchor slug used by the parser
+- `injectAnchors(text)`: Inserts missing `<a id="..."></a>` lines before Markdown headings
+- `renderToc(result, path)`: Renders a human-readable table of contents
+
+```typescript
+import { injectAnchors, parseSections, renderToc } from "textprompts";
+
+const result = parseSections("## Intro\n\nBody.");
+console.log(result.sections[0].anchorId); // "intro"
+
+const anchored = injectAnchors("## Intro\n\nBody.");
+console.log(anchored.text); // <a id="intro"></a>\n## Intro...
+
+console.log(renderToc(anchored.result, "prompt.txt"));
+```
+
 ### `PromptString`
 
 A string wrapper that validates `format()` calls:

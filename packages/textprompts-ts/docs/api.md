@@ -149,6 +149,37 @@ await savePrompt("greeting.txt", prompt, { format: "yaml" });
 
 ---
 
+### `parseSections()`
+
+Parse mixed Markdown/XML prompt structure directly from text.
+
+```typescript
+function parseSections(text: string | Uint8Array): ParseResult
+```
+
+**Returns:** `ParseResult` with:
+- `sections`: Ordered section tree with `kind`, `tagName`, `heading`, `anchorId`, `level`, `startLine`, `endLine`, `charCount`, `parentIdx`, `children`, and `links`
+- `anchors`: Canonical anchor id to first section index
+- `duplicateAnchors`: Explicit duplicate anchors preserved by the parser
+- `frontmatter`: Detected YAML/TOML frontmatter block, if present
+- `totalChars`: UTF-8 byte count of the body after frontmatter
+
+**Related utilities:**
+- `generateSlug(heading: string): string`
+- `injectAnchors(text: string | Uint8Array): { text: string; result: ParseResult }`
+- `renderToc(result: ParseResult, path: string): string`
+
+**Example:**
+```typescript
+import { parseSections, renderToc } from "textprompts";
+
+const result = parseSections("## Intro\n\nSee [Docs](#docs).");
+console.log(result.sections[0].links[0].fragment); // "docs"
+console.log(renderToc(result, "prompt.txt"));
+```
+
+---
+
 ### `setMetadata()`
 
 Set the global metadata handling mode.

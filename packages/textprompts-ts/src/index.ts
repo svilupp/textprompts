@@ -20,3 +20,5 @@ export { extractPlaceholders, getPlaceholderInfo } from "./placeholder-utils";
 export { PromptString } from "./prompt-string";
 export type { FrontMatterFormat } from "./savers";
 export { savePrompt } from "./savers";
+export type { FrontmatterBlock, Link, ParseResult, Section, SectionKind } from "./sections";
+export { generateSlug, injectAnchors, parseSections, renderToc } from "./sections";
