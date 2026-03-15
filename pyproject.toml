@@ -1,6 +1,6 @@
 [project]
 name = "textprompts"
-version = "1.3.0"
+version = "1.4.0"
 description = "Minimal text-based prompt-loader with TOML/YAML front-matter"
 readme = "README.md"
 license = "MIT"

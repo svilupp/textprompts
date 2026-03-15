@@ -145,6 +145,25 @@ created := prompt.Meta.GetCreated() // time.Time
 placeholders := prompt.Prompt.Placeholders() // []string{"name", "role"}
 ```
 
+### Section Parsing
+
+```go
+result := textprompts.ParseSections([]byte("## Intro\n\nBody."))
+fmt.Println(result.Sections[0].AnchorID) // intro
+
+anchored, parsed := textprompts.InjectAnchors([]byte("## Intro\n\nBody."))
+fmt.Println(string(anchored))
+
+fmt.Println(textprompts.RenderTOC(parsed, "prompt.txt"))
+```
+
+## Development
+
+```bash
+make setup
+make check
+```
+
 ### Saving Prompts
 
 ```go

@@ -413,6 +413,27 @@ save_prompt("my_prompt.txt", "You are a helpful assistant.", format="yaml")
 save_prompt("my_prompt.txt", prompt_object)
 ```
 
+### `parse_sections(text)` and section utilities
+
+Parse mixed Markdown/XML prompt structure without going through the file loader.
+
+- `parse_sections(text)`: Returns a `ParseResult` with `sections`, `anchors`, `duplicate_anchors`, `frontmatter`, and `total_chars`
+- `generate_slug(heading)`: Creates the same auto-anchor slug used by the parser
+- `inject_anchors(text)`: Inserts missing `<a id="..."></a>` lines before Markdown headings and returns `(text, result)`
+- `render_toc(result, path)`: Renders a human-readable table of contents
+
+```python
+from textprompts import inject_anchors, parse_sections, render_toc
+
+result = parse_sections("## Intro\n\nBody.")
+print(result.sections[0].anchor_id)  # "intro"
+
+anchored_text, anchored = inject_anchors("## Intro\n\nBody.")
+print(anchored_text)  # <a id="intro"></a>\n## Intro...
+
+print(render_toc(anchored, "prompt.txt"))
+```
+
 ### `PromptString`
 
 A string subclass that validates `format()` calls:

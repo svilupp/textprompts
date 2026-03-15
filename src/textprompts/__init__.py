@@ -16,6 +16,16 @@ from .loaders import load_prompt, load_prompts
 from .models import Prompt, PromptMeta
 from .prompt_string import PromptString, SafeString
 from .savers import save_prompt
+from .sections import (
+    FrontmatterBlock,
+    Link,
+    ParseResult,
+    Section,
+    generate_slug,
+    inject_anchors,
+    parse_sections,
+    render_toc,
+)
 
 __all__ = [
     "load_prompt",
@@ -25,6 +35,10 @@ __all__ = [
     "PromptMeta",
     "PromptString",
     "SafeString",
+    "Section",
+    "Link",
+    "FrontmatterBlock",
+    "ParseResult",
     "MetadataMode",
     "set_metadata",
     "get_metadata",
@@ -35,4 +49,8 @@ __all__ = [
     "MissingMetadataError",
     "InvalidMetadataError",
     "MalformedHeaderError",
+    "parse_sections",
+    "generate_slug",
+    "inject_anchors",
+    "render_toc",
 ]
