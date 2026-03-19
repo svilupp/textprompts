@@ -390,6 +390,7 @@ func NormalizeAnchorID(id string) string {
 	if len(out) == 0 {
 		return "section"
 	}
+
 	return string(out)
 }
 
@@ -401,6 +402,7 @@ func GenerateSlug(heading string) string {
 	slug = reHTMLTag.ReplaceAllString(slug, "")
 	// Strip markdown formatting characters
 	slug = reMDFormatting.ReplaceAllString(slug, "")
+
 	return NormalizeAnchorID(slug)
 }
 
