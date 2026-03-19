@@ -13,7 +13,10 @@
           "startLine": 1,
           "endLine": 15,
           "parentIdx": -1,
-          "children": [1, 2],
+          "children": [
+            1,
+            2
+          ],
           "charCount": 132,
           "links": []
         },
@@ -21,7 +24,7 @@
           "kind": "markdown",
           "tagName": "",
           "heading": "Section One",
-          "anchorId": "section-one",
+          "anchorId": "section_one",
           "level": 2,
           "startLine": 5,
           "endLine": 8,
@@ -34,12 +37,14 @@
           "kind": "markdown",
           "tagName": "",
           "heading": "Section Two",
-          "anchorId": "section-two",
+          "anchorId": "section_two",
           "level": 2,
           "startLine": 9,
           "endLine": 15,
           "parentIdx": 0,
-          "children": [3],
+          "children": [
+            3
+          ],
           "charCount": 57,
           "links": []
         },
@@ -59,8 +64,8 @@
       ],
       "anchors": {
         "title": 0,
-        "section-one": 1,
-        "section-two": 2,
+        "section_one": 1,
+        "section_two": 2,
         "subsection": 3
       },
       "duplicateAnchors": {},
@@ -90,7 +95,7 @@
           "kind": "markdown",
           "tagName": "",
           "heading": "First Heading",
-          "anchorId": "first-heading",
+          "anchorId": "first_heading",
           "level": 2,
           "startLine": 5,
           "endLine": 7,
@@ -101,7 +106,7 @@
         }
       ],
       "anchors": {
-        "first-heading": 1
+        "first_heading": 1
       },
       "duplicateAnchors": {},
       "frontmatter": null,
@@ -117,7 +122,7 @@
           "kind": "markdown",
           "tagName": "",
           "heading": "My Section",
-          "anchorId": "custom-id",
+          "anchorId": "custom_id",
           "level": 2,
           "startLine": 1,
           "endLine": 4,
@@ -128,7 +133,7 @@
         }
       ],
       "anchors": {
-        "custom-id": 0
+        "custom_id": 0
       },
       "duplicateAnchors": {},
       "frontmatter": null,
@@ -144,12 +149,14 @@
           "kind": "xml",
           "tagName": "section",
           "heading": "Data Flow",
-          "anchorId": "data-flow",
+          "anchorId": "data_flow",
           "level": 1,
           "startLine": 1,
           "endLine": 5,
           "parentIdx": -1,
-          "children": [1],
+          "children": [
+            1
+          ],
           "charCount": 24,
           "links": []
         },
@@ -157,7 +164,7 @@
           "kind": "markdown",
           "tagName": "",
           "heading": "Data Flow",
-          "anchorId": "data-flow-2",
+          "anchorId": "data_flow_2",
           "level": 2,
           "startLine": 2,
           "endLine": 5,
@@ -168,8 +175,8 @@
         }
       ],
       "anchors": {
-        "data-flow": 0,
-        "data-flow-2": 1
+        "data_flow": 0,
+        "data_flow_2": 1
       },
       "duplicateAnchors": {},
       "frontmatter": null,
@@ -198,7 +205,7 @@
           "kind": "xml",
           "tagName": "examples",
           "heading": "Worked Example",
-          "anchorId": "worked-example",
+          "anchorId": "examples",
           "level": 1,
           "startLine": 5,
           "endLine": 5,
@@ -210,7 +217,7 @@
       ],
       "anchors": {
         "instructions": 0,
-        "worked-example": 1
+        "examples": 1
       },
       "duplicateAnchors": {},
       "frontmatter": null,
@@ -226,12 +233,15 @@
           "kind": "xml",
           "tagName": "prompt",
           "heading": "Prompt Root",
-          "anchorId": "prompt-root",
+          "anchorId": "prompt_root",
           "level": 1,
           "startLine": 1,
           "endLine": 8,
           "parentIdx": -1,
-          "children": [1, 2],
+          "children": [
+            1,
+            2
+          ],
           "charCount": 95,
           "links": []
         },
@@ -239,7 +249,7 @@
           "kind": "xml",
           "tagName": "section",
           "heading": "Inner One",
-          "anchorId": "inner-one",
+          "anchorId": "inner_one",
           "level": 2,
           "startLine": 2,
           "endLine": 4,
@@ -252,7 +262,7 @@
           "kind": "xml",
           "tagName": "section",
           "heading": "Inner Two",
-          "anchorId": "inner-two",
+          "anchorId": "inner_two",
           "level": 2,
           "startLine": 5,
           "endLine": 7,
@@ -263,9 +273,9 @@
         }
       ],
       "anchors": {
-        "prompt-root": 0,
-        "inner-one": 1,
-        "inner-two": 2
+        "prompt_root": 0,
+        "inner_one": 1,
+        "inner_two": 2
       },
       "duplicateAnchors": {},
       "frontmatter": null,
@@ -281,7 +291,7 @@
           "kind": "markdown",
           "tagName": "",
           "heading": "Heading",
-          "anchorId": "custom-id",
+          "anchorId": "custom_id",
           "level": 2,
           "startLine": 1,
           "endLine": 4,
@@ -292,7 +302,7 @@
         }
       ],
       "anchors": {
-        "custom-id": 0
+        "custom_id": 0
       },
       "duplicateAnchors": {},
       "frontmatter": null,
@@ -321,7 +331,7 @@
           "kind": "markdown",
           "tagName": "",
           "heading": "Real Heading",
-          "anchorId": "real-heading",
+          "anchorId": "real_heading",
           "level": 2,
           "startLine": 7,
           "endLine": 9,
@@ -332,7 +342,7 @@
         }
       ],
       "anchors": {
-        "real-heading": 1
+        "real_heading": 1
       },
       "duplicateAnchors": {},
       "frontmatter": null,
@@ -348,7 +358,7 @@
           "kind": "markdown",
           "tagName": "",
           "heading": "Heading",
-          "anchorId": "named-anchor",
+          "anchorId": "named_anchor",
           "level": 2,
           "startLine": 1,
           "endLine": 2,
@@ -359,7 +369,7 @@
         }
       ],
       "anchors": {
-        "named-anchor": 0
+        "named_anchor": 0
       },
       "duplicateAnchors": {},
       "frontmatter": null,
@@ -429,7 +439,7 @@
           "kind": "markdown",
           "tagName": "",
           "heading": "First Section",
-          "anchorId": "first-section",
+          "anchorId": "first_section",
           "level": 2,
           "startLine": 6,
           "endLine": 8,
@@ -440,7 +450,7 @@
         }
       ],
       "anchors": {
-        "first-section": 0
+        "first_section": 0
       },
       "duplicateAnchors": {},
       "frontmatter": {

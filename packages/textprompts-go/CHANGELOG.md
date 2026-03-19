@@ -7,6 +7,11 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-19
+
+### Changed
+- Section anchors now normalize to underscore IDs, and generic XML sections default to tag-based anchors
+
 ## [0.2.0] - 2026-03-15
 
 ### Added

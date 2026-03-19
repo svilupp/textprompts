@@ -108,17 +108,17 @@ def test_parse_sections_accepts_bytes() -> None:
 
 def test_generate_slug() -> None:
     cases = [
-        ("Hello World", "hello-world"),
-        ("GCP Projects", "gcp-projects"),
-        ("Memory Architecture Design", "memory-architecture-design"),
-        ("**Bold** and *italic*", "bold-and-italic"),
-        ("`code` blocks", "code-blocks"),
-        ("[Link Text](http://example.com)", "link-text"),
-        ("<em>Inline HTML</em>", "inline-html"),
-        ("Multiple   Spaces", "multiple-spaces"),
-        ("Special!@#$%^&*()chars", "specialchars"),
-        ("  Leading/Trailing  ", "leadingtrailing"),
-        ("123 Numbers First", "123-numbers-first"),
+        ("Hello World", "hello_world"),
+        ("GCP Projects", "gcp_projects"),
+        ("Memory Architecture Design", "memory_architecture_design"),
+        ("**Bold** and *italic*", "bold_and_italic"),
+        ("`code` blocks", "code_blocks"),
+        ("[Link Text](http://example.com)", "link_text"),
+        ("<em>Inline HTML</em>", "inline_html"),
+        ("Multiple   Spaces", "multiple_spaces"),
+        ("Special!@#$%^&*()chars", "special_chars"),
+        ("  Leading/Trailing  ", "leading_trailing"),
+        ("123 Numbers First", "123_numbers_first"),
         ("---dashes---", "dashes"),
         ("", "section"),
     ]
@@ -152,9 +152,9 @@ def test_inject_anchors_is_idempotent_and_markdown_only() -> None:
     output, result = inject_anchors(doc)
     _assert_parser_invariants(result)
 
-    assert '<a id="first-section"></a>' in output
+    assert '<a id="first_section"></a>' in output
     assert '<a id="instructions"></a>' not in output
-    assert output.count('<a id="first-section"></a>') == 1
+    assert output.count('<a id="first_section"></a>') == 1
 
     output2, result2 = inject_anchors(output)
     _assert_parser_invariants(result2)
@@ -184,7 +184,7 @@ def test_parse_sections_adversarial_corpus() -> None:
                 "## Third\n\n"
                 "## Fourth"
             ),
-            "anchors": ["explicit-one", "attr-two", "comment-three", "fourth"],
+            "anchors": ["explicit_one", "attr_two", "comment_three", "fourth"],
             "kinds": ["markdown", "markdown", "markdown", "markdown"],
         },
         {
@@ -201,7 +201,7 @@ def test_parse_sections_adversarial_corpus() -> None:
                 "</examples>\n"
                 "</prompt>"
             ),
-            "anchors": ["prompt", "overview", "worked-examples"],
+            "anchors": ["prompt", "overview", "worked_examples"],
             "kinds": ["xml", "markdown", "xml"],
         },
     ]

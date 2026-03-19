@@ -173,6 +173,11 @@ Parse prompt structure directly from text without loading a `Prompt`.
 - `frontmatter`: Detected YAML/TOML frontmatter block, if present
 - `total_chars`: UTF-8 byte count of the body after frontmatter
 
+**Anchor behavior:**
+- Anchor ids normalize to lowercase underscore form, collapsing non-alphanumeric runs to `_`
+- `generate_slug("My Section")` returns `my_section`
+- Generic XML sections use the normalized tag name as the anchor id when no explicit `id` is present
+
 **Example:**
 ```python
 from textprompts import parse_sections, render_toc

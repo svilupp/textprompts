@@ -251,10 +251,14 @@ func ParseSections(data []byte) *ParseResult {
 				parentIdx := parentIndex(stack)
 				level := deriveXMLLevel(result, parentIdx)
 
+				explicitID := explicitAnchorFromAttrs(block.attrs)
+				if explicitID == "" {
+					explicitID = NormalizeAnchorID(block.tagName)
+				}
 				anchorID, explicit := resolveSectionAnchor(
 					heading,
 					pending,
-					explicitAnchorFromAttrs(block.attrs),
+					explicitID,
 					usedAnchorIDs,
 				)
 
@@ -364,33 +368,42 @@ func ParseSections(data []byte) *ParseResult {
 	return result
 }
 
-// GenerateSlug creates a GFM-compatible anchor slug from heading text.
-func GenerateSlug(heading string) string {
-	s := reLinkInline.ReplaceAllString(heading, "$1")
-	s = reHTMLTag.ReplaceAllString(s, "")
-	s = reMDFormatting.ReplaceAllString(s, "")
-	s = strings.ToLower(s)
-
-	var b strings.Builder
-	for _, r := range s {
-		switch {
-		case unicode.IsSpace(r):
-			b.WriteByte('-')
-		case (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-':
-			b.WriteRune(r)
+// NormalizeAnchorID converts any string into a canonical anchor ID:
+// lowercase, with runs of non-alphanumeric characters replaced by a
+// single underscore, and leading/trailing underscores stripped.
+func NormalizeAnchorID(id string) string {
+	var out []rune
+	lastWasUnderscore := false
+	for _, r := range strings.ToLower(id) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			out = append(out, r)
+			lastWasUnderscore = false
+		} else if !lastWasUnderscore && len(out) > 0 {
+			out = append(out, '_')
+			lastWasUnderscore = true
 		}
 	}
-
-	slug := b.String()
-	for strings.Contains(slug, "--") {
-		slug = strings.ReplaceAll(slug, "--", "-")
+	// Strip trailing underscore
+	for len(out) > 0 && out[len(out)-1] == '_' {
+		out = out[:len(out)-1]
 	}
-	slug = strings.Trim(slug, "-")
-	if slug == "" {
-		slug = defaultSectionSlug
+	if len(out) == 0 {
+		return "section"
 	}
 
-	return slug
+	return string(out)
+}
+
+// GenerateSlug creates a GFM-compatible anchor slug from heading text.
+func GenerateSlug(heading string) string {
+	// Strip markdown link text: [text](url) -> text
+	slug := reLinkInline.ReplaceAllString(heading, "$1")
+	// Strip HTML tags
+	slug = reHTMLTag.ReplaceAllString(slug, "")
+	// Strip markdown formatting characters
+	slug = reMDFormatting.ReplaceAllString(slug, "")
+
+	return NormalizeAnchorID(slug)
 }
 
 // InjectAnchors idempotently injects <a id="..."></a> anchors before markdown headings.
@@ -613,7 +626,7 @@ func parseMarkdownHeading(line string) (level int, heading, attrID string, ok bo
 	heading = strings.TrimSpace(matches[2])
 	heading = stripClosingHeadingHashes(heading)
 	if attrMatch := reAttrID.FindStringSubmatch(heading); attrMatch != nil {
-		attrID = attrMatch[1]
+		attrID = NormalizeAnchorID(attrMatch[1])
 		heading = strings.TrimSpace(reAttrID.ReplaceAllString(heading, ""))
 	}
 
@@ -738,7 +751,7 @@ func parseTagAttributes(attrText string) map[string]string {
 func explicitAnchorFromAttrs(attrs map[string]string) string {
 	for _, key := range []string{"id", "name"} {
 		if value := strings.TrimSpace(attrs[key]); value != "" {
-			return value
+			return NormalizeAnchorID(value)
 		}
 	}
 
@@ -751,7 +764,7 @@ func extractXMLCommentAnchor(line string) string {
 		return ""
 	}
 
-	return matches[1]
+	return NormalizeAnchorID(matches[1])
 }
 
 func mergePendingAnchor(existing *pendingAnchor, id string, lineNum int) *pendingAnchor {
@@ -786,7 +799,7 @@ func uniqueGeneratedAnchor(base string, used map[string]struct{}) string {
 		return base
 	}
 	for i := 2; ; i++ {
-		candidate := fmt.Sprintf("%s-%d", base, i)
+		candidate := fmt.Sprintf("%s_%d", base, i)
 		if _, exists := used[candidate]; !exists {
 			return candidate
 		}

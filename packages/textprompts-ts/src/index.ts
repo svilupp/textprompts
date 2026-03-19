@@ -12,7 +12,7 @@ export {
   MissingMetadataError,
   TextPromptsError,
 } from "./errors";
-export { loadPrompt, loadPrompts } from "./loaders";
+export { loadPrompt, loadPrompts, loadSection } from "./loaders";
 export type { PromptMeta } from "./models";
 export { Prompt } from "./models";
 export { parseString } from "./parser";
@@ -21,4 +21,4 @@ export { PromptString } from "./prompt-string";
 export type { FrontMatterFormat } from "./savers";
 export { savePrompt } from "./savers";
 export type { FrontmatterBlock, Link, ParseResult, Section, SectionKind } from "./sections";
-export { generateSlug, injectAnchors, parseSections, renderToc } from "./sections";
+export { generateSlug, getSectionText, injectAnchors, normalizeAnchorId, parseSections, renderToc, sliceSectionContent } from "./sections";

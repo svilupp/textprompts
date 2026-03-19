@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 
 import { MetadataMode } from "../src/config";
-import { loadPrompt, loadPrompts } from "../src/loaders";
+import { loadPrompt, loadPrompts, loadSection } from "../src/loaders";
 import { MissingMetadataError, FileMissingError, TextPromptsError } from "../src/errors";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -91,6 +91,23 @@ describe("loaders", () => {
 
     const prompts = await loadPrompts(file1, { meta: MetadataMode.IGNORE });
     expect(prompts.length).toBe(1);
+
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  test("loadSection loads XML sections by normalized anchor id", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "textprompts-test-"));
+    const file = join(tempDir, "agents.txt");
+    await writeFile(
+      file,
+      "<system id=\"expert-mode\">\nBe precise.\n</system>\n\n<user_template>\nUser: {question}\n</user_template>\n",
+    );
+
+    const expert = await loadSection(file, "expert-mode", { meta: MetadataMode.IGNORE });
+    const user = await loadSection(file, "user-template", { meta: MetadataMode.IGNORE });
+
+    expect(String(expert.prompt)).toBe("Be precise.");
+    expect(String(user.prompt)).toBe("User: {question}");
 
     await rm(tempDir, { recursive: true, force: true });
   });
