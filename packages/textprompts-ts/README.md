@@ -438,12 +438,16 @@ async function savePrompt(
 Parse mixed Markdown/XML prompt structure directly from a string or `Uint8Array`.
 
 - `parseSections(text)`: Returns a `ParseResult` with `sections`, `anchors`, `duplicateAnchors`, `frontmatter`, and `totalChars`
-- `generateSlug(heading)`: Creates the same auto-anchor slug used by the parser
+- `generateSlug(heading)`: Creates the same auto-anchor slug used by the parser (lowercase, non-alphanumeric runs → `_`)
+- `normalizeAnchorId(id)`: Canonical normalization — lowercase, collapse non-alphanumeric runs to `_`, strip leading/trailing `_`
 - `injectAnchors(text)`: Inserts missing `<a id="..."></a>` lines before Markdown headings
 - `renderToc(result, path)`: Renders a human-readable table of contents
+- `getSectionText(text, anchorId)`: Look up a section body by anchor ID (fuzzy: normalizes both query and stored IDs)
+- `sliceSectionContent(text, section)`: Extract the body text of a section using its content boundary fields
+- `loadSection(path, anchorId, options?)`: Load a named section from a file as a `Prompt`
 
 ```typescript
-import { injectAnchors, parseSections, renderToc } from "textprompts";
+import { injectAnchors, loadSection, parseSections, renderToc, getSectionText, sliceSectionContent, normalizeAnchorId } from "textprompts";
 
 const result = parseSections("## Intro\n\nBody.");
 console.log(result.sections[0].anchorId); // "intro"
@@ -452,7 +456,38 @@ const anchored = injectAnchors("## Intro\n\nBody.");
 console.log(anchored.text); // <a id="intro"></a>\n## Intro...
 
 console.log(renderToc(anchored.result, "prompt.txt"));
+
+// Look up a section body (tolerates "my-section", "my_section", "MY_SECTION")
+const sectionText = getSectionText(text, "intro");
+console.log(sectionText); // "Body."
+
+// Extract body content of a section (excludes heading line)
+const text = "## Intro\n\nBody.";
+const body = sliceSectionContent(text, result.sections[0]);
+console.log(body); // "Body."
+
+// Load a named XML section from a multi-section file
+// agents.txt: <system id="default">...</system>  <system id="expert">...</system>
+const expert = await loadSection("agents.txt", "expert");
+console.log(String(expert)); // "You are an expert assistant..."
+
+// normalizeAnchorId is applied universally: XML tags, id= attrs, headings
+console.log(normalizeAnchorId("My-Section")); // "my_section"
+console.log(normalizeAnchorId("USER_TEMPLATE")); // "user_template"
 ```
+
+#### Anchor ID normalization
+
+All anchor IDs use a single canonical form: lowercase, non-alphanumeric runs collapsed to `_`, leading/trailing `_` stripped.
+
+| Source | Raw | Normalized |
+|--------|-----|------------|
+| XML tag name | `<user_template>` | `user_template` |
+| XML `id=` attr | `id="my-section"` | `my_section` |
+| Markdown heading | `## My Section` | `my_section` |
+| `<a id="">` | `<a id="custom-ID">` | `custom_id` |
+
+This means `loadSection("file.txt", "my-section")`, `"my_section"`, and `"MY_SECTION"` all find the same section.
 
 ### `PromptString`
 
@@ -641,6 +676,7 @@ See the [examples/](./examples/) directory for complete, runnable examples:
 - **[basic-usage.ts](./examples/basic-usage.ts)** - Core functionality demo
 - **[fromstring-example.ts](./examples/fromstring-example.ts)** - Loading from strings for bundlers
 - **[simple-format-demo.ts](./examples/simple-format-demo.ts)** - PromptString features
+- **[sections-usage.ts](./examples/sections-usage.ts)** - XML/Markdown section parsing and extraction
 - **[openai-example.ts](./examples/openai-example.ts)** - OpenAI integration
 - **[aisdk-example.ts](./examples/aisdk-example.ts)** - Vercel AI SDK streaming chat
 
@@ -648,6 +684,7 @@ Run them with:
 ```bash
 bun examples/basic-usage.ts
 bun examples/fromstring-example.ts
+bun examples/sections-usage.ts
 bun examples/openai-example.ts
 bun examples/aisdk-example.ts
 ```

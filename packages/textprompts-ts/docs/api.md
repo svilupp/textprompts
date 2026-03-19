@@ -100,6 +100,27 @@ const limited = await loadPrompts("prompts/", { maxFiles: 10 });
 
 ---
 
+### `loadSection()`
+
+Load a single section body from a prompt file.
+
+```typescript
+async function loadSection(
+  path: string,
+  anchorId: string,
+  options?: LoadPromptOptions
+): Promise<Prompt>
+```
+
+**Parameters:**
+- `path: string` - Path to the prompt file
+- `anchorId: string` - Section anchor id or XML tag name; normalized lookups accept hyphens and underscores
+- `options?: LoadPromptOptions` - Optional metadata handling configuration for the extracted section
+
+**Returns:** `Promise<Prompt>` - The extracted section as a prompt
+
+---
+
 ### `savePrompt()`
 
 Save a prompt to a file.
@@ -158,7 +179,7 @@ function parseSections(text: string | Uint8Array): ParseResult
 ```
 
 **Returns:** `ParseResult` with:
-- `sections`: Ordered section tree with `kind`, `tagName`, `heading`, `anchorId`, `level`, `startLine`, `endLine`, `charCount`, `parentIdx`, `children`, and `links`
+- `sections`: Ordered section tree with `kind`, `tagName`, `heading`, `anchorId`, `level`, `startLine`, `endLine`, `contentStartLine`, `contentStartCol`, `contentEndLine`, `contentEndCol`, `charCount`, `parentIdx`, `children`, and `links`
 - `anchors`: Canonical anchor id to first section index
 - `duplicateAnchors`: Explicit duplicate anchors preserved by the parser
 - `frontmatter`: Detected YAML/TOML frontmatter block, if present
@@ -166,6 +187,9 @@ function parseSections(text: string | Uint8Array): ParseResult
 
 **Related utilities:**
 - `generateSlug(heading: string): string`
+- `normalizeAnchorId(id: string): string`
+- `getSectionText(text: string | Uint8Array, anchorId: string): string | null`
+- `sliceSectionContent(text: string | Uint8Array, section: Section): string`
 - `injectAnchors(text: string | Uint8Array): { text: string; result: ParseResult }`
 - `renderToc(result: ParseResult, path: string): string`
 

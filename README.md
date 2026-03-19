@@ -418,7 +418,7 @@ save_prompt("my_prompt.txt", prompt_object)
 Parse mixed Markdown/XML prompt structure without going through the file loader.
 
 - `parse_sections(text)`: Returns a `ParseResult` with `sections`, `anchors`, `duplicate_anchors`, `frontmatter`, and `total_chars`
-- `generate_slug(heading)`: Creates the same auto-anchor slug used by the parser
+- `generate_slug(heading)`: Creates the same auto-anchor slug used by the parser (lowercase, non-alphanumeric runs -> `_`)
 - `inject_anchors(text)`: Inserts missing `<a id="..."></a>` lines before Markdown headings and returns `(text, result)`
 - `render_toc(result, path)`: Renders a human-readable table of contents
 
@@ -433,6 +433,8 @@ print(anchored_text)  # <a id="intro"></a>\n## Intro...
 
 print(render_toc(anchored, "prompt.txt"))
 ```
+
+Anchor IDs use a canonical underscore form. For example, `generate_slug("My Section")` returns `my_section`, `id="my-section"` normalizes to `my_section`, and generic XML sections default to the normalized tag name when no explicit `id` is present.
 
 ### `PromptString`
 

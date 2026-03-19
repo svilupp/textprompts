@@ -155,7 +155,15 @@ anchored, parsed := textprompts.InjectAnchors([]byte("## Intro\n\nBody."))
 fmt.Println(string(anchored))
 
 fmt.Println(textprompts.RenderTOC(parsed, "prompt.txt"))
+
+// Normalize anchor IDs (lowercase, non-alphanumeric runs → "_")
+fmt.Println(textprompts.NormalizeAnchorID("My-Section")) // "my_section"
+fmt.Println(textprompts.GenerateSlug("My Section"))      // "my_section"
 ```
+
+#### Anchor ID normalization
+
+All anchor IDs use a single canonical form: lowercase, non-alphanumeric runs collapsed to `_`, leading/trailing `_` stripped. `NormalizeAnchorID` is applied universally to XML tag names, `id=` attributes, Markdown headings, and `<a id="">` anchors.
 
 ## Development
 

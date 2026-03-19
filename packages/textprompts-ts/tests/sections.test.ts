@@ -4,10 +4,12 @@ import { fileURLToPath } from "node:url";
 
 import {
   generateSlug,
+  getSectionText,
   injectAnchors,
   parseSections,
   type ParseResult,
   renderToc,
+  sliceSectionContent,
 } from "../src/sections";
 
 interface SharedCase {
@@ -103,17 +105,17 @@ test("parseSections accepts Uint8Array", () => {
 
 test("generateSlug", () => {
   const cases = [
-    ["Hello World", "hello-world"],
-    ["GCP Projects", "gcp-projects"],
-    ["Memory Architecture Design", "memory-architecture-design"],
-    ["**Bold** and *italic*", "bold-and-italic"],
-    ["`code` blocks", "code-blocks"],
-    ["[Link Text](http://example.com)", "link-text"],
-    ["<em>Inline HTML</em>", "inline-html"],
-    ["Multiple   Spaces", "multiple-spaces"],
-    ["Special!@#$%^&*()chars", "specialchars"],
-    ["  Leading/Trailing  ", "leadingtrailing"],
-    ["123 Numbers First", "123-numbers-first"],
+    ["Hello World", "hello_world"],
+    ["GCP Projects", "gcp_projects"],
+    ["Memory Architecture Design", "memory_architecture_design"],
+    ["**Bold** and *italic*", "bold_and_italic"],
+    ["`code` blocks", "code_blocks"],
+    ["[Link Text](http://example.com)", "link_text"],
+    ["<em>Inline HTML</em>", "inline_html"],
+    ["Multiple   Spaces", "multiple_spaces"],
+    ["Special!@#$%^&*()chars", "special_chars"],
+    ["  Leading/Trailing  ", "leading_trailing"],
+    ["123 Numbers First", "123_numbers_first"],
     ["---dashes---", "dashes"],
     ["", "section"],
   ] as const;
@@ -148,9 +150,9 @@ test("injectAnchors is idempotent and markdown only", () => {
   const output = injectAnchors(doc);
   assertParserInvariants(output.result);
 
-  expect(output.text).toContain('<a id="first-section"></a>');
+  expect(output.text).toContain('<a id="first_section"></a>');
   expect(output.text).not.toContain('<a id="instructions"></a>');
-  expect(output.text.match(/<a id="first-section"><\/a>/g)?.length ?? 0).toBe(1);
+  expect(output.text.match(/<a id="first_section"><\/a>/g)?.length ?? 0).toBe(1);
 
   const output2 = injectAnchors(output.text);
   assertParserInvariants(output2.result);
@@ -178,7 +180,7 @@ test("adversarial corpus", () => {
         "<!-- @id:comment-three -->\n" +
         "## Third\n\n" +
         "## Fourth",
-      anchors: ["explicit-one", "attr-two", "comment-three", "fourth"],
+      anchors: ["explicit_one", "attr_two", "comment_three", "fourth"],
       kinds: ["markdown", "markdown", "markdown", "markdown"],
     },
     {
@@ -194,7 +196,7 @@ test("adversarial corpus", () => {
         "Example.\n" +
         "</examples>\n" +
         "</prompt>",
-      anchors: ["prompt", "overview", "worked-examples"],
+      anchors: ["prompt", "overview", "worked_examples"],
       kinds: ["xml", "markdown", "xml"],
     },
   ] as const;
@@ -233,4 +235,23 @@ test("extracts links and line numbers", () => {
     "#local",
   ]);
   expect(result.sections[0].links.map((link) => link.fragment)).toEqual(["frag", "local"]);
+});
+
+test("extracts section bodies with normalized lookups", () => {
+  const doc =
+    "<system id=\"default-agent\">\n" +
+    "You are helpful.\n" +
+    "</system>\n\n" +
+    "<user_template>\n" +
+    "User: {question}\n" +
+    "</user_template>\n";
+
+  const result = parseSections(doc);
+  assertParserInvariants(result);
+
+  expect(sliceSectionContent(doc, result.sections[0])).toBe("You are helpful.");
+  expect(sliceSectionContent(doc, result.sections[1])).toBe("User: {question}");
+  expect(getSectionText(doc, "default-agent")).toBe("You are helpful.");
+  expect(getSectionText(doc, "default_agent")).toBe("You are helpful.");
+  expect(getSectionText(doc, "user-template")).toBe("User: {question}");
 });

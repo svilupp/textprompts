@@ -214,10 +214,13 @@ def parse_sections(text: str | bytes | bytearray) -> ParseResult:
                 heading = _derive_xml_heading(block.tag_name, block.attrs)
                 parent_idx = _parent_index(stack)
                 level = _derive_xml_level(result, parent_idx)
+                explicit_id = _explicit_anchor_from_attrs(block.attrs)
+                if explicit_id == "":
+                    explicit_id = _normalize_anchor_id(block.tag_name)
                 anchor_id, explicit = _resolve_section_anchor(
                     heading,
                     pending,
-                    _explicit_anchor_from_attrs(block.attrs),
+                    explicit_id,
                     used_anchor_ids,
                 )
                 section_idx = _append_section(
@@ -340,20 +343,7 @@ def generate_slug(heading: str) -> str:
     slug = _RE_LINK_INLINE.sub(r"\1", heading)
     slug = _RE_HTML_TAG.sub("", slug)
     slug = _RE_MD_FORMATTING.sub("", slug)
-    slug = slug.lower()
-
-    parts: list[str] = []
-    for char in slug:
-        if char.isspace():
-            parts.append("-")
-        elif char.isascii() and (char.islower() or char.isdigit() or char == "-"):
-            parts.append(char)
-
-    normalized = "".join(parts)
-    while "--" in normalized:
-        normalized = normalized.replace("--", "-")
-    normalized = normalized.strip("-")
-    return normalized or "section"
+    return _normalize_anchor_id(slug)
 
 
 def inject_anchors(text: str | bytes | bytearray) -> tuple[str, ParseResult]:
@@ -535,7 +525,7 @@ def _parse_markdown_heading(line: str) -> tuple[int, str, str, bool]:
     attr_id = ""
     attr_match = _RE_ATTR_ID.search(heading)
     if attr_match is not None:
-        attr_id = attr_match.group(1)
+        attr_id = _normalize_anchor_id(attr_match.group(1))
         heading = _RE_ATTR_ID.sub("", heading).strip()
 
     if heading == "":
@@ -628,13 +618,13 @@ def _explicit_anchor_from_attrs(attrs: dict[str, str]) -> str:
     for key in ("id", "name"):
         value = attrs.get(key, "").strip()
         if value:
-            return value
+            return _normalize_anchor_id(value)
     return ""
 
 
 def _extract_xml_comment_anchor(line: str) -> str:
     match = _RE_XML_COMMENT.match(_trim_right_cr(line))
-    return "" if match is None else match.group(1)
+    return "" if match is None else _normalize_anchor_id(match.group(1))
 
 
 def _merge_pending_anchor(
@@ -666,10 +656,28 @@ def _unique_generated_anchor(base: str, used: set[str]) -> str:
         return candidate
     suffix = 2
     while True:
-        candidate = f"{base or 'section'}-{suffix}"
+        candidate = f"{base or 'section'}_{suffix}"
         if candidate not in used:
             return candidate
         suffix += 1
+
+
+def _normalize_anchor_id(value: str) -> str:
+    out: list[str] = []
+    last_was_underscore = False
+    for char in value.lower():
+        if char.isascii() and char.isalnum():
+            out.append(char)
+            last_was_underscore = False
+        elif out and not last_was_underscore:
+            out.append("_")
+            last_was_underscore = True
+
+    while out and out[-1] == "_":
+        out.pop()
+
+    normalized = "".join(out)
+    return normalized or "section"
 
 
 def _register_anchor(

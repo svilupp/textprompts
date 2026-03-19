@@ -71,17 +71,17 @@ func TestGenerateSlug(t *testing.T) {
 		input string
 		want  string
 	}{
-		{"Hello World", "hello-world"},
-		{"GCP Projects", "gcp-projects"},
-		{"Memory Architecture Design", "memory-architecture-design"},
-		{"**Bold** and *italic*", "bold-and-italic"},
-		{"`code` blocks", "code-blocks"},
-		{"[Link Text](http://example.com)", "link-text"},
-		{"<em>Inline HTML</em>", "inline-html"},
-		{"Multiple   Spaces", "multiple-spaces"},
-		{"Special!@#$%^&*()chars", "specialchars"},
-		{"  Leading/Trailing  ", "leadingtrailing"},
-		{"123 Numbers First", "123-numbers-first"},
+		{"Hello World", "hello_world"},
+		{"GCP Projects", "gcp_projects"},
+		{"Memory Architecture Design", "memory_architecture_design"},
+		{"**Bold** and *italic*", "bold_and_italic"},
+		{"`code` blocks", "code_blocks"},
+		{"[Link Text](http://example.com)", "link_text"},
+		{"<em>Inline HTML</em>", "inline_html"},
+		{"Multiple   Spaces", "multiple_spaces"},
+		{"Special!@#$%^&*()chars", "special_chars"},
+		{"  Leading/Trailing  ", "leading_trailing"},
+		{"123 Numbers First", "123_numbers_first"},
 		{"---dashes---", "dashes"},
 		{"", "section"},
 	}
@@ -130,7 +130,7 @@ Nested content.`
 		{
 			kind:      sectionKindMarkdown,
 			heading:   "Section One",
-			anchor:    "section-one",
+			anchor:    "section_one",
 			level:     2,
 			startLine: 5,
 			endLine:   8,
@@ -141,7 +141,7 @@ Nested content.`
 		{
 			kind:      sectionKindMarkdown,
 			heading:   "Section Two",
-			anchor:    "section-two",
+			anchor:    "section_two",
 			level:     2,
 			startLine: 9,
 			endLine:   15,
@@ -189,7 +189,7 @@ Content.`
 		{
 			kind:      sectionKindMarkdown,
 			heading:   "First Heading",
-			anchor:    "first-heading",
+			anchor:    "first_heading",
 			level:     2,
 			startLine: 5,
 			endLine:   7,
@@ -212,7 +212,7 @@ Body.`
 		{
 			kind:      sectionKindMarkdown,
 			heading:   "My Section",
-			anchor:    "custom-id",
+			anchor:    "custom_id",
 			level:     2,
 			startLine: 1,
 			endLine:   4,
@@ -237,7 +237,7 @@ Content.
 			kind:      sectionKindXML,
 			tag:       "section",
 			heading:   "Data Flow",
-			anchor:    "data-flow",
+			anchor:    "data_flow",
 			level:     1,
 			startLine: 1,
 			endLine:   5,
@@ -248,7 +248,7 @@ Content.
 		{
 			kind:      sectionKindMarkdown,
 			heading:   "Data Flow",
-			anchor:    "data-flow-2",
+			anchor:    "data_flow_2",
 			level:     2,
 			startLine: 2,
 			endLine:   5,
@@ -285,7 +285,7 @@ Follow the instructions carefully.
 			kind:      sectionKindXML,
 			tag:       "examples",
 			heading:   "Worked Example",
-			anchor:    "worked-example",
+			anchor:    "examples",
 			level:     1,
 			startLine: 5,
 			endLine:   5,
@@ -313,7 +313,7 @@ Inner two.
 			kind:      sectionKindXML,
 			tag:       "prompt",
 			heading:   "Prompt Root",
-			anchor:    "prompt-root",
+			anchor:    "prompt_root",
 			level:     1,
 			startLine: 1,
 			endLine:   8,
@@ -325,7 +325,7 @@ Inner two.
 			kind:      sectionKindXML,
 			tag:       "section",
 			heading:   "Inner One",
-			anchor:    "inner-one",
+			anchor:    "inner_one",
 			level:     2,
 			startLine: 2,
 			endLine:   4,
@@ -337,7 +337,7 @@ Inner two.
 			kind:      sectionKindXML,
 			tag:       "section",
 			heading:   "Inner Two",
-			anchor:    "inner-two",
+			anchor:    "inner_two",
 			level:     2,
 			startLine: 5,
 			endLine:   7,
@@ -360,7 +360,7 @@ Body.`
 		{
 			kind:      sectionKindMarkdown,
 			heading:   "Heading",
-			anchor:    "custom-id",
+			anchor:    "custom_id",
 			level:     2,
 			startLine: 1,
 			endLine:   4,
@@ -391,7 +391,7 @@ func TestParseSections_IgnoresCodeFences(t *testing.T) {
 		{
 			kind:      sectionKindMarkdown,
 			heading:   "Real Heading",
-			anchor:    "real-heading",
+			anchor:    "real_heading",
 			level:     2,
 			startLine: 7,
 			endLine:   9,
@@ -412,7 +412,7 @@ func TestParseSections_AlternateAnchorSyntaxAndHeadingCleanup(t *testing.T) {
 		{
 			kind:      sectionKindMarkdown,
 			heading:   "Heading",
-			anchor:    "named-anchor",
+			anchor:    "named_anchor",
 			level:     2,
 			startLine: 1,
 			endLine:   2,
@@ -542,14 +542,14 @@ More.`
 	assertParserInvariants(t, result)
 
 	text := string(output)
-	if !strings.Contains(text, `<a id="first-section"></a>`) {
+	if !strings.Contains(text, `<a id="first_section"></a>`) {
 		t.Fatal("expected anchor injection for markdown heading without explicit id")
 	}
 	if strings.Contains(text, `<a id="instructions"></a>`) {
 		t.Fatal("should not inject anchors for XML sections")
 	}
-	if strings.Count(text, `<a id="first-section"></a>`) != 1 {
-		t.Fatal("expected exactly one injected first-section anchor")
+	if strings.Count(text, `<a id="first_section"></a>`) != 1 {
+		t.Fatal("expected exactly one injected first_section anchor")
 	}
 
 	output2, result2 := InjectAnchors(output)
@@ -601,7 +601,7 @@ func TestParseSections_AdversarialCorpus(t *testing.T) {
 ## Third
 
 ## Fourth`,
-			wantAnchors: []string{"explicit-one", "attr-two", "comment-three", "fourth"},
+			wantAnchors: []string{"explicit_one", "attr_two", "comment_three", "fourth"},
 			wantKinds:   []string{sectionKindMarkdown, sectionKindMarkdown, sectionKindMarkdown, sectionKindMarkdown},
 		},
 		{
@@ -620,7 +620,7 @@ func TestParseSections_AdversarialCorpus(t *testing.T) {
 Example.
 </examples>
 </prompt>`,
-			wantAnchors: []string{"prompt", "overview", "worked-examples"},
+			wantAnchors: []string{"prompt", "overview", "worked_examples"},
 			wantKinds:   []string{sectionKindXML, sectionKindMarkdown, sectionKindXML},
 		},
 	}

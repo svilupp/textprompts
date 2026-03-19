@@ -47,6 +47,19 @@ Focused demonstration of the PromptString feature:
 bun examples/simple-format-demo.ts
 ```
 
+### `sections-usage.ts`
+Demonstrates section parsing, extraction, and loading from multi-section files:
+- Parsing mixed Markdown/XML prompt files with `parseSections`
+- Looking up sections by anchor ID with `getSectionText` (tolerates `-` vs `_` and case differences)
+- Extracting section body text with `sliceSectionContent`
+- Loading named XML sections from a file as a `Prompt` with `loadSection`
+- How anchor IDs are normalized (`normalizeAnchorId`)
+
+**Run it:**
+```bash
+bun examples/sections-usage.ts
+```
+
 ### `openai-example.ts`
 Integration example with OpenAI:
 - System and user prompt templates

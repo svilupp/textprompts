@@ -22,6 +22,14 @@ export interface Section {
   level: number;
   startLine: number;
   endLine: number;
+  /** Line where section body content begins (1-indexed, after heading/opening tag). */
+  contentStartLine: number;
+  /** Column offset where content begins on contentStartLine. */
+  contentStartCol: number;
+  /** Line where section body content ends (1-indexed). */
+  contentEndLine: number;
+  /** Column offset where content ends on contentEndLine (-1 means end of line). */
+  contentEndCol: number;
   charCount: number;
   parentIdx: number;
   children: number[];
@@ -230,10 +238,12 @@ export const parseSections = (text: string | Uint8Array): ParseResult => {
         const heading = deriveXMLHeading(block.tagName, block.attrs);
         const parentIdx = parentIndex(stack);
         const level = deriveXMLLevel(result, parentIdx);
+        const explicitId = explicitAnchorFromAttrs(block.attrs);
+        const defaultId = explicitId !== "" ? explicitId : normalizeAnchorId(block.tagName);
         const { anchorId, explicit } = resolveSectionAnchor(
           heading,
           pending,
-          explicitAnchorFromAttrs(block.attrs),
+          defaultId,
           usedAnchorIds,
         );
         const sectionIdx = appendSection(result, {
@@ -244,6 +254,10 @@ export const parseSections = (text: string | Uint8Array): ParseResult => {
           level,
           startLine,
           endLine: block.endLine,
+          contentStartLine: block.startLine,
+          contentStartCol: block.openEndCol,
+          contentEndLine: block.endLine,
+          contentEndCol: block.closeStartCol,
           charCount: 0,
           parentIdx,
           children: [],
@@ -310,6 +324,10 @@ export const parseSections = (text: string | Uint8Array): ParseResult => {
         level: markdownHeading.level,
         startLine,
         endLine: lineNum,
+        contentStartLine: lineNum + 1,
+        contentStartCol: 0,
+        contentEndLine: lineNum,
+        contentEndCol: -1,
         charCount: 0,
         parentIdx,
         children: [],
@@ -365,22 +383,7 @@ export const generateSlug = (heading: string): string => {
   let slug = heading.replace(RE_LINK_INLINE, "$1");
   slug = slug.replace(RE_HTML_TAG, "");
   slug = slug.replace(RE_MD_FORMATTING, "");
-  slug = slug.toLowerCase();
-
-  let out = "";
-  for (const char of slug) {
-    if (/\s/.test(char)) {
-      out += "-";
-    } else if (/^[a-z0-9-]$/.test(char)) {
-      out += char;
-    }
-  }
-
-  while (out.includes("--")) {
-    out = out.replaceAll("--", "-");
-  }
-  out = out.replace(/^-+|-+$/g, "");
-  return out || "section";
+  return normalizeAnchorId(slug);
 };
 
 export const injectAnchors = (text: string | Uint8Array): { text: string; result: ParseResult } => {
@@ -604,7 +607,7 @@ const parseMarkdownHeading = (
   let attrId = "";
   const attrMatch = RE_ATTR_ID.exec(heading);
   if (attrMatch) {
-    attrId = attrMatch[1];
+    attrId = normalizeAnchorId(attrMatch[1]);
     heading = heading.replace(RE_ATTR_ID, "").trim();
   }
 
@@ -728,7 +731,7 @@ const explicitAnchorFromAttrs = (attrs: Record<string, string>): string => {
   for (const key of ["id", "name"]) {
     const value = attrs[key]?.trim() ?? "";
     if (value) {
-      return value;
+      return normalizeAnchorId(value);
     }
   }
   return "";
@@ -736,7 +739,7 @@ const explicitAnchorFromAttrs = (attrs: Record<string, string>): string => {
 
 const extractXMLCommentAnchor = (line: string): string => {
   const match = RE_XML_COMMENT.exec(trimRightCr(line));
-  return match ? match[1] : "";
+  return match ? normalizeAnchorId(match[1]) : "";
 };
 
 const mergePendingAnchor = (
@@ -771,7 +774,7 @@ const uniqueGeneratedAnchor = (base: string, used: Set<string>): string => {
     return root;
   }
   for (let idx = 2; ; idx += 1) {
-    const candidate = `${root}-${idx}`;
+    const candidate = `${root}_${idx}`;
     if (!used.has(candidate)) {
       return candidate;
     }
@@ -847,6 +850,10 @@ const maybeAppendPreamble = (
     level: 0,
     startLine: normalizedStart,
     endLine,
+    contentStartLine: normalizedStart,
+    contentStartCol: 0,
+    contentEndLine: endLine,
+    contentEndCol: lineEndCol(lines, endLine),
     charCount: chars,
     parentIdx: -1,
     children: [],
@@ -904,6 +911,10 @@ const finalizeSection = (
 ): void => {
   const section = result.sections[state.idx];
   section.endLine = endLine;
+  section.contentStartLine = state.contentStartLine;
+  section.contentStartCol = state.contentStartCol;
+  section.contentEndLine = endLine;
+  section.contentEndCol = endCol;
   const { chars, links } = computeWindowStats(
     lines,
     state.contentStartLine,
@@ -1200,4 +1211,98 @@ const findMarkdownHeadingLine = (lines: string[], startLine: number, endLine: nu
   return -1;
 };
 
+/**
+ * Convert any string to a canonical anchor ID:
+ * lowercase, runs of non-alphanumeric characters collapsed to a single
+ * underscore, leading and trailing underscores stripped.
+ *
+ * Applied to all anchor sources: tag names, id attributes, <a id="">,
+ * comment anchors, and markdown {#attr} values.
+ */
+export const normalizeAnchorId = (id: string): string => {
+  const lower = id.toLowerCase();
+  let out = "";
+  for (const char of lower) {
+    if (/^[a-z0-9]$/.test(char)) {
+      out += char;
+    } else if (out.length > 0 && !out.endsWith("_")) {
+      out += "_";
+    }
+  }
+  out = out.replace(/_+$/g, "");
+  return out || "section";
+};
+
 const trimRightCr = (line: string): string => (line.endsWith("\r") ? line.slice(0, -1) : line);
+
+/**
+ * Extract the body text of a specific section by its anchor ID.
+ * Returns null if no section with that anchor ID exists.
+ *
+ * For XML sections: returns the content between the opening and closing tags.
+ * For markdown sections: returns the content after the heading line.
+ *
+ * @example
+ * const text = `<system>\nYou are a helpful assistant.\n</system>`;
+ * getSectionText(text, "system"); // "You are a helpful assistant."
+ */
+export const getSectionText = (text: string | Uint8Array, anchorId: string): string | null => {
+  const source = coerceText(text);
+  const result = parseSections(source);
+  let section = result.sections.find((s) => s.anchorId === anchorId);
+  if (!section) {
+    const normalizedQuery = normalizeAnchorId(anchorId);
+    section = result.sections.find((s) => normalizeAnchorId(s.anchorId) === normalizedQuery);
+  }
+  if (!section) {
+    return null;
+  }
+  return sliceSectionContent(source, section);
+};
+
+/**
+ * Extract the body text of a section given its parsed Section descriptor.
+ * Returns the content between the opening/heading line and closing tag/end.
+ */
+export const sliceSectionContent = (text: string | Uint8Array, section: Section): string => {
+  const source = coerceText(text);
+  const lines = source.split("\n");
+
+  const startLine = section.contentStartLine;
+  const startCol = section.contentStartCol;
+  const endLine = section.contentEndLine;
+  const endCol = section.contentEndCol;
+
+  if (startLine <= 0 || startLine > lines.length) {
+    return "";
+  }
+
+  const parts: string[] = [];
+
+  if (startLine === endLine) {
+    const line = trimRightCr(lines[startLine - 1] ?? "");
+    const from = clamp(startCol, 0, line.length);
+    const to = endCol < 0 ? line.length : clamp(endCol, from, line.length);
+    parts.push(line.slice(from, to));
+  } else {
+    for (let lineNum = startLine; lineNum <= Math.min(endLine, lines.length); lineNum += 1) {
+      let line = trimRightCr(lines[lineNum - 1] ?? "");
+      if (lineNum === startLine && startCol > 0) {
+        line = line.slice(startCol);
+      } else if (lineNum === endLine && endCol >= 0) {
+        line = line.slice(0, endCol);
+      }
+      parts.push(line);
+    }
+  }
+
+  // Trim leading and trailing blank lines, preserve internal whitespace
+  while (parts.length > 0 && parts[0].trim() === "") {
+    parts.shift();
+  }
+  while (parts.length > 0 && parts[parts.length - 1].trim() === "") {
+    parts.pop();
+  }
+
+  return parts.join("\n");
+};
