@@ -1,6 +1,6 @@
 {
   "name": "textprompts",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "TypeScript companion to textprompts for loading and formatting prompt files.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.mjs",
+      "require": "./dist/core.cjs"
     },
     "./cli": {
       "types": "./dist/cli.d.ts",

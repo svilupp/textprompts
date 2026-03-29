@@ -8,10 +8,10 @@ Load a single prompt file.
 
 **Parameters:**
 - `path` (str | Path): Path to the prompt file
-- `meta` (MetadataMode | str | None): Metadata handling mode - "strict", "allow", "ignore", or None (uses global config)
+- `meta` (MetadataMode | str | None): Metadata handling mode - "strict", "allow", "ignore", or None (uses global config, which defaults to `ALLOW`)
 
 You can also set the environment variable `TEXTPROMPTS_METADATA_MODE` before
-importing the package to choose the default mode.
+importing the package to override the default `ALLOW` mode.
 
 **Returns:** `Prompt` object
 

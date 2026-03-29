@@ -1,8 +1,9 @@
 """
-TOML front-matter parsing utilities.
+Front-matter parsing utilities (TOML and YAML).
 """
 
 using TOML
+using YAML
 using Dates
 
 const FRONT_MATTER_DELIMITER = "---"
@@ -112,27 +113,71 @@ function _dedent(text::AbstractString)::String
 end
 
 """
-    _parse_toml_header(header::AbstractString, path::AbstractString) -> Dict{String, Any}
+    _parse_header(header::AbstractString, path::AbstractString) -> Dict{String, Any}
 
-Parse TOML header content.
+Parse front-matter header as TOML or YAML (try TOML first for backward compat).
+
+1. Try TOML first (backward compatible)
+2. If TOML fails, try YAML
+3. If both fail, report the TOML error
 
 # Throws
-- `InvalidMetadataError`: If TOML parsing fails
+- `InvalidMetadataError`: If both TOML and YAML parsing fail
 """
-function _parse_toml_header(header::AbstractString, path::AbstractString)::Dict{String, Any}
+function _parse_header(header::AbstractString, path::AbstractString)::Dict{String, Any}
+    # Try TOML first
+    toml_error = nothing
     try
         return TOML.parse(header)
     catch e
-        throw(InvalidMetadataError(path, string(e)))
+        toml_error = e
+    end
+
+    # TOML failed, try YAML
+    try
+        result = YAML.load(header)
+        if isnothing(result)
+            return Dict{String, Any}()
+        end
+        if !(result isa AbstractDict)
+            throw(InvalidMetadataError(path, "YAML front-matter must be a mapping, got $(typeof(result))"))
+        end
+        # Convert to Dict{String, Any} (YAML.jl may return OrderedDict)
+        d = Dict{String, Any}(string(k) => v for (k, v) in result)
+        return _normalize_yaml_values(d)
+    catch e
+        if e isa InvalidMetadataError
+            rethrow()
+        end
+        # Both failed, report the TOML error for backward compat
+        throw(InvalidMetadataError(path, string(toml_error)))
     end
 end
+
+"""
+    _normalize_yaml_values(d::Dict{String, Any}) -> Dict{String, Any}
+
+Normalize YAML-parsed values: coerce booleans/numbers to strings for known string fields,
+keep dates as-is for the created field.
+"""
+function _normalize_yaml_values(d::Dict{String, Any})::Dict{String, Any}
+    string_fields = Set(["title", "description", "version", "author"])
+    for (key, value) in d
+        if key in string_fields && !isnothing(value) && !(value isa AbstractString)
+            d[key] = string(value)
+        end
+    end
+    return d
+end
+
+const _KNOWN_FIELDS = Set(["title", "description", "version", "author", "created"])
 
 """
     _dict_to_meta(d::Dict{String, Any}, path::AbstractString) -> PromptMeta
 
 Convert a dictionary to PromptMeta.
 
-Handles date parsing from ISO format strings.
+Handles date parsing from ISO format strings. Unknown fields are collected into `extras`.
 """
 function _dict_to_meta(d::Dict{String, Any}, path::AbstractString)::PromptMeta
     title = get(d, "title", nothing)
@@ -160,12 +205,21 @@ function _dict_to_meta(d::Dict{String, Any}, path::AbstractString)::PromptMeta
         end
     end
 
+    # Collect unknown fields into extras
+    extras = Dict{String, Any}()
+    for (key, value) in d
+        if key ∉ _KNOWN_FIELDS
+            extras[key] = value
+        end
+    end
+
     return PromptMeta(;
         title = isnothing(title) ? nothing : string(title),
         version = isnothing(version) ? nothing : string(version),
         author = isnothing(author) ? nothing : string(author),
         created = created,
-        description = isnothing(description) ? nothing : string(description)
+        description = isnothing(description) ? nothing : string(description),
+        extras = isempty(extras) ? nothing : extras
     )
 end
 
@@ -279,7 +333,7 @@ function parse_file(path::AbstractString; metadata_mode::MetadataMode)::Prompt
     end
 
     # Parse TOML header
-    header_dict = _parse_toml_header(header, path)
+    header_dict = _parse_header(header, path)
     meta = _dict_to_meta(header_dict, path)
 
     # Use filename as title if not specified
@@ -289,7 +343,8 @@ function parse_file(path::AbstractString; metadata_mode::MetadataMode)::Prompt
             version = meta.version,
             author = meta.author,
             created = meta.created,
-            description = meta.description
+            description = meta.description,
+            extras = meta.extras
         )
     end
 
@@ -370,7 +425,7 @@ function parse_string(content::AbstractString; path::AbstractString="<string>", 
     end
 
     # Parse TOML header
-    header_dict = _parse_toml_header(header, path)
+    header_dict = _parse_header(header, path)
     meta = _dict_to_meta(header_dict, path)
 
     # Use filename as title if not specified
@@ -380,7 +435,8 @@ function parse_string(content::AbstractString; path::AbstractString="<string>", 
             version=meta.version,
             author=meta.author,
             created=meta.created,
-            description=meta.description
+            description=meta.description,
+            extras=meta.extras
         )
     end
 

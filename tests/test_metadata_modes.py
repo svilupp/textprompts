@@ -19,7 +19,7 @@ class TestMetadataModes:
 
     def setup_method(self) -> None:
         """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
+        set_metadata(MetadataMode.ALLOW)  # Reset to default
 
     def test_global_metadata_mode_setting(self) -> None:
         """Test setting and getting global metadata mode"""
@@ -57,7 +57,7 @@ class TestStrictMode:
 
     def setup_method(self) -> None:
         """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
+        set_metadata(MetadataMode.ALLOW)  # Reset to default
 
     def test_strict_mode_with_complete_metadata(self, tmp_path: Path) -> None:
         """Test STRICT mode with complete metadata"""
@@ -157,7 +157,7 @@ class TestAllowMode:
 
     def setup_method(self) -> None:
         """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
+        set_metadata(MetadataMode.ALLOW)  # Reset to default
 
     def test_allow_mode_with_complete_metadata(self, tmp_path: Path) -> None:
         """Test ALLOW mode with complete metadata"""
@@ -263,7 +263,7 @@ class TestIgnoreMode:
 
     def setup_method(self) -> None:
         """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
+        set_metadata(MetadataMode.ALLOW)  # Reset to default
 
     def test_ignore_mode_with_metadata(self, tmp_path: Path) -> None:
         """Test IGNORE mode ignores metadata"""
@@ -278,7 +278,8 @@ Test content here."""
         file_path = tmp_path / "test.txt"
         file_path.write_text(content)
 
-        # Test with global config (default)
+        # Test with global config
+        set_metadata(MetadataMode.IGNORE)
         prompt = load_prompt(file_path)
         assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
@@ -301,7 +302,8 @@ Test content here."""
         file_path = tmp_path / "test.txt"
         file_path.write_text(content)
 
-        # Test with global config (default)
+        # Test with global config
+        set_metadata(MetadataMode.IGNORE)
         prompt = load_prompt(file_path)
         assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
@@ -322,6 +324,7 @@ Test content here."""
         file_path.write_text(content)
 
         # Should not raise error in IGNORE mode
+        set_metadata(MetadataMode.IGNORE)
         prompt = load_prompt(file_path)
         assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
@@ -333,7 +336,7 @@ class TestParameterPriority:
 
     def setup_method(self) -> None:
         """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
+        set_metadata(MetadataMode.ALLOW)  # Reset to default
 
     def test_meta_parameter_overrides_global(self, tmp_path: Path) -> None:
         """Test meta parameter overrides global configuration"""

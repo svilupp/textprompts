@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-// MetadataMode defines how the parser handles TOML frontmatter.
+// MetadataMode defines how the parser handles prompt frontmatter.
 type MetadataMode int
 
 const (
@@ -93,7 +93,11 @@ func GetMetadata() MetadataMode {
 }
 
 // SkipMetadata is a convenience function that sets mode to ModeIgnore.
-func SkipMetadata() {
+// Pass true to also disable ignored-metadata warnings.
+func SkipMetadata(skipWarning ...bool) {
+	if len(skipWarning) > 0 {
+		SetWarnOnIgnoredMetadata(!skipWarning[0])
+	}
 	SetMetadata(ModeIgnore)
 }
 

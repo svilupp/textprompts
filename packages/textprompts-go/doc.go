@@ -8,14 +8,16 @@ before v1.0. Please report issues and feedback on GitHub.
 
 # Overview
 
-TextPrompts allows you to store prompts as text files with optional TOML
-metadata (frontmatter), providing safe string formatting and organized
-loading capabilities. This Go package is part of a cross-language family
-that includes Python, TypeScript, and Julia implementations.
+TextPrompts allows you to store prompts as text files with optional
+frontmatter metadata, providing safe string formatting and organized loading
+capabilities. This Go package is part of a cross-language family that
+includes Python, TypeScript, and Julia implementations.
 
 # File Format
 
-Prompt files use a simple format with optional TOML frontmatter:
+Prompt files use a simple format with optional TOML or YAML frontmatter.
+The Go parser tries TOML first for backward compatibility and falls back to
+YAML when TOML parsing fails:
 
 	---
 	title = "Customer Greeting"
@@ -49,7 +51,7 @@ Load and format a prompt:
 
 # Metadata Modes
 
-Three modes control how TOML frontmatter is handled:
+Three modes control how frontmatter is handled:
 
   - ModeAllow (default): Parse metadata if present, allow missing/empty fields
   - ModeStrict: Require title, description, and version to be non-empty
@@ -80,13 +82,33 @@ PromptString validates that all placeholders have values:
 	)
 	// partial = "Hello Alice, you are {role}"
 
+Positional formatting is available through FormatArgs:
+
+	formatted, err := template.FormatArgs(
+		[]interface{}{"Alice"},
+		map[string]interface{}{"role": "admin"},
+	)
+
+# Extras And Sections
+
+Additional frontmatter keys are preserved in PromptMeta.Extras / GetExtras:
+
+	extras := prompt.Meta.GetExtras()
+	fmt.Println(extras["tags"])
+
+Section helpers allow extracting a subsection body from a larger prompt file:
+
+	sectionPrompt, err := textprompts.LoadSection("prompts/catalog.txt", "system")
+	body, ok := textprompts.GetSectionText("<system>Hello</system>", "system")
+	slice := textprompts.SliceSectionContent(raw, &parsed.Sections[0])
+
 # Error Handling
 
 The package provides specific error types:
 
   - FileMissingError: File not found
   - MissingMetadataError: No frontmatter in strict mode
-  - InvalidMetadataError: Malformed TOML or validation failure
+  - InvalidMetadataError: Malformed TOML/YAML or validation failure
   - MalformedHeaderError: Invalid frontmatter structure
   - FormatError: Missing placeholder values
 

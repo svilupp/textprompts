@@ -61,10 +61,9 @@ describe("Prompt", () => {
     expect(prompt.format(["Bob"], { age: 30 })).toBe("Hello Bob, you are 30");
   });
 
-  test("path is resolved to absolute", () => {
+  test("path is stored as-is (resolution happens in loaders)", () => {
     const prompt = new Prompt({ path: "test.txt", meta: null, prompt: "Hello" });
-    expect(prompt.path).toContain("test.txt");
-    expect(prompt.path.startsWith("/")).toBe(true);
+    expect(prompt.path).toBe("test.txt");
   });
 });
 

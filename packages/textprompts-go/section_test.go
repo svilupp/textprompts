@@ -96,6 +96,121 @@ func TestGenerateSlug(t *testing.T) {
 	}
 }
 
+func TestSectionTextExtraction(t *testing.T) {
+	markdownDoc := `---
+title = "Demo"
+---
+Prelude line.
+
+# Title Section
+Alpha line.
+Beta line.`
+
+	xmlDoc := `<callout id="Important Note">XML body</callout>`
+
+	result := ParseSections([]byte(markdownDoc))
+	assertParserInvariants(t, result)
+
+	var markdown *Section
+	for i := range result.Sections {
+		section := &result.Sections[i]
+		if section.AnchorID == "title_section" {
+			markdown = section
+		}
+	}
+
+	if markdown == nil {
+		t.Fatal("expected markdown section title_section")
+	}
+
+	normalizedMarkdown, ok := GetSectionText(markdownDoc, "Title Section")
+	if !ok {
+		t.Fatal("GetSectionText should find markdown section by normalized anchor")
+	}
+	if normalizedMarkdown != "Alpha line.\nBeta line." {
+		t.Fatalf("GetSectionText markdown = %q, want %q", normalizedMarkdown, "Alpha line.\nBeta line.")
+	}
+
+	exactMarkdown, ok := GetSectionText(markdownDoc, "title_section")
+	if !ok || exactMarkdown != normalizedMarkdown {
+		t.Fatalf("GetSectionText exact markdown = %q, want %q", exactMarkdown, normalizedMarkdown)
+	}
+
+	xmlResult := ParseSections([]byte(xmlDoc))
+	assertParserInvariants(t, xmlResult)
+
+	var xml *Section
+	for i := range xmlResult.Sections {
+		if xmlResult.Sections[i].AnchorID == "important_note" {
+			xml = &xmlResult.Sections[i]
+			break
+		}
+	}
+	if xml == nil {
+		t.Fatal("expected xml section important_note")
+	}
+
+	normalizedXML, ok := GetSectionText(xmlDoc, "Important Note")
+	if !ok {
+		t.Fatal("GetSectionText should find xml section by normalized anchor")
+	}
+	if normalizedXML != "XML body" {
+		t.Fatalf("GetSectionText xml = %q, want %q", normalizedXML, "XML body")
+	}
+
+	if got := SliceSectionContent(markdownDoc, markdown); got != normalizedMarkdown {
+		t.Fatalf("SliceSectionContent markdown = %q, want %q", got, normalizedMarkdown)
+	}
+	if got := SliceSectionContent(xmlDoc, xml); got != normalizedXML {
+		t.Fatalf("SliceSectionContent xml = %q, want %q", got, normalizedXML)
+	}
+
+	if markdown.ContentStartLine != markdown.StartLine+1 {
+		t.Fatalf("markdown content start line = %d, want %d", markdown.ContentStartLine, markdown.StartLine+1)
+	}
+	if markdown.ContentStartCol != 0 {
+		t.Fatalf("markdown content start col = %d, want 0", markdown.ContentStartCol)
+	}
+	if markdown.ContentEndLine != markdown.EndLine {
+		t.Fatalf("markdown content end line = %d, want %d", markdown.ContentEndLine, markdown.EndLine)
+	}
+	if xml.ContentStartLine != xml.StartLine {
+		t.Fatalf("xml content start line = %d, want %d", xml.ContentStartLine, xml.StartLine)
+	}
+	if xml.ContentEndLine != xml.EndLine {
+		t.Fatalf("xml content end line = %d, want %d", xml.ContentEndLine, xml.EndLine)
+	}
+	if xml.ContentStartCol <= 0 {
+		t.Fatalf("xml content start col = %d, want > 0", xml.ContentStartCol)
+	}
+	if xml.ContentEndCol <= xml.ContentStartCol {
+		t.Fatalf("xml content end col = %d, want > content start col %d", xml.ContentEndCol, xml.ContentStartCol)
+	}
+}
+
+func TestSliceSectionContentPreservesCRLFBoundaries(t *testing.T) {
+	doc := "<note id=\"crlf\">Line 1\r\nLine 2\r\n</note>\r\n"
+
+	result := ParseSections([]byte(doc))
+	assertParserInvariants(t, result)
+
+	var section *Section
+	for i := range result.Sections {
+		if result.Sections[i].AnchorID == "crlf" {
+			section = &result.Sections[i]
+			break
+		}
+	}
+	if section == nil {
+		t.Fatal("expected crlf section")
+	}
+
+	got := SliceSectionContent(doc, section)
+	if got != "Line 1\nLine 2\n" {
+		t.Fatalf("SliceSectionContent CRLF = %q, want %q", got, "Line 1\nLine 2\n")
+	}
+}
+
 func TestParseSections_MarkdownHierarchyUsesOverlappingRanges(t *testing.T) {
 	doc := `# Title
 

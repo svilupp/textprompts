@@ -1,32 +1,10 @@
-export {
-  getMetadata,
-  MetadataMode,
-  setMetadata,
-  skipMetadata,
-  warnOnIgnoredMetadata,
-} from "./config";
-export {
-  FileMissingError,
-  InvalidMetadataError,
-  MalformedHeaderError,
-  MissingMetadataError,
-  TextPromptsError,
-} from "./errors";
+// textprompts — full API including Node.js file-system operations.
+// For edge runtimes without fs, use "textprompts/core" instead.
+
+// Core pure-string APIs (re-exported so index is always a superset of core)
+export * from "./core";
+
+// Node.js file-system APIs
 export { loadPrompt, loadSection } from "./loaders";
-export type { PromptMeta } from "./models";
-export { Prompt } from "./models";
-export { parseString } from "./parser";
-export { extractPlaceholders, getPlaceholderInfo } from "./placeholder-utils";
-export { PromptString } from "./prompt-string";
 export type { FrontMatterFormat } from "./savers";
 export { savePrompt } from "./savers";
-export type { FrontmatterBlock, Link, ParseResult, Section, SectionKind } from "./sections";
-export {
-  generateSlug,
-  getSectionText,
-  injectAnchors,
-  normalizeAnchorId,
-  parseSections,
-  renderToc,
-  sliceSectionContent,
-} from "./sections";

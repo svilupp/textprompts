@@ -113,11 +113,19 @@ func NewInvalidMetadataError(path, detail string, cause error) *InvalidMetadataE
 
 // MalformedHeaderError indicates the frontmatter structure is invalid.
 type MalformedHeaderError struct {
-	Base Error
-	Path string
+	Base   Error
+	Path   string
+	Detail string
 }
 
 func (e *MalformedHeaderError) Error() string {
+	if e.Detail != "" {
+		if e.Path != "" {
+			return fmt.Sprintf("malformed header in file %s: %s", e.Path, e.Detail)
+		}
+
+		return fmt.Sprintf("malformed header: %s", e.Detail)
+	}
 	if e.Path != "" {
 		return fmt.Sprintf("malformed header in file: %s", e.Path)
 	}
@@ -130,12 +138,18 @@ func (e *MalformedHeaderError) Unwrap() error {
 }
 
 // NewMalformedHeaderError creates a new MalformedHeaderError.
-func NewMalformedHeaderError(path string) *MalformedHeaderError {
+func NewMalformedHeaderError(path string, detail ...string) *MalformedHeaderError {
+	var resolved string
+	if len(detail) > 0 {
+		resolved = detail[0]
+	}
+
 	return &MalformedHeaderError{
 		Base: Error{
 			Message: fmt.Sprintf("malformed header in file: %s", path),
 		},
-		Path: path,
+		Path:   path,
+		Detail: resolved,
 	}
 }
 

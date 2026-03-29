@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-03-29
+
+### Changed
+- **BREAKING:** Default metadata mode changed from `IGNORE` to `ALLOW`. `load_prompt()` without an explicit `meta=` override now parses front matter when present instead of skipping it by default.
+
 ### Removed
 - Removed `load_prompts()` function. Multi-file/directory scanning is too platform-specific and hard to maintain cross-compatibility. Users should implement their own file discovery and call `load_prompt()` per file.
 

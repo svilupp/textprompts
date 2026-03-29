@@ -15,6 +15,7 @@ Metadata for a prompt file.
 - `author::Union{String, Nothing}`: Author of the prompt
 - `created::Union{Date, Nothing}`: Creation date
 - `description::Union{String, Nothing}`: Description of the prompt
+- `extras::Union{Dict{String, Any}, Nothing}`: Additional non-standard metadata fields
 """
 Base.@kwdef struct PromptMeta
     title::Union{String, Nothing} = nothing
@@ -22,6 +23,7 @@ Base.@kwdef struct PromptMeta
     author::Union{String, Nothing} = nothing
     created::Union{Date, Nothing} = nothing
     description::Union{String, Nothing} = nothing
+    extras::Union{Dict{String, Any}, Nothing} = nothing
 end
 
 function Base.show(io::IO, meta::PromptMeta)
@@ -31,6 +33,7 @@ function Base.show(io::IO, meta::PromptMeta)
     !isnothing(meta.author) && push!(fields, "author=$(repr(meta.author))")
     !isnothing(meta.created) && push!(fields, "created=$(meta.created)")
     !isnothing(meta.description) && push!(fields, "description=$(repr(meta.description))")
+    !isnothing(meta.extras) && !isempty(meta.extras) && push!(fields, "extras=$(repr(meta.extras))")
     print(io, "PromptMeta(", join(fields, ", "), ")")
 end
 

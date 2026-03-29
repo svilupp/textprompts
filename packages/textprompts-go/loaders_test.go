@@ -214,3 +214,71 @@ func TestLoadPromptAbsolutePath(t *testing.T) {
 		t.Errorf("LoadPrompt() path = %q, want %q", prompt.Path, absPath)
 	}
 }
+
+func TestLoadSection(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "textprompts-section-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	markdownPath := filepath.Join(tmpDir, "prompt.txt")
+	markdownContent := `---
+title = "Demo"
+description = "Demo prompt"
+version = "1.0.0"
+---
+Prelude line.
+
+# Title Section
+Alpha line.
+Beta line.`
+	if writeErr := os.WriteFile(markdownPath, []byte(markdownContent), 0o600); writeErr != nil {
+		t.Fatalf("Failed to write prompt file: %v", writeErr)
+	}
+
+	markdownPrompt, err := LoadSection(markdownPath, "Title Section", WithMetadataMode(ModeAllow))
+	if err != nil {
+		t.Fatalf("LoadSection() markdown error = %v", err)
+	}
+	if markdownPrompt.Path == "" {
+		t.Fatal("LoadSection() should set prompt path")
+	}
+	if markdownPrompt.Meta.Title == nil || *markdownPrompt.Meta.Title != "prompt" {
+		t.Fatalf("LoadSection() title = %v, want prompt", markdownPrompt.Meta.Title)
+	}
+	if got := markdownPrompt.Prompt.String(); got != "Alpha line.\nBeta line." {
+		t.Fatalf("LoadSection() markdown body = %q, want %q", got, "Alpha line.\nBeta line.")
+	}
+
+	xmlPath := filepath.Join(tmpDir, "xml.txt")
+	xmlContent := `<callout id="Important Note">XML body</callout>`
+	if writeErr := os.WriteFile(xmlPath, []byte(xmlContent), 0o600); writeErr != nil {
+		t.Fatalf("Failed to write xml prompt file: %v", writeErr)
+	}
+
+	xmlPrompt, err := LoadSection(xmlPath, "Important Note", WithMetadataMode(ModeAllow))
+	if err != nil {
+		t.Fatalf("LoadSection() xml error = %v", err)
+	}
+	if got := xmlPrompt.Prompt.String(); got != "XML body" {
+		t.Fatalf("LoadSection() xml body = %q, want %q", got, "XML body")
+	}
+}
+
+func TestLoadSectionMissingSection(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "textprompts-section-missing-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	path := filepath.Join(tmpDir, "prompt.txt")
+	if err := os.WriteFile(path, []byte("# Heading\n\nBody."), 0o600); err != nil {
+		t.Fatalf("Failed to write prompt file: %v", err)
+	}
+
+	if _, err := LoadSection(path, "missing", WithMetadataMode(ModeAllow)); err == nil {
+		t.Fatal("LoadSection() should fail for missing section")
+	}
+}

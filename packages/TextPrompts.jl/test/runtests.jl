@@ -2,6 +2,7 @@ using TextPrompts
 using Test
 using Aqua
 using Dates
+using JSON3
 
 const FIXTURES_DIR = joinpath(@__DIR__, "fixtures")
 
@@ -447,46 +448,6 @@ const FIXTURES_DIR = joinpath(@__DIR__, "fixtures")
         end
     end
 
-    @testset "load_prompts" begin
-        @testset "empty paths" begin
-            prompts = load_prompts()
-            @test prompts == Prompt[]
-        end
-
-        @testset "load directory" begin
-            prompts = load_prompts(FIXTURES_DIR; meta = :ignore, glob_pattern = "good.txt")
-            @test length(prompts) >= 1
-        end
-
-        @testset "load multiple files" begin
-            good = joinpath(FIXTURES_DIR, "good.txt")
-            no_meta = joinpath(FIXTURES_DIR, "no_meta.txt")
-            prompts = load_prompts(good, no_meta; meta = :allow)
-            @test length(prompts) == 2
-        end
-
-        @testset "recursive loading" begin
-            # Use good*.txt pattern to avoid empty.txt and other error test files
-            prompts = load_prompts(FIXTURES_DIR; recursive = true, meta = :ignore, glob_pattern = "nested*.txt")
-            paths = [p.path for p in prompts]
-            # Should include nested file
-            @test any(occursin("subdir", p) for p in paths)
-        end
-
-        @testset "custom glob pattern" begin
-            prompts = load_prompts(
-                FIXTURES_DIR;
-                glob_pattern = "good*.txt",
-                meta = :ignore
-            )
-            @test all(occursin("good", basename(p.path)) for p in prompts)
-        end
-
-        @testset "nonexistent path" begin
-            @test_throws TextPrompts.FileMissingError load_prompts("nonexistent_dir/")
-        end
-    end
-
     @testset "from_path" begin
         good_path = joinpath(FIXTURES_DIR, "good.txt")
 
@@ -694,5 +655,255 @@ const FIXTURES_DIR = joinpath(@__DIR__, "fixtures")
         # Extra keys are OK
         extra_provided = Dict{String, Any}("name" => "test", "value" => 123, "extra" => "ok")
         @test validate_format_args(placeholders, extra_provided) === nothing
+    end
+
+    @testset "YAML frontmatter support" begin
+        @testset "YAML parsing from file" begin
+            prompt = load_prompt(joinpath(FIXTURES_DIR, "yaml_meta.txt"); meta=:allow)
+            @test prompt.meta.title == "YAML Prompt"
+            @test prompt.meta.version == "2.0.0"
+            @test prompt.meta.description == "A prompt with YAML metadata"
+            @test prompt.meta.author == "Test Author"
+            @test occursin("Hello", String(prompt))
+        end
+
+        @testset "YAML from_string" begin
+            content = "---\ntitle: My Prompt\nversion: \"1.0\"\ndescription: A test\n---\n\nBody text."
+            prompt = from_string(content)
+            @test prompt.meta.title == "My Prompt"
+            @test prompt.meta.version == "1.0"
+        end
+
+        @testset "TOML still works (backward compat)" begin
+            content = "---\ntitle = \"TOML Title\"\nversion = \"1.0.0\"\ndescription = \"TOML desc\"\n---\n\nBody."
+            prompt = from_string(content)
+            @test prompt.meta.title == "TOML Title"
+        end
+
+        @testset "YAML boolean coercion" begin
+            content = "---\ntitle: true\nversion: \"1.0.0\"\ndescription: A test\n---\n\nBody."
+            prompt = from_string(content)
+            @test prompt.meta.title == "true"  # YAML true -> bool -> "true"
+            @test prompt.meta.description == "A test"
+        end
+
+        @testset "YAML numeric version coercion" begin
+            content = "---\ntitle: Test\nversion: 2.0\ndescription: desc\n---\n\nBody."
+            prompt = from_string(content)
+            @test prompt.meta.version == "2.0"
+        end
+
+        @testset "empty YAML header" begin
+            content = "---\n---\n\nBody."
+            prompt = from_string(content)
+            @test prompt.meta.title == "untitled"
+        end
+    end
+
+    @testset "Extras field" begin
+        @testset "extras captured from YAML" begin
+            prompt = load_prompt(joinpath(FIXTURES_DIR, "yaml_extras.txt"); meta=:allow)
+            @test prompt.meta.title == "Extras Test"
+            @test !isnothing(prompt.meta.extras)
+            @test prompt.meta.extras["model"] == "gpt-4"
+            @test prompt.meta.extras["temperature"] == 0.7
+        end
+
+        @testset "extras nil when no unknown fields" begin
+            prompt = from_string("---\ntitle: Simple\nversion: \"1.0\"\ndescription: desc\n---\n\nBody.")
+            @test isnothing(prompt.meta.extras)
+        end
+
+        @testset "extras in show" begin
+            meta = PromptMeta(title="T", extras=Dict{String,Any}("model" => "gpt-4"))
+            str = sprint(show, meta)
+            @test occursin("extras", str)
+        end
+
+        @testset "extras round-trip save/load" begin
+            mktempdir() do tmpdir
+                meta = PromptMeta(
+                    title="WithExtras", version="1.0.0", description="test",
+                    extras=Dict{String,Any}("model" => "gpt-4", "temp" => 0.7)
+                )
+                original = Prompt("test.txt", meta, "Body.")
+                path = joinpath(tmpdir, "extras_rt.txt")
+                save_prompt(path, original)
+                loaded = load_prompt(path; meta=:allow)
+                @test !isnothing(loaded.meta.extras)
+                @test loaded.meta.extras["model"] == "gpt-4"
+            end
+        end
+    end
+
+    @testset "Save in YAML format" begin
+        mktempdir() do tmpdir
+            @testset "save string as YAML" begin
+                path = joinpath(tmpdir, "yaml_str.txt")
+                save_prompt(path, "Hello!"; format=:yaml)
+                content = read(path, String)
+                @test occursin("title:", content)
+                @test occursin("---", content)
+                @test !occursin("=", split(content, "---")[2])  # No TOML = in header
+            end
+
+            @testset "save Prompt as YAML" begin
+                meta = PromptMeta(
+                    title="YAML Save", version="1.0.0", description="test",
+                    author="Author", created=Date(2024, 6, 15)
+                )
+                prompt = Prompt("test.txt", meta, "Body {name}.")
+                path = joinpath(tmpdir, "yaml_prompt.txt")
+                save_prompt(path, prompt; format=:yaml)
+                content = read(path, String)
+                @test occursin("title:", content)
+                @test occursin("YAML Save", content)
+                @test occursin("2024-06-15", content)
+            end
+
+            @testset "YAML round-trip" begin
+                meta = PromptMeta(title="RT", version="1.0.0", description="round trip")
+                original = Prompt("test.txt", meta, "Hello, {name}!")
+                path = joinpath(tmpdir, "yaml_rt.txt")
+                save_prompt(path, original; format=:yaml)
+                loaded = load_prompt(path; meta=:allow)
+                @test loaded.meta.title == "RT"
+                @test loaded.meta.version == "1.0.0"
+                @test String(loaded) == String(original)
+            end
+
+            @testset "invalid format" begin
+                @test_throws ArgumentError save_prompt(joinpath(tmpdir, "x.txt"), "body"; format=:xml)
+            end
+        end
+    end
+
+    @testset "normalize_anchor_id" begin
+        @test normalize_anchor_id("Hello World") == "hello_world"
+        @test normalize_anchor_id("Section-One") == "section_one"
+        @test normalize_anchor_id("under_score") == "under_score"
+        @test normalize_anchor_id("UPPER") == "upper"
+        @test normalize_anchor_id("a--b") == "a_b"
+        @test normalize_anchor_id("trailing-") == "trailing"
+        @test normalize_anchor_id("") == "section"
+        @test normalize_anchor_id("!!!") == "section"
+    end
+
+    @testset "generate_slug" begin
+        @test generate_slug("Hello World") == "hello_world"
+        @test generate_slug("[Link](http://example.com)") == "link"
+        @test generate_slug("**Bold** and *italic*") == "bold_and_italic"
+        @test generate_slug("<code>Tag</code>") == "tag"
+    end
+
+    @testset "Section parsing - shared corpus" begin
+        # Load shared test corpus
+        corpus_path = joinpath(@__DIR__, "..", "..", "..", "testdata", "sections", "cases.json")
+        if isfile(corpus_path)
+            cases = JSON3.read(read(corpus_path, String))
+
+            for tc in cases
+                @testset "$(tc.name)" begin
+                    result = parse_sections(tc.document)
+                    expected = tc.expected
+
+                    # Check section count
+                    @test length(result.sections) == length(expected.sections)
+
+                    # Check each section
+                    for (i, exp_sec) in enumerate(expected.sections)
+                        if i > length(result.sections)
+                            break
+                        end
+                        sec = result.sections[i]
+                        @test sec.kind == exp_sec.kind
+                        @test sec.heading == exp_sec.heading
+                        @test sec.anchor_id == exp_sec.anchorId
+                        @test sec.level == exp_sec.level
+                        @test sec.start_line == exp_sec.startLine
+                        @test sec.end_line == exp_sec.endLine
+                        @test sec.char_count == exp_sec.charCount
+                        @test sec.parent_idx == exp_sec.parentIdx
+                        @test sec.children == collect(exp_sec.children)
+                    end
+
+                    # Check anchors
+                    for (key, val) in pairs(expected.anchors)
+                        @test get(result.anchors, string(key), nothing) == val
+                    end
+
+                    # Check totalChars
+                    @test result.total_chars == expected.totalChars
+
+                    # Check frontmatter
+                    if isnothing(expected.frontmatter)
+                        @test isnothing(result.frontmatter)
+                    else
+                        @test !isnothing(result.frontmatter)
+                        @test result.frontmatter.format == expected.frontmatter.format
+                        @test result.frontmatter.title == expected.frontmatter.title
+                    end
+                end
+            end
+        else
+            @warn "Shared test corpus not found at $(corpus_path), skipping corpus tests"
+        end
+    end
+
+    @testset "inject_anchors" begin
+        text = "## Heading One\n\nContent.\n\n## Heading Two\n\nMore content."
+        output, result = inject_anchors(text)
+        @test occursin("<a id=", output)
+        @test occursin("heading_one", output)
+        @test occursin("heading_two", output)
+    end
+
+    @testset "render_toc" begin
+        text = "# Title\n\n## Section\n\nContent."
+        result = parse_sections(text)
+        toc = render_toc(result, "test.md")
+        @test occursin("test.md", toc)
+        @test occursin("Title", toc)
+        @test occursin("Section", toc)
+        @test occursin("chars", toc)
+    end
+
+    @testset "get_section_text" begin
+        @testset "XML section extraction" begin
+            text = "<system>\nYou are helpful.\n</system>\n\n<user>\nHello!\n</user>"
+            body = get_section_text(text, "system")
+            @test !isnothing(body)
+            @test body == "You are helpful."
+        end
+
+        @testset "markdown section extraction" begin
+            text = "## First\n\nContent one.\n\n## Second\n\nContent two."
+            body = get_section_text(text, "first")
+            @test !isnothing(body)
+            @test body == "Content one."
+        end
+
+        @testset "section not found" begin
+            text = "## Heading\n\nContent."
+            body = get_section_text(text, "nonexistent")
+            @test isnothing(body)
+        end
+    end
+
+    @testset "load_section" begin
+        sections_path = joinpath(FIXTURES_DIR, "sections.txt")
+
+        @testset "load XML section" begin
+            prompt = load_section(sections_path, "system")
+            @test occursin("helpful assistant", String(prompt))
+        end
+
+        @testset "section not found" begin
+            @test_throws TextPrompts.PromptLoadError load_section(sections_path, "nonexistent")
+        end
+
+        @testset "file not found" begin
+            @test_throws TextPrompts.FileMissingError load_section("nonexistent.txt", "system")
+        end
     end
 end

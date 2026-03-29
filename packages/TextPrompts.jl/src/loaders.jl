@@ -113,131 +113,47 @@ function load_prompt(path; meta = nothing)::Prompt
 end
 
 """
-    load_prompts(paths...; recursive=false, glob_pattern="*.txt", meta=nothing, max_files=1000) -> Vector{Prompt}
+    load_section(path, anchor_id::AbstractString; meta=nothing) -> Prompt
 
-Load multiple prompt files from directories and/or individual files.
+Load a specific section from a prompt file by its anchor ID.
 
 # Arguments
-- `paths...`: One or more paths to files or directories
-- `recursive::Bool=false`: If true, search subdirectories recursively
-- `glob_pattern::String="*.txt"`: Glob pattern for matching files in directories
-- `meta`: Metadata mode (see `load_prompt`)
-- `max_files::Union{Int, Nothing}=1000`: Maximum number of files to process.
-  Set to `nothing` for unlimited.
+- `path`: Path to the prompt file
+- `anchor_id::AbstractString`: The anchor ID of the section to load
+- `meta`: Metadata mode (see `load_prompt` for details)
 
 # Returns
-A `Vector{Prompt}` of loaded prompts.
+A `Prompt` object containing only the section's content.
 
 # Throws
-- Various errors from `load_prompt` for individual files
+- `FileMissingError`: If file doesn't exist
+- `TextPromptsError`: If the section is not found
 
 # Examples
 ```julia
-# Load all .txt files from a directory
-prompts = load_prompts("prompts/")
-
-# Load recursively
-prompts = load_prompts("prompts/"; recursive=true)
-
-# Load specific files
-prompts = load_prompts("greeting.txt", "farewell.txt")
-
-# Mix files and directories
-prompts = load_prompts("prompts/", "special/custom.txt")
-
-# Custom glob pattern
-prompts = load_prompts("prompts/"; glob_pattern="*.prompt")
+prompt = load_section("prompts/multi.txt", "system")
+prompt = load_section("prompts/multi.txt", "examples"; meta=:ignore)
 ```
 """
-function load_prompts(
-        paths...;
-        recursive::Bool = false,
-        glob_pattern::AbstractString = "*.txt",
-        meta = nothing,
-        max_files::Union{Int, Nothing} = 1000
-)::Vector{Prompt}
-    if isempty(paths)
-        return Prompt[]
+function load_section(path, anchor_id::AbstractString; meta=nothing)::Prompt
+    path_str = string(path)
+
+    if !isfile(path_str)
+        throw(FileMissingError(path_str))
+    end
+
+    content = try
+        read(path_str, String)
+    catch e
+        throw(FileReadError(path_str, string(e)))
+    end
+
+    section_text = get_section_text(content, anchor_id)
+    if isnothing(section_text)
+        throw(PromptLoadError(path_str, "Section not found: $(anchor_id)"))
     end
 
     metadata_mode = parse_metadata_mode(meta)
-    all_files = String[]
-
-    for path in paths
-        path_str = string(path)
-
-        if isfile(path_str)
-            push!(all_files, path_str)
-        elseif isdir(path_str)
-            # Collect files matching glob pattern
-            pattern_regex = _glob_to_regex(glob_pattern)
-
-            if recursive
-                for (root, dirs, files) in walkdir(path_str)
-                    for file in files
-                        if occursin(pattern_regex, file)
-                            push!(all_files, joinpath(root, file))
-                        end
-                    end
-                end
-            else
-                for file in readdir(path_str)
-                    if occursin(pattern_regex, file) && isfile(joinpath(path_str, file))
-                        push!(all_files, joinpath(path_str, file))
-                    end
-                end
-            end
-        else
-            throw(FileMissingError(path_str))
-        end
-
-        # Check max_files limit
-        if !isnothing(max_files) && length(all_files) > max_files
-            all_files = all_files[1:max_files]
-            break
-        end
-    end
-
-    # Apply max_files limit
-    if !isnothing(max_files) && length(all_files) > max_files
-        all_files = all_files[1:max_files]
-    end
-
-    # Load all files
-    prompts = Prompt[]
-    for file in all_files
-        try
-            push!(prompts, parse_file(file; metadata_mode = metadata_mode))
-        catch e
-            if e isa TextPromptsError
-                rethrow()
-            else
-                throw(PromptLoadError(file, string(e)))
-            end
-        end
-    end
-
-    return prompts
+    return parse_string(section_text; path=path_str, metadata_mode=metadata_mode)
 end
 
-"""
-    _glob_to_regex(pattern::AbstractString) -> Regex
-
-Convert a simple glob pattern to a regex.
-
-Supports:
-- `*` matches any characters except `/`
-- `?` matches any single character except `/`
-- `[...]` character classes
-"""
-function _glob_to_regex(pattern::AbstractString)::Regex
-    # Escape regex special characters except * and ?
-    regex_str = replace(pattern, r"[.+^${}()|\\]" => s"\\\0")
-
-    # Convert glob wildcards to regex
-    regex_str = replace(regex_str, "*" => ".*")
-    regex_str = replace(regex_str, "?" => ".")
-
-    # Anchor to match entire string
-    return Regex("^" * regex_str * "\$")
-end

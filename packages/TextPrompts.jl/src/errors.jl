@@ -41,7 +41,7 @@ struct MissingMetadataError <: TextPromptsError
     end
     function MissingMetadataError(path::AbstractString)
         msg = "No metadata found in $(path). " *
-              "Add TOML front-matter with title, description, and version fields, " *
+              "Add TOML/YAML front-matter with title, description, and version fields, " *
               "or use meta=:allow or meta=:ignore."
         new(string(path), String[], msg)
     end
@@ -59,7 +59,7 @@ struct InvalidMetadataError <: TextPromptsError
     message::String
     function InvalidMetadataError(path::AbstractString, parse_error::String)
         msg = "Invalid metadata in $(path): $(parse_error). " *
-              "Check TOML syntax or use meta=:ignore to skip metadata parsing."
+              "Check TOML/YAML syntax or use meta=:ignore to skip metadata parsing."
         new(string(path), msg)
     end
 end

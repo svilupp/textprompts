@@ -1,4 +1,5 @@
 import { lstat, readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 import { type MetadataMode, resolveMetadataMode } from "./config";
 import { FileMissingError, TextPromptsError } from "./errors";
@@ -28,6 +29,7 @@ export const loadSection = async (
   anchorId: string,
   options: LoadPromptOptions = {},
 ): Promise<Prompt> => {
+  path = resolve(path);
   try {
     const stats = await lstat(path);
     if (!(stats.isFile() || stats.isSymbolicLink())) {
@@ -54,6 +56,7 @@ export const loadPrompt = async (
   path: string,
   options: LoadPromptOptions = {},
 ): Promise<Prompt> => {
+  path = resolve(path);
   try {
     const stats = await lstat(path);
     if (!(stats.isFile() || stats.isSymbolicLink())) {

@@ -8,9 +8,10 @@ func TestSplitFrontMatter(t *testing.T) {
 	tests := []struct {
 		name               string
 		content            string
-		wantToml           string
+		wantHeader         string
 		wantBody           string
 		wantHasFrontmatter bool
+		wantErr            bool
 	}{
 		{
 			name: "with frontmatter",
@@ -19,14 +20,14 @@ title = "Test"
 version = "1.0.0"
 ---
 Body content here.`,
-			wantToml:           "title = \"Test\"\nversion = \"1.0.0\"",
+			wantHeader:         "title = \"Test\"\nversion = \"1.0.0\"",
 			wantBody:           "Body content here.",
 			wantHasFrontmatter: true,
 		},
 		{
 			name:               "no frontmatter",
 			content:            "Just body content.",
-			wantToml:           "",
+			wantHeader:         "",
 			wantBody:           "Just body content.",
 			wantHasFrontmatter: false,
 		},
@@ -35,14 +36,12 @@ Body content here.`,
 			content: `---
 title = "Test"
 No closing delimiter.`,
-			wantToml:           "",
-			wantBody:           "---\ntitle = \"Test\"\nNo closing delimiter.",
-			wantHasFrontmatter: false,
+			wantErr: true,
 		},
 		{
 			name:               "empty content",
 			content:            "",
-			wantToml:           "",
+			wantHeader:         "",
 			wantBody:           "",
 			wantHasFrontmatter: false,
 		},
@@ -52,7 +51,7 @@ No closing delimiter.`,
 title = "Test"
 ---
 `,
-			wantToml:           "title = \"Test\"",
+			wantHeader:         "title = \"Test\"",
 			wantBody:           "",
 			wantHasFrontmatter: true,
 		},
@@ -64,17 +63,33 @@ title = "Test"
 Line 1
 Line 2
 Line 3`,
-			wantToml:           "title = \"Test\"",
+			wantHeader:         "title = \"Test\"",
 			wantBody:           "Line 1\nLine 2\nLine 3",
 			wantHasFrontmatter: true,
+		},
+		{
+			name: "leading whitespace before delimiter is not frontmatter",
+			content: `  ---
+title = "Test"
+---
+Body`,
+			wantHeader:         "",
+			wantBody:           "  ---\ntitle = \"Test\"\n---\nBody",
+			wantHasFrontmatter: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotToml, gotBody, gotHas := splitFrontMatter(tt.content)
-			if gotToml != tt.wantToml {
-				t.Errorf("splitFrontMatter() toml = %q, want %q", gotToml, tt.wantToml)
+			gotHeader, gotBody, gotHas, err := splitFrontMatter(tt.content)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("splitFrontMatter() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr {
+				return
+			}
+			if gotHeader != tt.wantHeader {
+				t.Errorf("splitFrontMatter() header = %q, want %q", gotHeader, tt.wantHeader)
 			}
 			if gotBody != tt.wantBody {
 				t.Errorf("splitFrontMatter() body = %q, want %q", gotBody, tt.wantBody)
@@ -157,6 +172,20 @@ title = "Missing quote
 Body`,
 			mode:    ModeAllow,
 			wantErr: true,
+		},
+		{
+			name: "yaml frontmatter allow mode",
+			content: `---
+title: YAML Prompt
+version: "1.0.0"
+description: YAML description
+custom_flag: true
+---
+Hello {name}!`,
+			mode:        ModeAllow,
+			wantTitle:   "YAML Prompt",
+			wantVersion: "1.0.0",
+			wantBody:    "Hello {name}!",
 		},
 	}
 

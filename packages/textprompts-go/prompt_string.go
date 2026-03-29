@@ -2,7 +2,7 @@ package textprompts
 
 import (
 	"fmt"
-	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -65,6 +65,19 @@ func WithSkipValidation() FormatOption {
 // Format replaces placeholders with provided values.
 // Returns an error if required placeholders are missing (unless WithSkipValidation is used).
 func (ps PromptString) Format(values map[string]interface{}, opts ...FormatOption) (string, error) {
+	return ps.formatWithBindings(nil, values, opts...)
+}
+
+// FormatArgs replaces placeholders with positional and keyword values.
+func (ps PromptString) FormatArgs(args []interface{}, kwargs map[string]interface{}, opts ...FormatOption) (string, error) {
+	return ps.formatWithBindings(args, kwargs, opts...)
+}
+
+func (ps PromptString) formatWithBindings(args []interface{}, kwargs map[string]interface{}, opts ...FormatOption) (string, error) {
+	if kwargs == nil {
+		kwargs = map[string]interface{}{}
+	}
+
 	// Parse options
 	options := &formatOptions{}
 	for _, opt := range opts {
@@ -73,8 +86,21 @@ func (ps PromptString) Format(values map[string]interface{}, opts ...FormatOptio
 
 	// Validate unless skipped
 	if !options.skipValidation {
-		if err := ValidateFormatArgs(ps.placeholders, values); err != nil {
+		if err := validateFormatBindings(ps.placeholders, args, kwargs); err != nil {
 			return "", err
+		}
+		emptyPlaceholderCount := countEmptyPlaceholders(ps.content)
+		if emptyPlaceholderCount > len(args) {
+			if _, ok := kwargs[""]; ok {
+				emptyPlaceholderCount = len(args)
+			}
+		}
+		if emptyPlaceholderCount > len(args) {
+			return "", fmt.Errorf(
+				"missing positional format variables for empty placeholders: expected %d, received %d",
+				countEmptyPlaceholders(ps.content),
+				len(args),
+			)
 		}
 	}
 
@@ -85,13 +111,54 @@ func (ps PromptString) Format(values map[string]interface{}, opts ...FormatOptio
 	result = strings.ReplaceAll(result, "{{", escapedOpenMarker)
 	result = strings.ReplaceAll(result, "}}", escapedCloseMarker)
 
-	// Replace each placeholder with its value
-	for name, value := range values {
-		// Handle {name} and {name:format} patterns
-		pattern := regexp.MustCompile(`\{` + regexp.QuoteMeta(name) + `(?::[^{}]*)?\}`)
-		strValue := formatValue(value)
-		result = pattern.ReplaceAllString(result, strValue)
-	}
+	emptyPlaceholderIndex := 0
+	result = placeholderPattern.ReplaceAllStringFunc(result, func(match string) string {
+		parts := placeholderPattern.FindStringSubmatch(match)
+		if len(parts) < 2 {
+			return match
+		}
+
+		key := strings.TrimSpace(parts[1])
+		if key == "" {
+			if emptyPlaceholderIndex >= len(args) {
+				if value, exists := kwargs[""]; exists {
+					if value == nil && options.skipValidation {
+						return match
+					}
+
+					return formatValue(value)
+				}
+
+				return match
+			}
+			value := args[emptyPlaceholderIndex]
+			emptyPlaceholderIndex++
+			if value == nil && options.skipValidation {
+				return match
+			}
+
+			return formatValue(value)
+		}
+
+		if value, exists := kwargs[key]; exists {
+			if value == nil && options.skipValidation {
+				return match
+			}
+
+			return formatValue(value)
+		}
+
+		if index, err := strconv.Atoi(key); err == nil && index >= 0 && index < len(args) {
+			value := args[index]
+			if value == nil && options.skipValidation {
+				return match
+			}
+
+			return formatValue(value)
+		}
+
+		return match
+	})
 
 	// Restore escaped braces
 	result = strings.ReplaceAll(result, escapedOpenMarker, "{")
@@ -103,6 +170,16 @@ func (ps PromptString) Format(values map[string]interface{}, opts ...FormatOptio
 // MustFormat is like Format but panics on error.
 func (ps PromptString) MustFormat(values map[string]interface{}, opts ...FormatOption) string {
 	result, err := ps.Format(values, opts...)
+	if err != nil {
+		panic(err)
+	}
+
+	return result
+}
+
+// MustFormatArgs is like FormatArgs but panics on error.
+func (ps PromptString) MustFormatArgs(args []interface{}, kwargs map[string]interface{}, opts ...FormatOption) string {
+	result, err := ps.FormatArgs(args, kwargs, opts...)
 	if err != nil {
 		panic(err)
 	}

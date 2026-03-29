@@ -258,7 +258,7 @@ def demonstrate_no_metadata_loading(prompt_dir):
     except Exception as e:
         print(f"❌ Error: {e}")
 
-    # This will fail with strict mode (default is ignore, so we need to set strict)
+    # This will fail with strict mode, so we set it explicitly for this load
     try:
         simple = load_prompt(simple_path, meta="strict")
         print("✅ Loaded simple prompt with strict mode")
