@@ -7,6 +7,17 @@ Produces a structured ParseResult matching the cross-language test corpus.
 
 # ─── Types ────────────────────────────────────────────────────────────────────
 
+"""
+    Link
+
+A hyperlink found within a section.
+
+# Fields
+- `target::String`: The URL or path target of the link
+- `fragment::String`: The fragment (anchor) part of the link
+- `label::String`: The display label of the link
+- `line::Int`: The 1-based line number where the link appears
+"""
 struct Link
     target::String
     fragment::String
@@ -14,6 +25,24 @@ struct Link
     line::Int
 end
 
+"""
+    Section
+
+A parsed section of a document (markdown heading, XML tag, or preamble).
+
+# Fields
+- `kind::String`: Section kind -- `"preamble"`, `"markdown"`, or `"xml"`
+- `tag_name::String`: XML tag name (empty for non-XML sections)
+- `heading::String`: Section heading text
+- `anchor_id::String`: Unique anchor identifier for the section
+- `level::Int`: Heading level (1-6 for markdown, nesting depth for XML, 0 for preamble)
+- `start_line::Int`: 1-based start line number
+- `end_line::Int`: 1-based end line number
+- `char_count::Int`: Character count of the section body
+- `parent_idx::Int`: 0-based index of the parent section (-1 for top-level)
+- `children::Vector{Int}`: 0-based indices of child sections
+- `links::Vector{Link}`: Links found within the section
+"""
 mutable struct Section
     kind::String          # "preamble", "markdown", "xml"
     tag_name::String
@@ -28,6 +57,18 @@ mutable struct Section
     links::Vector{Link}
 end
 
+"""
+    FrontmatterBlock
+
+A parsed front-matter block from the beginning of a document.
+
+# Fields
+- `raw::String`: The raw front-matter content (without delimiters)
+- `format::String`: The detected format -- `"yaml"` or `"toml"`
+- `title::String`: The title extracted from the front-matter (empty if not found)
+- `start_line::Int`: 1-based start line number (including opening delimiter)
+- `end_line::Int`: 1-based end line number (including closing delimiter)
+"""
 struct FrontmatterBlock
     raw::String
     format::String        # "yaml" or "toml"
@@ -36,6 +77,18 @@ struct FrontmatterBlock
     end_line::Int
 end
 
+"""
+    ParseResult
+
+The result of parsing a document into sections via [`parse_sections`](@ref).
+
+# Fields
+- `sections::Vector{Section}`: Ordered list of parsed sections
+- `anchors::Dict{String, Int}`: Map from anchor ID to 0-based section index
+- `duplicate_anchors::Dict{String, Vector{Int}}`: Anchor IDs that appear more than once
+- `frontmatter::Union{FrontmatterBlock, Nothing}`: Parsed front-matter block, if present
+- `total_chars::Int`: Total character count of the document body (excluding front-matter)
+"""
 struct ParseResult
     sections::Vector{Section}
     anchors::Dict{String, Int}              # anchor_id -> 0-based section index
