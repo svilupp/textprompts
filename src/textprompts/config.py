@@ -33,10 +33,10 @@ class MetadataMode(Enum):
 _env_mode = os.getenv("TEXTPROMPTS_METADATA_MODE")
 try:
     _METADATA_MODE: MetadataMode = (
-        MetadataMode(_env_mode.lower()) if _env_mode else MetadataMode.IGNORE
+        MetadataMode(_env_mode.lower()) if _env_mode else MetadataMode.ALLOW
     )
 except ValueError:
-    _METADATA_MODE = MetadataMode.IGNORE
+    _METADATA_MODE = MetadataMode.ALLOW
 _WARN_ON_IGNORED_META: bool = True
 
 

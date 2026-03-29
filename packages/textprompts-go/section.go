@@ -30,8 +30,13 @@ type Section struct {
 	Level     int    // markdown heading level, or derived display level for XML
 	StartLine int    // 1-based inclusive
 	EndLine   int    // 1-based inclusive
-	CharCount int    // characters in this section's content (excluding heading/tag wrapper)
-	ParentIdx int    // index of parent section (-1 for top-level)
+	// ContentStartLine/Col and ContentEndLine/Col delimit the raw section body.
+	ContentStartLine int
+	ContentStartCol  int
+	ContentEndLine   int
+	ContentEndCol    int
+	CharCount        int // characters in this section's content (excluding heading/tag wrapper)
+	ParentIdx        int // index of parent section (-1 for top-level)
 }
 
 // Link represents a cross-reference found in section content.
@@ -263,14 +268,18 @@ func ParseSections(data []byte) *ParseResult {
 				)
 
 				sectionIdx := appendSection(result, &Section{
-					Kind:      sectionKindXML,
-					TagName:   block.tagName,
-					Heading:   heading,
-					AnchorID:  anchorID,
-					Level:     level,
-					StartLine: startLine,
-					EndLine:   block.endLine,
-					ParentIdx: parentIdx,
+					Kind:             sectionKindXML,
+					TagName:          block.tagName,
+					Heading:          heading,
+					AnchorID:         anchorID,
+					Level:            level,
+					StartLine:        startLine,
+					EndLine:          block.endLine,
+					ContentStartLine: block.startLine,
+					ContentStartCol:  block.openEndCol,
+					ContentEndLine:   block.endLine,
+					ContentEndCol:    block.closeStartCol,
+					ParentIdx:        parentIdx,
 				})
 				registerAnchor(result, usedAnchorIDs, anchorID, sectionIdx, explicit)
 
@@ -313,13 +322,15 @@ func ParseSections(data []byte) *ParseResult {
 			anchorID, explicit := resolveSectionAnchor(heading, pending, attrID, usedAnchorIDs)
 
 			sectionIdx := appendSection(result, &Section{
-				Kind:      sectionKindMarkdown,
-				Heading:   heading,
-				AnchorID:  anchorID,
-				Level:     level,
-				StartLine: startLine,
-				EndLine:   lineNum,
-				ParentIdx: parentIdx,
+				Kind:             sectionKindMarkdown,
+				Heading:          heading,
+				AnchorID:         anchorID,
+				Level:            level,
+				StartLine:        startLine,
+				EndLine:          lineNum,
+				ContentStartLine: lineNum + 1,
+				ContentStartCol:  0,
+				ParentIdx:        parentIdx,
 			})
 			registerAnchor(result, usedAnchorIDs, anchorID, sectionIdx, explicit)
 
@@ -860,15 +871,19 @@ func maybeAppendPreamble(
 
 	chars, links := computeWindowStatsSkippingLines(lines, startLine, 0, endLine, lineEndCol(lines, endLine), skipLines)
 	appendSection(result, &Section{
-		Kind:      sectionKindPreamble,
-		Heading:   "",
-		AnchorID:  "",
-		Level:     0,
-		StartLine: startLine,
-		EndLine:   endLine,
-		CharCount: chars,
-		ParentIdx: -1,
-		Links:     links,
+		Kind:             sectionKindPreamble,
+		Heading:          "",
+		AnchorID:         "",
+		Level:            0,
+		StartLine:        startLine,
+		EndLine:          endLine,
+		ContentStartLine: startLine,
+		ContentStartCol:  0,
+		ContentEndLine:   endLine,
+		ContentEndCol:    lineEndCol(lines, endLine),
+		CharCount:        chars,
+		ParentIdx:        -1,
+		Links:            links,
 	})
 
 	return endLine + 1
@@ -915,6 +930,8 @@ func closeXMLBlock(
 func finalizeSection(result *ParseResult, lines []string, state *sectionState, endLine, endCol int) {
 	section := &result.Sections[state.idx]
 	section.EndLine = endLine
+	section.ContentEndLine = endLine
+	section.ContentEndCol = endCol
 	section.CharCount, section.Links = computeWindowStats(
 		lines,
 		state.contentStartLine,
@@ -978,6 +995,61 @@ func humanizeIdentifier(value string) string {
 	}
 
 	return strings.Join(fields, " ")
+}
+
+// GetSectionText extracts the body text for the section with the given anchor ID.
+// Returns the section content and true when found; otherwise returns "", false.
+func GetSectionText(text, anchorID string) (string, bool) {
+	result := ParseSections([]byte(text))
+	normalizedQuery := NormalizeAnchorID(anchorID)
+
+	for i := range result.Sections {
+		section := &result.Sections[i]
+		if section.AnchorID == anchorID || NormalizeAnchorID(section.AnchorID) == normalizedQuery {
+			return SliceSectionContent(text, section), true
+		}
+	}
+
+	return "", false
+}
+
+// SliceSectionContent returns the raw body content for a parsed section.
+// The section should come from ParseSections so the content bounds are populated.
+func SliceSectionContent(text string, section *Section) string {
+	if section == nil {
+		return ""
+	}
+
+	lines := strings.Split(text, "\n")
+	startLine := section.ContentStartLine
+	startCol := section.ContentStartCol
+	endLine := section.ContentEndLine
+	endCol := section.ContentEndCol
+
+	if !validWindow(lines, startLine, endLine) {
+		return ""
+	}
+
+	parts := make([]string, 0, endLine-startLine+1)
+	for lineNum := startLine; lineNum <= endLine; lineNum++ {
+		line := strings.TrimRight(lines[lineNum-1], "\r")
+		from := 0
+		to := len(line)
+
+		if lineNum == startLine {
+			from = clamp(startCol, 0, len(line))
+		}
+		if lineNum == endLine && endCol >= 0 {
+			to = clamp(endCol, from, len(line))
+		}
+		if to < from {
+			to = from
+		}
+
+		parts = append(parts, line[from:to])
+	}
+
+	return strings.Join(parts, "\n")
 }
 
 func updateFenceState(line string, state *fenceState) bool {

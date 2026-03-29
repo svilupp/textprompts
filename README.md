@@ -47,7 +47,7 @@ uv add textprompts # or pip install textprompts
 
 ## Quick Start
 
-**Super simple by default** - TextPrompts just loads text files with optional metadata:
+**Flexible by default** - TextPrompts loads metadata when present and still works fine without it:
 
 1. **Create a prompt file** (`greeting.txt`):
 ```
@@ -127,24 +127,9 @@ partial = template.format(name="Alice", skip_validation=True)
 print(partial)  # "Hello Alice, your order {order_id} is {status}"
 ```
 
-### Bulk Loading
-
-Load entire directories of prompts:
-
-```python
-from textprompts import load_prompts
-
-# Load all prompts from a directory
-prompts = load_prompts("prompts/", recursive=True)
-
-# Create a lookup
-prompt_dict = {p.meta.title: p for p in prompts if p.meta}
-greeting = prompt_dict["Customer Greeting"]
-```
-
 ### Simple & Flexible Metadata Handling
 
-TextPrompts is designed to be **super simple** by default - just load text files with optional metadata when available. No configuration needed!
+TextPrompts is designed to be **flexible** by default - load metadata when it's present, and fall back gracefully when it isn't. No configuration needed!
 
 ```python
 import textprompts
@@ -153,14 +138,14 @@ import textprompts
 prompt = textprompts.load_prompt("my_prompt.txt")  # Just works!
 
 # Three modes available for different use cases:
-# 1. IGNORE (default): Treat as simple text file, use filename as title
+# 1. ALLOW (default): Load metadata if present, don't worry if it's incomplete
+textprompts.set_metadata("allow")  # Flexible metadata loading (default)
+prompt = textprompts.load_prompt("prompt.txt")  # Loads any metadata found
+
+# 2. IGNORE: Treat as simple text file, use filename as title
 textprompts.set_metadata("ignore")  # Super simple file loading
 prompt = textprompts.load_prompt("prompt.txt")  # No metadata parsing
 print(prompt.meta.title)  # "prompt" (from filename)
-
-# 2. ALLOW: Load metadata if present, don't worry if it's incomplete
-textprompts.set_metadata("allow")  # Flexible metadata loading
-prompt = textprompts.load_prompt("prompt.txt")  # Loads any metadata found
 
 # 3. STRICT: Require complete metadata for production use
 textprompts.set_metadata("strict")  # Prevent errors in production
@@ -171,8 +156,8 @@ prompt = textprompts.load_prompt("prompt.txt", meta="strict")
 ```
 
 **Why this design?**
-- **Default = Simple**: No configuration needed, just load files
-- **Flexible**: Add metadata when you want structure
+- **Default = Flexible**: Parse metadata when it's available, no friction when it's not
+- **No configuration needed**: Just load files and it works
 - **Production-Safe**: Use strict mode to catch missing metadata before deployment
 
 ## Real-World Examples
@@ -333,8 +318,8 @@ Both formats are auto-detected based on the front-matter content.
 
 Choose the right level of strictness for your use case:
 
-1. **IGNORE** (default) - Simple text file loading, filename becomes title
-2. **ALLOW** - Load metadata if present, don't worry about completeness
+1. **ALLOW** (default) - Load metadata if present, don't worry about completeness
+2. **IGNORE** - Simple text file loading, filename becomes title
 3. **STRICT** - Require complete metadata (title, description, version) for production safety
 
 You can also set the environment variable `TEXTPROMPTS_METADATA_MODE` to one of
@@ -343,8 +328,8 @@ default mode.
 
 ```python
 # Set globally
-textprompts.set_metadata("ignore")   # Default: simple file loading
-textprompts.set_metadata("allow")    # Flexible: load any metadata
+textprompts.set_metadata("allow")    # Default: load metadata when available
+textprompts.set_metadata("ignore")   # Simple: no metadata parsing
 textprompts.set_metadata("strict")   # Production: require complete metadata
 
 # Or override per prompt
@@ -364,16 +349,6 @@ Returns a `Prompt` object with:
 - `prompt.meta`: Metadata from TOML/YAML front-matter (always present)
 - `prompt.prompt`: The prompt content as a `PromptString`
 - `prompt.path`: Path to the original file
-
-### `load_prompts(*paths, recursive=False, glob="*.txt", meta=None, max_files=1000)`
-
-Load multiple prompts from files or directories.
-
-- `*paths`: Files or directories to load
-- `recursive`: Search directories recursively (default: False)
-- `glob`: File pattern to match (default: "*.txt")
-- `meta`: Metadata handling mode - `MetadataMode.STRICT`, `MetadataMode.ALLOW`, `MetadataMode.IGNORE`, or string equivalents. None uses global config.
-- `max_files`: Maximum files to process (default: 1000)
 
 ### `set_metadata(mode)` / `get_metadata()`
 

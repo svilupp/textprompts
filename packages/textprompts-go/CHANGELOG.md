@@ -7,14 +7,17 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-03-19
-
-### Changed
-- Section anchors now normalize to underscore IDs, and generic XML sections default to tag-based anchors
-
-## [0.2.0] - 2026-03-15
+## [0.4.0] - 2026-03-29
 
 ### Added
-- Section parsing APIs: `ParseSections`, `GenerateSlug`, `InjectAnchors`, and `RenderTOC`
-- Shared and package-level tests for mixed Markdown/XML section parsing
-- Strict maintainer Makefile with setup, format checks, vet, lint, vuln scan, and race-test `check`
+- YAML frontmatter support, metadata extras, section extraction helpers, and positional formatting.
+
+### Changed
+- Ignored-metadata warnings are configurable, docs/tests were tightened, and `ModeAllow` remains the default.
+
+## [0.3.0] - 2026-03-19
+- Section anchors now normalize to underscore IDs, and generic XML sections default to tag-based anchors.
+
+## [0.2.0] - 2026-03-15
+- Added section parsing APIs plus shared mixed Markdown/XML coverage.
+- Added a stricter maintainer workflow with formatting, lint, vuln, vet, and race-test checks.

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-03-29
+
+### BREAKING CHANGES
+
+**`loadPrompts()` has been removed.** Multi-file/directory scanning and the `fast-glob` dependency have been dropped entirely — they were too platform-specific to maintain cross-compatibility across Node.js, edge runtimes, and browsers. If you relied on `loadPrompts()`, implement your own file discovery and call `loadPrompt()` for each file.
+
+### Added
+- `textprompts/core` entry point — pure-string APIs with zero `node:` imports, safe for edge runtimes
+
+### Removed
+- `loadPrompts()` function and `LoadPromptsOptions` type
+- `fast-glob` dependency (and all its transitive `node:fs` imports)
+
 ## [0.7.0] - 2026-03-19
 
 ### Changed
@@ -61,7 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite
 - Examples for OpenAI, Anthropic, and Vercel AI SDK
 
-[Unreleased]: https://github.com/svilupp/textprompts/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/svilupp/textprompts/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/svilupp/textprompts/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/svilupp/textprompts/releases/tag/v0.7.0
 [0.6.0]: https://github.com/svilupp/textprompts/releases/tag/v0.6.0
 [0.5.0]: https://github.com/svilupp/textprompts/releases/tag/v0.5.0

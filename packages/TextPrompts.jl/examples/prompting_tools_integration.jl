@@ -76,31 +76,6 @@ end
 # Uncomment to call:
 # response = aigenerate(messages)
 
-# =============================================================================
-# 4. Dynamic Prompt Selection
-# =============================================================================
-
-println("\n" * "="^60)
-println("4. Dynamic Prompt Selection")
-println("="^60)
-
-# Load all prompts and select by title
-all_templates = load_prompts(prompts_dir)
-templates_by_title = Dict(p.meta.title => p for p in all_templates)
-
-println("\nAvailable templates:")
-for title in keys(templates_by_title)
-    println("  - ", title)
-end
-
-# Use a specific template
-if haskey(templates_by_title, "Task Prompt")
-    task_template = templates_by_title["Task Prompt"]
-    msg = task_template(; task="write a hello world function") |> UserMessage
-    println("\nDynamically selected template:")
-    println("  ", msg.content)
-end
-
 println("\n" * "="^60)
 println("Done!")
 println("="^60)

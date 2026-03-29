@@ -1,56 +1,11 @@
 package textprompts
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/BurntSushi/toml"
 )
-
-const (
-	// FrontmatterDelimiter marks the start and end of TOML frontmatter.
-	FrontmatterDelimiter = "---"
-)
-
-// splitFrontMatter separates metadata from body content.
-// Returns the TOML content, body content, and whether frontmatter was found.
-func splitFrontMatter(content string) (tomlContent, body string, hasFrontmatter bool) {
-	lines := strings.Split(content, "\n")
-
-	// Check for opening delimiter on first line
-	if len(lines) == 0 || strings.TrimSpace(lines[0]) != FrontmatterDelimiter {
-		return "", content, false
-	}
-
-	// Find closing delimiter
-	closingIdx := -1
-	for i := 1; i < len(lines); i++ {
-		if strings.TrimSpace(lines[i]) == FrontmatterDelimiter {
-			closingIdx = i
-			break
-		}
-	}
-
-	if closingIdx == -1 {
-		// No closing delimiter found - treat as no frontmatter
-		return "", content, false
-	}
-
-	// Extract TOML content (between delimiters)
-	tomlContent = strings.Join(lines[1:closingIdx], "\n")
-
-	// Extract body (after closing delimiter)
-	if closingIdx+1 < len(lines) {
-		body = strings.Join(lines[closingIdx+1:], "\n")
-		// Trim leading newline from body if present
-		body = strings.TrimPrefix(body, "\n")
-	} else {
-		body = ""
-	}
-
-	return tomlContent, body, true
-}
 
 // parseFile reads and parses a prompt file.
 func parseFile(path string, mode MetadataMode) (*Prompt, error) {
@@ -78,18 +33,20 @@ func parseFile(path string, mode MetadataMode) (*Prompt, error) {
 
 // parseString parses prompt content from a string.
 func parseString(content string, mode MetadataMode, sourcePath string) (*Prompt, error) {
+	normalizedContent := normalizeNewlines(content)
 	prompt := &Prompt{
 		Path: sourcePath,
 	}
 
 	// Handle IGNORE mode - treat entire content as body
 	if mode == ModeIgnore {
-		prompt.Prompt = NewPromptString(content)
+		if WarnOnIgnoredMetadata() && looksLikeFrontmatter(normalizedContent) {
+			ignoredMetadataWarner(ignoredMetadataWarningMessage)
+		}
+		prompt.Prompt = NewPromptString(dedent(normalizedContent))
 		// Set title from filename if available
 		if sourcePath != "" {
-			baseName := filepath.Base(sourcePath)
-			ext := filepath.Ext(baseName)
-			title := strings.TrimSuffix(baseName, ext)
+			title := titleFromSourcePath(sourcePath)
 			prompt.Meta.Title = &title
 		}
 
@@ -97,7 +54,18 @@ func parseString(content string, mode MetadataMode, sourcePath string) (*Prompt,
 	}
 
 	// Try to split frontmatter
-	tomlContent, body, hasFrontmatter := splitFrontMatter(content)
+	headerText, body, hasFrontmatter, err := splitFrontMatter(normalizedContent)
+	if err != nil {
+		detail := err.Error()
+		if strings.HasPrefix(normalizedContent, FrontmatterDelimiter) {
+			detail = fmt.Sprintf(
+				"%s. If this content has no metadata and starts with '---', use ModeIgnore to skip metadata parsing",
+				detail,
+			)
+		}
+
+		return nil, NewInvalidMetadataError(sourcePath, detail, err)
+	}
 
 	if !hasFrontmatter {
 		// No frontmatter found
@@ -105,32 +73,37 @@ func parseString(content string, mode MetadataMode, sourcePath string) (*Prompt,
 			return nil, NewMissingMetadataError(sourcePath)
 		}
 		// ALLOW mode - use content as body, set title from filename
-		prompt.Prompt = NewPromptString(content)
+		prompt.Prompt = NewPromptString(dedent(normalizedContent))
 		if sourcePath != "" {
-			baseName := filepath.Base(sourcePath)
-			ext := filepath.Ext(baseName)
-			title := strings.TrimSuffix(baseName, ext)
+			title := titleFromSourcePath(sourcePath)
 			prompt.Meta.Title = &title
 		}
 
 		return prompt, nil
 	}
 
-	// Parse TOML metadata
-	var meta PromptMeta
-	if _, err := toml.Decode(tomlContent, &meta); err != nil {
+	data, err := parseHeader(headerText)
+	if err != nil {
 		return nil, NewInvalidMetadataError(sourcePath, err.Error(), err)
 	}
 
-	// Validate in strict mode
+	meta, err := promptMetaFromMap(data)
+	if err != nil {
+		return nil, NewInvalidMetadataError(sourcePath, err.Error(), err)
+	}
+
 	if mode == ModeStrict {
-		if err := meta.Validate(); err != nil {
+		if err := validateStrictMetadata(meta); err != nil {
 			return nil, NewInvalidMetadataError(sourcePath, err.Error(), nil)
 		}
 	}
 
 	prompt.Meta = meta
-	prompt.Prompt = NewPromptString(body)
+	if prompt.Meta.Title == nil && sourcePath != "" {
+		title := titleFromSourcePath(sourcePath)
+		prompt.Meta.Title = &title
+	}
+	prompt.Prompt = NewPromptString(dedent(body))
 
 	return prompt, nil
 }
@@ -155,4 +128,11 @@ func FromString(content string, opts ...LoadOption) (*Prompt, error) {
 	}
 
 	return parseString(content, *mode, "")
+}
+
+func titleFromSourcePath(sourcePath string) string {
+	baseName := filepath.Base(sourcePath)
+	ext := filepath.Ext(baseName)
+
+	return strings.TrimSuffix(baseName, ext)
 }

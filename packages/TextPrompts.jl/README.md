@@ -3,7 +3,7 @@
 [![CI](https://github.com/svilupp/textprompts/actions/workflows/julia-ci.yml/badge.svg)](https://github.com/svilupp/textprompts/actions/workflows/julia-ci.yml)
 [![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://svilupp.github.io/textprompts/julia/)
 
-A minimal, zero-complexity prompt loader with TOML front-matter metadata for Julia.
+A minimal, zero-complexity prompt loader with TOML/YAML front-matter metadata and section parsing for Julia.
 
 TextPrompts.jl is a Julia port of the [textprompts](https://github.com/svilupp/textprompts) Python package, allowing you to manage prompts as text files next to your code with optional metadata.
 
@@ -32,7 +32,7 @@ result = prompt(; name="World", day="Monday")
 
 ## File Format
 
-Prompt files can optionally include TOML front-matter:
+Prompt files can include TOML or YAML front-matter:
 
 ```
 ---
@@ -48,13 +48,20 @@ Hello, {name}!
 Today is {day} and the weather is {weather}.
 ```
 
-Or just plain text:
+YAML is also supported (auto-detected):
 
 ```
+---
+title: Greeting Prompt
+version: "1.0.0"
+description: A friendly greeting
+model: gpt-4
+---
+
 Hello, {name}!
-
-This is a simple prompt without metadata.
 ```
+
+Or just plain text without metadata.
 
 ## Metadata Modes
 
@@ -79,16 +86,12 @@ prompt = load_prompt("simple.txt"; meta=:ignore)
 ### Loading Prompts
 
 ```julia
-# Load single file
+# Load a prompt file
 prompt = load_prompt("path/to/prompt.txt")
 prompt = load_prompt("path/to/prompt.txt"; meta=:strict)
 
-# Load multiple files/directories
-prompts = load_prompts("prompts/")
-prompts = load_prompts("prompts/"; recursive=true)
-prompts = load_prompts("a.txt", "b.txt", "prompts/")
-prompts = load_prompts("prompts/"; glob_pattern="*.prompt")
-prompts = load_prompts("prompts/"; max_files=100)
+# Load a specific section by anchor ID
+section = load_section("path/to/file.txt", "system")
 ```
 
 ### Formatting
@@ -119,6 +122,9 @@ save_prompt("new_prompt.txt", "Hello, {name}!")
 
 # Save Prompt object (preserves metadata)
 save_prompt("backup.txt", prompt)
+
+# Save with YAML front-matter
+save_prompt("backup.txt", prompt; format=:yaml)
 ```
 
 ### Configuration
@@ -175,6 +181,7 @@ struct PromptMeta
     author::Union{String, Nothing}
     created::Union{Date, Nothing}
     description::Union{String, Nothing}
+    extras::Union{Dict{String, Any}, Nothing}  # Custom front-matter fields
 end
 ```
 
@@ -197,7 +204,7 @@ TextPrompts provides descriptive errors:
 | `FileMissingError` | File not found |
 | `EmptyContentError` | File has no content |
 | `MalformedHeaderError` | Invalid front-matter structure |
-| `InvalidMetadataError` | Invalid TOML syntax |
+| `InvalidMetadataError` | Invalid TOML/YAML syntax |
 | `MissingMetadataError` | Missing required fields (strict mode) |
 | `PlaceholderError` | Missing values for placeholders |
 
@@ -258,6 +265,28 @@ title = "Task Prompt"
 version = "1.0"
 ---
 Please help me with the following task: {task}
+```
+
+## Section Parsing
+
+Parse markdown headings and XML-style sections from documents:
+
+```julia
+# Parse sections from a document
+result = parse_sections(read("doc.md", String))
+for s in result.sections
+    println(s.heading, " [#", s.anchor_id, "]")
+end
+
+# Extract a section's body text
+body = get_section_text(content, "my_section")
+
+# Generate slugs and inject anchors
+slug = generate_slug("My Section")  # "my_section"
+anchored, result = inject_anchors(content)
+
+# Render table of contents
+println(render_toc(result, "doc.md"))
 ```
 
 ## Advanced Features

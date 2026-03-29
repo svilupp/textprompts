@@ -81,10 +81,11 @@ result = template.format(name="Alice", id="123", status="shipped")
 
 ### 3. Directory Loading
 ```python
-from textprompts import load_prompts
+from pathlib import Path
+from textprompts import load_prompt
 
 # Load all prompts from a directory tree
-prompts = load_prompts("prompts/", recursive=True)
+prompts = [load_prompt(str(p)) for p in Path("prompts/").rglob("*.txt")]
 prompt_dict = {p.meta.title: p for p in prompts if p.meta}
 ```
 
@@ -121,10 +122,11 @@ def get_prompt(name):
 
 ### Validation Pipeline
 ```python
-from textprompts import load_prompts
+from pathlib import Path
+from textprompts import load_prompt
 
 # Validate all prompts can be loaded
-prompts = load_prompts("prompts/", recursive=True)
+prompts = [load_prompt(str(p)) for p in Path("prompts/").rglob("*.txt")]
 print(f"Successfully validated {len(prompts)} prompts")
 ```
 

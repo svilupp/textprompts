@@ -1,5 +1,3 @@
-import { resolve } from "node:path";
-
 import type { MetadataMode } from "./config";
 import { PromptString } from "./prompt-string";
 
@@ -34,7 +32,7 @@ export class Prompt {
   readonly prompt: PromptString;
 
   constructor(init: PromptInit) {
-    this.path = resolve(init.path);
+    this.path = init.path;
     this.meta = init.meta;
     const value = init.prompt instanceof PromptString ? init.prompt : new PromptString(init.prompt);
     if (value.strip().length === 0) {
@@ -44,7 +42,9 @@ export class Prompt {
   }
 
   static async fromPath(path: string, options?: { meta?: MetadataMode | string | null }) {
-    const { loadPrompt } = await import("./loaders");
+    // Dynamic import kept opaque so bundlers don't inline node:fs into core
+    const mod = "./loaders";
+    const { loadPrompt } = await import(/* @vite-ignore */ mod);
     return loadPrompt(path, options?.meta !== undefined ? { meta: options.meta } : {});
   }
 
@@ -52,7 +52,7 @@ export class Prompt {
     content: string,
     options?: { path?: string; meta?: MetadataMode | string | null },
   ): Prompt {
-    const { parseString } = require("./parser");
+    const { parseString } = require("./parser-core");
     const { resolveMetadataMode } = require("./config");
     const sourcePath = options?.path ?? "<string>";
     const mode = resolveMetadataMode(options?.meta ?? null);

@@ -50,7 +50,7 @@ func TestExtractPlaceholders(t *testing.T) {
 		{
 			name:     "empty braces",
 			input:    "Empty {} placeholder",
-			expected: nil,
+			expected: []string{""},
 		},
 		{
 			name:     "nested escaped braces",

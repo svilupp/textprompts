@@ -25,10 +25,10 @@ def test_env_var_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.delenv("TEXTPROMPTS_METADATA_MODE")
     cfg = importlib.reload(cfg)
-    assert cfg.get_metadata() == cfg.MetadataMode.IGNORE
+    assert cfg.get_metadata() == cfg.MetadataMode.ALLOW
 
 
 def test_env_var_invalid_value(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TEXTPROMPTS_METADATA_MODE", "invalid_mode")
     cfg = importlib.reload(importlib.import_module("textprompts.config"))
-    assert cfg.get_metadata() == cfg.MetadataMode.IGNORE
+    assert cfg.get_metadata() == cfg.MetadataMode.ALLOW

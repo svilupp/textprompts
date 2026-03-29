@@ -6,7 +6,6 @@ from textprompts import (
     MetadataMode,
     get_metadata,
     load_prompt,
-    load_prompts,
     set_metadata,
 )
 from textprompts.errors import (
@@ -20,7 +19,7 @@ class TestMetadataModes:
 
     def setup_method(self) -> None:
         """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
+        set_metadata(MetadataMode.ALLOW)  # Reset to default
 
     def test_global_metadata_mode_setting(self) -> None:
         """Test setting and getting global metadata mode"""
@@ -58,7 +57,7 @@ class TestStrictMode:
 
     def setup_method(self) -> None:
         """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
+        set_metadata(MetadataMode.ALLOW)  # Reset to default
 
     def test_strict_mode_with_complete_metadata(self, tmp_path: Path) -> None:
         """Test STRICT mode with complete metadata"""
@@ -158,7 +157,7 @@ class TestAllowMode:
 
     def setup_method(self) -> None:
         """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
+        set_metadata(MetadataMode.ALLOW)  # Reset to default
 
     def test_allow_mode_with_complete_metadata(self, tmp_path: Path) -> None:
         """Test ALLOW mode with complete metadata"""
@@ -264,7 +263,7 @@ class TestIgnoreMode:
 
     def setup_method(self) -> None:
         """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
+        set_metadata(MetadataMode.ALLOW)  # Reset to default
 
     def test_ignore_mode_with_metadata(self, tmp_path: Path) -> None:
         """Test IGNORE mode ignores metadata"""
@@ -279,7 +278,8 @@ Test content here."""
         file_path = tmp_path / "test.txt"
         file_path.write_text(content)
 
-        # Test with global config (default)
+        # Test with global config
+        set_metadata(MetadataMode.IGNORE)
         prompt = load_prompt(file_path)
         assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
@@ -302,7 +302,8 @@ Test content here."""
         file_path = tmp_path / "test.txt"
         file_path.write_text(content)
 
-        # Test with global config (default)
+        # Test with global config
+        set_metadata(MetadataMode.IGNORE)
         prompt = load_prompt(file_path)
         assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
@@ -323,6 +324,7 @@ Test content here."""
         file_path.write_text(content)
 
         # Should not raise error in IGNORE mode
+        set_metadata(MetadataMode.IGNORE)
         prompt = load_prompt(file_path)
         assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename
@@ -334,7 +336,7 @@ class TestParameterPriority:
 
     def setup_method(self) -> None:
         """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
+        set_metadata(MetadataMode.ALLOW)  # Reset to default
 
     def test_meta_parameter_overrides_global(self, tmp_path: Path) -> None:
         """Test meta parameter overrides global configuration"""
@@ -384,86 +386,3 @@ Test content here."""
         assert prompt.meta is not None
         assert prompt.meta.title == "test"  # Uses filename, metadata ignored
         assert 'title = "Test Title"' in prompt.prompt
-
-
-class TestLoadPrompts:
-    """Test load_prompts function with metadata modes"""
-
-    def setup_method(self) -> None:
-        """Reset global config before each test"""
-        set_metadata(MetadataMode.IGNORE)  # Reset to default
-
-    def test_load_prompts_with_global_config(self, tmp_path: Path) -> None:
-        """Test load_prompts respects global metadata configuration"""
-        # Create test files
-        content1 = """---
-title = "Prompt 1"
-description = "First prompt"
-version = "1.0.0"
----
-
-Content 1"""
-
-        content2 = """---
-title = "Prompt 2"
-description = "Second prompt"
-version = "2.0.0"
----
-
-Content 2"""
-
-        (tmp_path / "prompt1.txt").write_text(content1)
-        (tmp_path / "prompt2.txt").write_text(content2)
-
-        # Test with STRICT mode
-        set_metadata(MetadataMode.STRICT)
-        prompts = load_prompts(tmp_path)
-        assert len(prompts) == 2
-        assert prompts[0].meta is not None
-        assert prompts[1].meta is not None
-        assert prompts[0].meta.title in ["Prompt 1", "Prompt 2"]
-        assert prompts[1].meta.title in ["Prompt 1", "Prompt 2"]
-
-    def test_load_prompts_with_meta_parameter(self, tmp_path: Path) -> None:
-        """Test load_prompts with meta parameter override"""
-        # Create test files
-        content1 = """---
-title = "Prompt 1"
-description = "First prompt"
-version = "1.0.0"
----
-
-Content 1"""
-
-        content2 = "Just content, no metadata"
-
-        (tmp_path / "prompt1.txt").write_text(content1)
-        (tmp_path / "prompt2.txt").write_text(content2)
-
-        # Global is IGNORE, but override with ALLOW
-        set_metadata(MetadataMode.IGNORE)
-        prompts = load_prompts(tmp_path, meta=MetadataMode.ALLOW)
-        assert len(prompts) == 2
-
-        # Find the prompts by their expected titles
-        # Add null checks for all prompts
-        for p in prompts:
-            assert p.meta is not None
-
-        # Find prompts with explicit null checks
-        prompt1 = None
-        prompt2 = None
-        for p in prompts:
-            assert p.meta is not None  # Additional null check in loop
-            if p.meta.title == "Prompt 1":
-                prompt1 = p
-            elif p.meta.title == "prompt2":
-                prompt2 = p
-
-        assert prompt1 is not None
-        assert prompt2 is not None
-
-        assert prompt1.meta is not None
-        assert prompt2.meta is not None
-        assert prompt1.meta.description == "First prompt"
-        assert prompt2.meta.description is None  # No metadata for second file

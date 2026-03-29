@@ -1,0 +1,10 @@
+---
+title: Extras Test
+version: "1.0.0"
+description: Testing extras
+model: gpt-4
+temperature: 0.7
+tags: custom
+---
+
+This prompt has extra metadata fields.

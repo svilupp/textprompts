@@ -8,10 +8,10 @@ Load a single prompt file.
 
 **Parameters:**
 - `path` (str | Path): Path to the prompt file
-- `meta` (MetadataMode | str | None): Metadata handling mode - "strict", "allow", "ignore", or None (uses global config)
+- `meta` (MetadataMode | str | None): Metadata handling mode - "strict", "allow", "ignore", or None (uses global config, which defaults to `ALLOW`)
 
 You can also set the environment variable `TEXTPROMPTS_METADATA_MODE` before
-importing the package to choose the default mode.
+importing the package to override the default `ALLOW` mode.
 
 **Returns:** `Prompt` object
 
@@ -24,38 +24,6 @@ from textprompts import load_prompt
 prompt = load_prompt("prompts/greeting.txt")
 print(prompt.meta.title)
 print(prompt.prompt)
-```
-
-### `load_prompts(*paths, recursive=False, glob="*.txt", meta=None, max_files=1000)`
-
-Load multiple prompt files from directories and/or individual files.
-
-**Parameters:**
-- `*paths` (str | Path): Files and directories to load
-- `recursive` (bool): If True, search directories recursively
-- `glob` (str): Glob pattern for finding files in directories
-- `meta` (MetadataMode | str | None): Metadata handling mode - "strict", "allow", "ignore", or None (uses global config)
-- `max_files` (int | None): Maximum number of files to process. None for no limit
-
-**Returns:** `list[Prompt]`
-
-**Raises:** `TextPromptsError` subclasses on any failure
-
-**Example:**
-```python
-from textprompts import load_prompts
-
-# Load all .txt files in a directory
-prompts = load_prompts("prompts/")
-
-# Load recursively with custom pattern
-prompts = load_prompts("templates/", recursive=True, glob="*.prompt")
-
-# Load specific files
-prompts = load_prompts("file1.txt", "file2.txt")
-
-# Load with specific metadata mode
-prompts = load_prompts("prompts/", meta="allow")
 ```
 
 ### `save_prompt(path, content, *, format="toml")`
@@ -279,18 +247,6 @@ path: Path = prompt.path
 ```
 
 ## Performance Considerations
-
-### File Limits
-
-By default, `load_prompts()` limits processing to 1000 files to prevent accidental loading of huge directories:
-
-```python
-# Raises error if more than 100 files found
-prompts = load_prompts("huge_dir/", max_files=100)
-
-# Disable limits (use with caution)
-prompts = load_prompts("huge_dir/", max_files=None)
-```
 
 ### Caching
 

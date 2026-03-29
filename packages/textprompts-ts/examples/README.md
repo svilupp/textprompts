@@ -25,7 +25,6 @@ bun examples/aisdk-example.ts
 ### `basic-usage.ts`
 Comprehensive demonstration of core TextPrompts functionality:
 - Loading single prompts with metadata
-- Loading multiple prompts from directories
 - Using PromptString for safe formatting
 - Loading prompts without metadata
 - Error handling examples
@@ -114,16 +113,7 @@ const template = new PromptString("Hello {name}, order {id} is {status}");
 const result = template.format({ name: "Alice", id: "123", status: "shipped" });
 ```
 
-### 3. Directory Loading
-```typescript
-import { loadPrompts } from "textprompts";
-
-// Load all prompts from a directory tree
-const prompts = await loadPrompts("prompts/", { recursive: true });
-const promptMap = new Map(prompts.map(p => [p.meta?.title ?? 'Untitled', p]));
-```
-
-### 4. Error Prevention
+### 3. Error Prevention
 ```typescript
 // PromptString raises clear errors for missing variables
 const safe = new PromptString("Hello {name}");
@@ -154,15 +144,6 @@ async function getPrompt(name: string) {
 }
 ```
 
-### Validation Pipeline
-```typescript
-import { loadPrompts } from "textprompts";
-
-// Validate all prompts can be loaded
-const prompts = await loadPrompts("prompts/", { recursive: true });
-console.log(`Successfully validated ${prompts.length} prompts`);
-```
-
 ## Best Practices Shown
 
 1. **Organize prompts by domain** - Use subdirectories for different purposes
@@ -181,7 +162,6 @@ import type {
   PromptMeta,       // Metadata interface
   PromptString,     // Safe formatting string
   LoadPromptOptions,
-  LoadPromptsOptions,
 } from "textprompts";
 ```
 

@@ -1,0 +1,9 @@
+---
+title: YAML Prompt
+version: "2.0.0"
+description: A prompt with YAML metadata
+author: Test Author
+created: 2024-06-15
+---
+
+Hello, {name}! Welcome to {place}.

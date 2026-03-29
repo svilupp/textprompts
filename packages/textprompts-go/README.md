@@ -47,7 +47,7 @@ func main() {
 
 ## File Format
 
-Prompt files use optional TOML frontmatter followed by the prompt content:
+Prompt files use optional frontmatter followed by the prompt content. Go accepts TOML first for backward compatibility and falls back to YAML when TOML parsing fails.
 
 ```
 ---
@@ -65,9 +65,27 @@ Best regards,
 {agent_name}
 ```
 
+YAML frontmatter works as well:
+
+```yaml
+---
+title: Customer Greeting
+version: "1.0.0"
+description: Friendly greeting for customers
+author: Your Name
+created: 2024-01-15
+tags:
+  - support
+  - onboarding
+settings:
+  tone: warm
+---
+Hello {customer_name}!
+```
+
 ## Metadata Modes
 
-Three modes control how TOML frontmatter is handled:
+Three modes control how frontmatter is handled:
 
 | Mode | Description | When to Use |
 |------|-------------|-------------|
@@ -96,16 +114,11 @@ prompt, err := textprompts.LoadPrompt("prompts/greeting.txt")
 prompt, err := textprompts.LoadPrompt("prompts/greeting.txt",
     textprompts.WithMetadataMode(textprompts.ModeStrict))
 
-// Load multiple prompts from a directory
-prompts, err := textprompts.LoadPrompts(
-    []string{"prompts/"},
-    textprompts.WithRecursive(),
-    textprompts.WithGlob("*.txt"),
-    textprompts.WithMaxFiles(100),
-)
-
 // Create from string content
 prompt, err := textprompts.FromString(content)
+
+// Load a single section body from a larger prompt file
+prompt, err := textprompts.LoadSection("prompts/catalog.txt", "system")
 ```
 
 ### Formatting
@@ -126,6 +139,22 @@ result, err := prompt.Format(
 
 // Panic on error (useful in templates)
 result := prompt.MustFormat(map[string]interface{}{"name": "Alice"})
+
+// Positional + named formatting
+result, err := prompt.FormatArgs(
+    []interface{}{"Alice"},
+    map[string]interface{}{"role": "admin"},
+)
+```
+
+### Extras And Metadata
+
+```go
+extras := prompt.Meta.GetExtras()
+if extras != nil {
+    fmt.Println(extras["tags"])
+    fmt.Println(extras["settings"])
+}
 ```
 
 ### Accessing Prompt Data
@@ -140,6 +169,7 @@ version := prompt.Meta.GetVersion()
 description := prompt.Meta.GetDescription()
 author := prompt.Meta.GetAuthor()
 created := prompt.Meta.GetCreated() // time.Time
+extras := prompt.Meta.GetExtras()   // map[string]interface{}
 
 // Get placeholder names
 placeholders := prompt.Prompt.Placeholders() // []string{"name", "role"}
@@ -159,6 +189,10 @@ fmt.Println(textprompts.RenderTOC(parsed, "prompt.txt"))
 // Normalize anchor IDs (lowercase, non-alphanumeric runs → "_")
 fmt.Println(textprompts.NormalizeAnchorID("My-Section")) // "my_section"
 fmt.Println(textprompts.GenerateSlug("My Section"))      // "my_section"
+
+// Extract a section body from a parsed document or raw file content
+body, ok := textprompts.GetSectionText("<system>Hello</system>", "system")
+fmt.Println(body, ok) // Hello true
 ```
 
 #### Anchor ID normalization
@@ -186,6 +220,13 @@ prompt := textprompts.NewPromptFull(
 
 // Save to file
 err := textprompts.SavePrompt("prompts/greeting.txt", prompt)
+
+// Save using YAML frontmatter
+err = textprompts.SavePrompt(
+    "prompts/greeting.yaml.txt",
+    prompt,
+    textprompts.WithFrontmatterFormat(textprompts.FrontmatterFormatYAML),
+)
 ```
 
 ### Configuration
@@ -200,6 +241,10 @@ mode := textprompts.GetMetadata()
 
 // Convenience function for ignore mode
 textprompts.SkipMetadata()
+textprompts.SkipMetadata(true) // also disable ignored-metadata warnings
+
+// Control ignored-metadata warnings directly
+textprompts.SetWarnOnIgnoredMetadata(false)
 
 // Environment variable (checked at init)
 // export TEXTPROMPTS_METADATA_MODE=strict
@@ -217,7 +262,7 @@ if err != nil {
         // No frontmatter in strict mode
     }
     if textprompts.IsInvalidMetadata(err) {
-        // Malformed TOML or validation failure
+        // Malformed TOML/YAML or validation failure
     }
     if textprompts.IsFormatError(err) {
         // Missing placeholder values

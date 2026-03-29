@@ -260,38 +260,6 @@ const cache = new PromptCache();
 const prompt = await cache.get("prompts/greeting.txt");
 ```
 
-### Preloading Prompts
-
-Load prompts at startup for better runtime performance:
-
-```typescript
-import { loadPrompts } from "textprompts";
-
-class PromptManager {
-  private prompts = new Map<string, Prompt>();
-
-  async initialize(): Promise<void> {
-    const loaded = await loadPrompts("prompts/", { recursive: true });
-
-    for (const prompt of loaded) {
-      if (prompt.meta?.title) {
-        this.prompts.set(prompt.meta.title, prompt);
-      }
-    }
-
-    console.log(`Loaded ${this.prompts.size} prompts`);
-  }
-
-  get(title: string): Prompt | undefined {
-    return this.prompts.get(title);
-  }
-}
-
-// At app startup
-const manager = new PromptManager();
-await manager.initialize();
-```
-
 ### Lazy Loading
 
 For large prompt sets, load on demand:
@@ -432,29 +400,6 @@ test("greeting prompt requires all variables", async () => {
 });
 ```
 
-### Validation Tests
-
-Validate all prompts at build time:
-
-```typescript
-import { loadPrompts } from "textprompts";
-
-test("all prompts are valid", async () => {
-  const prompts = await loadPrompts("prompts/", {
-    recursive: true,
-    meta: "strict"
-  });
-
-  expect(prompts.length).toBeGreaterThan(0);
-
-  for (const prompt of prompts) {
-    expect(prompt.meta?.title).toBeTruthy();
-    expect(prompt.meta?.version).toMatch(/^\d+\.\d+\.\d+$/);
-    expect(prompt.meta?.description).toBeTruthy();
-  }
-});
-```
-
 ### Snapshot Testing
 
 Test prompt output doesn't change unexpectedly:
@@ -490,34 +435,6 @@ Don't ignore your prompts! They're part of your code:
 # But you might ignore generated/cached prompts
 generated-prompts/
 .prompt-cache
-```
-
-### Git Hooks
-
-Validate prompts before commit:
-
-```bash
-#!/bin/bash
-# .git/hooks/pre-commit
-
-# Validate all prompts
-bun run validate-prompts || {
-  echo "Prompt validation failed!"
-  exit 1
-}
-```
-
-```typescript
-// scripts/validate-prompts.ts
-import { loadPrompts } from "textprompts";
-
-const prompts = await loadPrompts("prompts/", {
-  recursive: true,
-  meta: "strict"
-});
-
-console.log(`✅ Validated ${prompts.length} prompts`);
-process.exit(0);
 ```
 
 ### Branching Strategy
@@ -623,6 +540,16 @@ const response = await model.invoke([
   new HumanMessage("Hello!")
 ]);
 ```
+
+## Edge Runtimes
+
+For environments without Node.js file-system APIs (Cloudflare Workers, Deno Deploy, Vercel Edge, browsers), import from `textprompts/core` -- it has zero `node:` imports:
+
+```typescript
+import { Prompt, PromptString } from "textprompts/core";
+```
+
+All pure-string APIs (`Prompt.fromString`, `PromptString`, `parseSections`, etc.) are available. Only `loadPrompt`, `loadSection`, and `savePrompt` are excluded.
 
 ## Advanced Patterns
 

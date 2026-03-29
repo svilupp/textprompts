@@ -7,11 +7,42 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"gopkg.in/yaml.v3"
 )
 
-// SavePrompt writes a prompt to a file with TOML frontmatter.
-func SavePrompt(path string, prompt *Prompt) error {
-	content, err := formatPromptContent(prompt.Meta, prompt.Prompt.String())
+type saveOptions struct {
+	format FrontmatterFormat
+}
+
+func defaultSaveOptions() *saveOptions {
+	return &saveOptions{
+		format: FrontmatterFormatTOML,
+	}
+}
+
+// SaveOption configures prompt serialization.
+type SaveOption func(*saveOptions)
+
+// WithFrontmatterFormat overrides the default TOML frontmatter output format.
+func WithFrontmatterFormat(format FrontmatterFormat) SaveOption {
+	return func(o *saveOptions) {
+		o.format = format
+	}
+}
+
+// WithFrontMatterFormat is an exported alias matching the TypeScript/Python naming.
+func WithFrontMatterFormat(format FrontMatterFormat) SaveOption {
+	return WithFrontmatterFormat(format)
+}
+
+// SavePrompt writes a prompt to a file with TOML or YAML frontmatter.
+func SavePrompt(path string, prompt *Prompt, opts ...SaveOption) error {
+	options := defaultSaveOptions()
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	content, err := formatPromptContent(prompt.Meta, prompt.Prompt.String(), options.format)
 	if err != nil {
 		return err
 	}
@@ -37,8 +68,13 @@ func SavePrompt(path string, prompt *Prompt) error {
 }
 
 // SavePromptContent writes prompt content with metadata to a file.
-func SavePromptContent(path string, meta PromptMeta, content string) error {
-	formatted, err := formatPromptContent(meta, content)
+func SavePromptContent(path string, meta PromptMeta, content string, opts ...SaveOption) error {
+	options := defaultSaveOptions()
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	formatted, err := formatPromptContent(meta, content, options.format)
 	if err != nil {
 		return err
 	}
@@ -64,41 +100,54 @@ func SavePromptContent(path string, meta PromptMeta, content string) error {
 }
 
 // formatPromptContent formats metadata and content into a prompt file string.
-func formatPromptContent(meta PromptMeta, content string) (string, error) {
+func formatPromptContent(meta PromptMeta, content string, format FrontmatterFormat) (string, error) {
 	var buf bytes.Buffer
+	resolvedFormat, err := normalizeFrontmatterFormat(format)
+	if err != nil {
+		return "", &Error{
+			Message: "failed to encode metadata",
+			Cause:   err,
+		}
+	}
 
 	// Check if metadata has any non-empty fields
 	if !meta.IsEmpty() {
+		metaMap := meta.toMap()
 		buf.WriteString(FrontmatterDelimiter)
 		buf.WriteString("\n")
 
-		// Build a map for TOML encoding (only non-nil fields)
-		metaMap := make(map[string]interface{})
-
-		if meta.Title != nil && *meta.Title != "" {
-			metaMap["title"] = *meta.Title
-		}
-		if meta.Version != nil && *meta.Version != "" {
-			metaMap["version"] = *meta.Version
-		}
-		if meta.Author != nil && *meta.Author != "" {
-			metaMap["author"] = *meta.Author
-		}
-		if meta.Description != nil && *meta.Description != "" {
-			metaMap["description"] = *meta.Description
-		}
-		if meta.Created != nil {
-			// Format as date only (YYYY-MM-DD) for TOML
-			metaMap["created"] = meta.Created.Time.Format("2006-01-02")
-		}
-
-		if err := toml.NewEncoder(&buf).Encode(metaMap); err != nil {
-			return "", &Error{
-				Message: "failed to encode metadata",
-				Cause:   err,
+		switch resolvedFormat {
+		case FrontmatterFormatTOML:
+			filtered := make(map[string]interface{}, len(metaMap))
+			for key, value := range metaMap {
+				cleaned, ok := normalizeTOMLValue(value)
+				if !ok {
+					continue
+				}
+				filtered[key] = cleaned
+			}
+			if len(filtered) == 0 {
+				return content, nil
+			}
+			if err := toml.NewEncoder(&buf).Encode(filtered); err != nil {
+				return "", &Error{
+					Message: "failed to encode metadata",
+					Cause:   err,
+				}
+			}
+		case FrontmatterFormatYAML:
+			payload, err := yaml.Marshal(metaMap)
+			if err != nil {
+				return "", &Error{
+					Message: "failed to encode metadata",
+					Cause:   err,
+				}
+			}
+			buf.Write(payload)
+			if len(payload) == 0 || payload[len(payload)-1] != '\n' {
+				buf.WriteString("\n")
 			}
 		}
-
 		buf.WriteString(FrontmatterDelimiter)
 		buf.WriteString("\n")
 	}

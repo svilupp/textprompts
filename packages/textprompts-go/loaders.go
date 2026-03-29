@@ -1,28 +1,19 @@
 package textprompts
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/bmatcuk/doublestar/v4"
 )
 
 // loadOptions holds configuration for loading prompts.
-//
-//nolint:govet // Field layout is fine; keep options readable.
 type loadOptions struct {
-	glob      string
-	mode      *MetadataMode
-	maxFiles  int
-	recursive bool
+	mode *MetadataMode
 }
 
 func defaultLoadOptions() *loadOptions {
 	return &loadOptions{
-		mode:      nil, // Use global default
-		recursive: false,
-		glob:      "*.txt",
-		maxFiles:  1000,
+		mode: nil, // Use global default
 	}
 }
 
@@ -33,27 +24,6 @@ type LoadOption func(*loadOptions)
 func WithMetadataMode(mode MetadataMode) LoadOption {
 	return func(o *loadOptions) {
 		o.mode = &mode
-	}
-}
-
-// WithRecursive enables recursive directory traversal.
-func WithRecursive() LoadOption {
-	return func(o *loadOptions) {
-		o.recursive = true
-	}
-}
-
-// WithGlob sets the glob pattern for file matching (default: "*.txt").
-func WithGlob(pattern string) LoadOption {
-	return func(o *loadOptions) {
-		o.glob = pattern
-	}
-}
-
-// WithMaxFiles limits the number of files loaded.
-func WithMaxFiles(n int) LoadOption {
-	return func(o *loadOptions) {
-		o.maxFiles = n
 	}
 }
 
@@ -73,8 +43,8 @@ func LoadPrompt(path string, opts ...LoadOption) (*Prompt, error) {
 	return parseFile(path, *mode)
 }
 
-// LoadPrompts loads multiple prompts from paths, directories, or glob patterns.
-func LoadPrompts(paths []string, opts ...LoadOption) ([]*Prompt, error) {
+// LoadSection loads a specific section from a prompt file by anchor ID.
+func LoadSection(path, anchorID string, opts ...LoadOption) (*Prompt, error) {
 	options := defaultLoadOptions()
 	for _, opt := range opts {
 		opt(options)
@@ -86,126 +56,29 @@ func LoadPrompts(paths []string, opts ...LoadOption) ([]*Prompt, error) {
 		mode = &m
 	}
 
-	var allFiles []string
-
-	for _, path := range paths {
-		files, err := resolvePath(path, options)
-		if err != nil {
-			return nil, err
-		}
-		allFiles = append(allFiles, files...)
-	}
-
-	// Deduplicate files
-	seen := make(map[string]struct{})
-	var uniqueFiles []string
-	for _, f := range allFiles {
-		absPath, err := filepath.Abs(f)
-		if err != nil {
-			absPath = f
-		}
-		if _, exists := seen[absPath]; !exists {
-			seen[absPath] = struct{}{}
-			uniqueFiles = append(uniqueFiles, f)
-		}
-	}
-
-	// Apply max files limit
-	if options.maxFiles > 0 && len(uniqueFiles) > options.maxFiles {
-		uniqueFiles = uniqueFiles[:options.maxFiles]
-	}
-
-	// Load all prompts
-	prompts := make([]*Prompt, 0, len(uniqueFiles))
-	for _, file := range uniqueFiles {
-		prompt, err := parseFile(file, *mode)
-		if err != nil {
-			return nil, err
-		}
-		prompts = append(prompts, prompt)
-	}
-
-	return prompts, nil
-}
-
-// resolvePath resolves a path to a list of files.
-// Handles directories, glob patterns, and individual files.
-func resolvePath(path string, options *loadOptions) ([]string, error) {
-	info, err := os.Stat(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// Try as glob pattern
-			return resolveGlob(path)
+			return nil, NewFileMissingError(path, err)
 		}
 
 		return nil, &Error{
-			Message: "failed to access path",
+			Message: "failed to read file",
 			Cause:   err,
 		}
 	}
 
-	if !info.IsDir() {
-		// Single file
-		return []string{path}, nil
-	}
-
-	return findFilesInDir(path, options)
-}
-
-// findFilesInDir finds files matching the glob pattern in a directory.
-func findFilesInDir(dir string, options *loadOptions) ([]string, error) {
-	var pattern string
-	if options.recursive {
-		pattern = filepath.Join(dir, "**", options.glob)
-	} else {
-		pattern = filepath.Join(dir, options.glob)
-	}
-
-	// Use doublestar for glob matching
-	matches, err := doublestar.FilepathGlob(pattern)
+	absPath, err := filepath.Abs(path)
 	if err != nil {
+		absPath = path
+	}
+
+	sectionText, ok := GetSectionText(string(data), anchorID)
+	if !ok {
 		return nil, &Error{
-			Message: "invalid glob pattern",
-			Cause:   err,
+			Message: fmt.Sprintf("section %q not found in %s", anchorID, absPath),
 		}
 	}
 
-	// Filter out directories
-	var files []string
-	for _, match := range matches {
-		info, err := os.Stat(match)
-		if err != nil {
-			continue
-		}
-		if !info.IsDir() {
-			files = append(files, match)
-		}
-	}
-
-	return files, nil
-}
-
-// resolveGlob resolves a glob pattern to matching files.
-func resolveGlob(pattern string) ([]string, error) {
-	matches, err := doublestar.FilepathGlob(pattern)
-	if err != nil {
-		return nil, &Error{
-			Message: "invalid glob pattern",
-			Cause:   err,
-		}
-	}
-
-	// Filter out directories
-	var files []string
-	for _, match := range matches {
-		info, err := os.Stat(match)
-		if err != nil {
-			continue
-		}
-		if !info.IsDir() {
-			files = append(files, match)
-		}
-	}
-
-	return files, nil
+	return parseString(sectionText, *mode, absPath)
 }

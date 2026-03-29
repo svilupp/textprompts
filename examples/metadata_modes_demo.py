@@ -3,8 +3,8 @@
 Example: Metadata Modes Demo
 
 This example demonstrates the three metadata handling modes in TextPrompts:
-- IGNORE (default): Simple file loading, filename becomes title
-- ALLOW: Load metadata if present, don't worry about completeness
+- ALLOW (default): Load metadata if present, don't worry about completeness
+- IGNORE: Simple file loading, filename becomes title
 - STRICT: Require complete metadata for production safety
 """
 
@@ -67,12 +67,14 @@ This file has invalid TOML metadata."""
 
 def demonstrate_ignore_mode(test_dir):
     """Demonstrate IGNORE mode - simple file loading."""
-    print("1. IGNORE Mode (Default) - Simple File Loading")
+    print("2. IGNORE Mode - Simple File Loading")
     print("=" * 50)
-    print("✨ Perfect for: Simple text file loading, no configuration needed\n")
+    print(
+        "✨ Perfect for: Treating prompts as plain text and skipping metadata parsing\n"
+    )
 
-    # Set global mode to IGNORE (this is the default)
-    textprompts.set_metadata("ignore")
+    # Set global mode to IGNORE explicitly and suppress warnings for the demo
+    textprompts.skip_metadata(skip_warning=True)
 
     files = ["complete.txt", "partial.txt", "simple.txt", "invalid.txt"]
 
@@ -91,7 +93,7 @@ def demonstrate_ignore_mode(test_dir):
 
 def demonstrate_allow_mode(test_dir):
     """Demonstrate ALLOW mode - flexible metadata loading."""
-    print("2. ALLOW Mode - Flexible Metadata Loading")
+    print("1. ALLOW Mode (Default) - Flexible Metadata Loading")
     print("=" * 50)
     print(
         "✨ Perfect for: Loading metadata when available, not strict about completeness\n"
@@ -154,16 +156,16 @@ def demonstrate_per_prompt_override(test_dir):
     )
 
     # Set global to one mode, then override per prompt
-    textprompts.set_metadata("ignore")  # Global setting
+    textprompts.set_metadata("allow")  # Global default
 
     complete_path = os.path.join(test_dir, "complete.txt")
     simple_path = os.path.join(test_dir, "simple.txt")
 
-    print("Global mode: IGNORE")
+    print("Global mode: ALLOW")
     print()
 
     # Load with different overrides
-    modes = ["ignore", "allow", "strict"]
+    modes = ["allow", "ignore", "strict"]
 
     for mode in modes:
         print(f"Loading complete.txt with meta='{mode}':")
@@ -216,15 +218,23 @@ def demonstrate_use_cases(test_dir):
 
     # Development: Use ALLOW mode for flexibility
     textprompts.set_metadata("allow")
+    from pathlib import Path
+
     try:
-        dev_prompts = textprompts.load_prompts(test_dir, meta="allow")
+        dev_prompts = [
+            textprompts.load_prompt(str(p), meta="allow")
+            for p in sorted(Path(test_dir).glob("*.txt"))
+        ]
         print(f"✅ Development: Loaded {len(dev_prompts)} prompts with ALLOW mode")
     except Exception as e:
         print(f"❌ Development: {e}")
 
     # Production: Use STRICT mode for safety
     try:
-        prod_prompts = textprompts.load_prompts(test_dir, meta="strict")
+        prod_prompts = [
+            textprompts.load_prompt(str(p), meta="strict")
+            for p in sorted(Path(test_dir).glob("*.txt"))
+        ]
         print(f"✅ Production: {len(prod_prompts)} prompts passed STRICT validation")
     except Exception as e:
         print(f"❌ Production: Failed STRICT validation - {type(e).__name__}")
@@ -236,15 +246,15 @@ def main():
     """Run all demonstrations."""
     print("TextPrompts Metadata Modes Demo")
     print("===============================")
-    print("Learn when and how to use IGNORE, ALLOW, and STRICT modes\n")
+    print("Learn when and how to use ALLOW, IGNORE, and STRICT modes\n")
 
     # Create test files
     test_dir = create_test_files()
     print(f"Created test files in: {test_dir}\n")
 
     try:
-        demonstrate_ignore_mode(test_dir)
         demonstrate_allow_mode(test_dir)
+        demonstrate_ignore_mode(test_dir)
         demonstrate_strict_mode(test_dir)
         demonstrate_per_prompt_override(test_dir)
         demonstrate_use_cases(test_dir)
@@ -252,8 +262,10 @@ def main():
         print("🎉 All metadata mode demonstrations completed!")
         print()
         print("💡 Quick Reference:")
-        print("   textprompts.set_metadata('ignore')  # Simple file loading (default)")
-        print("   textprompts.set_metadata('allow')   # Flexible metadata loading")
+        print(
+            "   textprompts.set_metadata('allow')   # Default: load metadata when available"
+        )
+        print("   textprompts.set_metadata('ignore')  # Simple: no metadata parsing")
         print("   textprompts.set_metadata('strict')  # Production-safe validation")
         print("   load_prompt('file.txt', meta='...')  # Per-prompt override")
 

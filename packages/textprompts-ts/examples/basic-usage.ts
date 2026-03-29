@@ -7,7 +7,7 @@
  */
 
 import { join } from "node:path";
-import { loadPrompt, loadPrompts, PromptString } from "../src/index";
+import { loadPrompt, PromptString } from "../src/index";
 
 const PROMPTS_DIR = join(import.meta.dir, "prompts");
 
@@ -34,42 +34,6 @@ async function demonstrateSinglePromptLoading() {
 
   console.log("\nFormatted message:");
   console.log(message);
-  console.log();
-}
-
-async function demonstrateMultiplePromptLoading() {
-  console.log("2. Multiple Prompt Loading");
-  console.log("-".repeat(30));
-
-  // Load all prompts from directory
-  const prompts = await loadPrompts(PROMPTS_DIR, {
-    meta: "allow",
-    glob: "*.txt",
-  });
-
-  console.log(`Loaded ${prompts.length} prompts:`);
-  for (const prompt of prompts) {
-    if (prompt.meta?.version) {
-      console.log(`  • ${prompt.meta?.title ?? "Untitled"} (v${prompt.meta.version})`);
-    } else {
-      console.log(`  • ${prompt.meta?.title ?? "Untitled"} (from filename)`);
-    }
-  }
-
-  // Create a lookup by title
-  const promptLookup = new Map(prompts.map((p) => [p.meta?.title ?? "Untitled", p]));
-
-  // Use system prompt
-  const system = promptLookup.get("AI Assistant System Prompt");
-  if (system) {
-    const formatted = system.prompt.format({
-      company_name: "Tech Solutions Inc",
-      tone: "friendly and professional",
-    });
-
-    console.log(`\nSample ${system.meta?.title ?? "Untitled"}:`);
-    console.log(`${formatted.slice(0, 150)}...`);
-  }
   console.log();
 }
 
@@ -179,19 +143,6 @@ async function demonstrateErrorHandling() {
     }
   }
 
-  // Try with file limit
-  try {
-    const prompts = await loadPrompts(PROMPTS_DIR, {
-      meta: "allow",
-      maxFiles: 2,
-    });
-    console.log(`✅ Loaded ${prompts.length} prompts with limit`);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(`❌ File limit exceeded: ${error.message}`);
-    }
-  }
-
   console.log();
 }
 
@@ -201,7 +152,6 @@ async function main() {
   console.log();
 
   await demonstrateSinglePromptLoading();
-  await demonstrateMultiplePromptLoading();
   demonstratePromptString();
   await demonstrateNoMetadataLoading();
   await demonstrateErrorHandling();

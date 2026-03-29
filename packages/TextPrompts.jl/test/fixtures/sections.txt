@@ -1,0 +1,7 @@
+<system>
+You are a helpful assistant.
+</system>
+
+<examples id="worked-examples">
+Here is an example conversation.
+</examples>

@@ -4,7 +4,7 @@
 # - Loading prompts from files
 # - Accessing metadata
 # - Formatting with placeholders
-# - Loading multiple prompts
+# - Section parsing
 
 using TextPrompts
 
@@ -60,20 +60,29 @@ println("\nUsing TextPrompts.format explicitly:")
 println(formatted2)
 
 # =============================================================================
-# 3. Loading Multiple Prompts
+# 3. Section Parsing
 # =============================================================================
 
 println("\n" * "=" ^ 60)
-println("3. Loading Multiple Prompts")
+println("3. Section Parsing")
 println("=" ^ 60)
 
-# Load all .txt files from the prompts directory
-all_prompts = load_prompts(prompts_dir)
+# Parse sections from text
+doc = "# Main Title\n\nIntro text.\n\n## Section A\n\nContent A.\n\n## Section B\n\nContent B."
+result = parse_sections(doc)
 
-println("\nLoaded $(length(all_prompts)) prompts:")
-for p in all_prompts
-    println("  - $(p.meta.title) ($(basename(p.path)))")
+println("\nParsed $(length(result.sections)) sections:")
+for s in result.sections
+    println("  - $(s.heading) [#$(s.anchor_id)] (L$(s.start_line)-L$(s.end_line))")
 end
+
+# Extract section body text
+body = get_section_text(doc, "section_a")
+println("\nSection A body: ", body)
+
+# Generate slugs
+println("\nSlug examples:")
+println("  generate_slug(\"Hello World!\") = ", generate_slug("Hello World!"))
 
 # =============================================================================
 # 4. Working with Prompt Strings Directly

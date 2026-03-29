@@ -499,35 +499,6 @@ Body."""
         assert prompt.meta is not None
         assert prompt.meta.description == "Line one and line two"
 
-    def test_mixed_format_directory_loading(self, tmp_path: Path) -> None:
-        """Test loading a directory with both TOML and YAML files."""
-        from textprompts import load_prompts
-
-        toml_content = """---
-title = "TOML File"
-description = "Written in TOML"
-version = "1.0.0"
----
-
-TOML body."""
-
-        yaml_content = """---
-title: YAML File
-description: Written in YAML
-version: "1.0.0"
----
-
-YAML body."""
-
-        (tmp_path / "toml_prompt.txt").write_text(toml_content)
-        (tmp_path / "yaml_prompt.txt").write_text(yaml_content)
-
-        prompts = load_prompts(tmp_path, meta="strict")
-        assert len(prompts) == 2
-        titles = {p.meta.title for p in prompts if p.meta}
-        assert "TOML File" in titles
-        assert "YAML File" in titles
-
 
 class TestYamlBooleanKeywords:
     """Test YAML boolean-like keyword handling (yes, no, on, off)."""
