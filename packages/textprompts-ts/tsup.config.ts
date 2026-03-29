@@ -9,7 +9,7 @@ export default defineConfig({
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };
   },
-  external: ["fast-glob", "@iarna/toml", "yaml"],
+  external: ["@iarna/toml", "yaml"],
   dts: true,
   sourcemap: false,
   clean: true,

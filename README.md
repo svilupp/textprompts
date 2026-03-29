@@ -127,21 +127,6 @@ partial = template.format(name="Alice", skip_validation=True)
 print(partial)  # "Hello Alice, your order {order_id} is {status}"
 ```
 
-### Bulk Loading
-
-Load entire directories of prompts:
-
-```python
-from textprompts import load_prompts
-
-# Load all prompts from a directory
-prompts = load_prompts("prompts/", recursive=True)
-
-# Create a lookup
-prompt_dict = {p.meta.title: p for p in prompts if p.meta}
-greeting = prompt_dict["Customer Greeting"]
-```
-
 ### Simple & Flexible Metadata Handling
 
 TextPrompts is designed to be **super simple** by default - just load text files with optional metadata when available. No configuration needed!
@@ -364,16 +349,6 @@ Returns a `Prompt` object with:
 - `prompt.meta`: Metadata from TOML/YAML front-matter (always present)
 - `prompt.prompt`: The prompt content as a `PromptString`
 - `prompt.path`: Path to the original file
-
-### `load_prompts(*paths, recursive=False, glob="*.txt", meta=None, max_files=1000)`
-
-Load multiple prompts from files or directories.
-
-- `*paths`: Files or directories to load
-- `recursive`: Search directories recursively (default: False)
-- `glob`: File pattern to match (default: "*.txt")
-- `meta`: Metadata handling mode - `MetadataMode.STRICT`, `MetadataMode.ALLOW`, `MetadataMode.IGNORE`, or string equivalents. None uses global config.
-- `max_files`: Maximum files to process (default: 1000)
 
 ### `set_metadata(mode)` / `get_metadata()`
 

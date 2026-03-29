@@ -131,25 +131,6 @@ template.format({});  // Error: Missing format variables: ["name"]
 
 ## Common Use Cases
 
-### Loading Multiple Prompts
-
-```typescript
-import { loadPrompts } from "textprompts";
-
-// Load all prompts from a directory
-const prompts = await loadPrompts("prompts/", {
-  recursive: true,
-  glob: "*.txt"
-});
-
-// Create a lookup by title
-const promptMap = new Map(
-  prompts.map(p => [p.meta?.title ?? 'Untitled', p])
-);
-
-const greeting = promptMap.get("Customer Greeting");
-```
-
 ### Environment-Specific Prompts
 
 ```typescript
@@ -298,20 +279,6 @@ async function getPrompt(name: string): Promise<Prompt> {
   }
   return cache.get(name)!;
 }
-```
-
-### Validate at Build Time
-
-```typescript
-import { loadPrompts } from "textprompts";
-
-// In your build script or tests
-const prompts = await loadPrompts("prompts/", {
-  recursive: true,
-  meta: "strict"  // Ensure all prompts have proper metadata
-});
-
-console.log(`✅ Validated ${prompts.length} prompts`);
 ```
 
 ## Getting Help

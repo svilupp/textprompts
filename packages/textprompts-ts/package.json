@@ -44,7 +44,6 @@
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
-    "fast-glob": "^3.3.2",
     "yaml": "^2.4.0"
   },
   "devDependencies": {

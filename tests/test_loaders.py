@@ -8,8 +8,8 @@ from textprompts.errors import (
     InvalidMetadataError,
     MissingMetadataError,
 )
-from textprompts.loaders import load_prompt, load_prompts
-from textprompts.models import Prompt, PromptMeta
+from textprompts.loaders import load_prompt
+from textprompts.models import PromptMeta
 
 
 def test_good_prompt(fixtures: Path) -> None:
@@ -68,78 +68,6 @@ def test_load_prompt_file_missing(tmp_path: Path) -> None:
     nonexistent_file = tmp_path / "nonexistent.txt"
     with pytest.raises(FileMissingError):
         load_prompt(nonexistent_file)
-
-
-def test_load_prompts_directory_processing(tmp_path: Path) -> None:
-    """Test load_prompts processes directories correctly."""
-    # Create test files
-    (tmp_path / "test1.txt").write_text("---\ntitle = 'Test 1'\n---\nContent 1")
-    (tmp_path / "test2.txt").write_text("---\ntitle = 'Test 2'\n---\nContent 2")
-    (tmp_path / "other.md").write_text("Markdown content")  # Should be ignored
-
-    # Test with default glob pattern
-    prompts = load_prompts(tmp_path, meta="allow")
-    assert len(prompts) == 2
-    assert all(isinstance(p, Prompt) for p in prompts)
-
-    # Test with custom glob pattern
-    prompts = load_prompts(tmp_path, glob="*.md", meta="ignore")
-    assert len(prompts) == 1
-    assert prompts[0].meta is not None
-    assert prompts[0].meta.title == "other"
-
-
-def test_load_prompts_recursive_processing(tmp_path: Path) -> None:
-    """Test load_prompts with recursive directory processing."""
-    # Create nested directory structure
-    subdir = tmp_path / "subdir"
-    subdir.mkdir()
-
-    (tmp_path / "root.txt").write_text("Root content")
-    (subdir / "nested.txt").write_text("Nested content")
-
-    # Test without recursive
-    prompts = load_prompts(tmp_path, recursive=False, meta="ignore")
-    assert len(prompts) == 1
-    # Add null checks for all prompts and extract titles
-    titles = []
-    for p in prompts:
-        assert p.meta is not None
-        titles.append(p.meta.title)
-    assert "root" in titles
-
-    # Test with recursive
-    prompts = load_prompts(tmp_path, recursive=True, meta="ignore")
-    assert len(prompts) == 2
-    # Add null checks for all prompts and extract titles
-    titles = []
-    for p in prompts:
-        assert p.meta is not None
-        titles.append(p.meta.title)
-    assert "root" in titles
-    assert "nested" in titles
-
-
-def test_load_prompts_mixed_files_and_directories(tmp_path: Path) -> None:
-    """Test load_prompts with mixed file and directory arguments."""
-    # Create files and directories
-    file1 = tmp_path / "file1.txt"
-    file1.write_text("File 1 content")
-
-    subdir = tmp_path / "subdir"
-    subdir.mkdir()
-    (subdir / "file2.txt").write_text("File 2 content")
-
-    # Load both file and directory
-    prompts = load_prompts(file1, subdir, meta="ignore")
-    assert len(prompts) == 2
-    # Add null checks for all prompts and extract titles
-    titles = []
-    for p in prompts:
-        assert p.meta is not None
-        titles.append(p.meta.title)
-    assert "file1" in titles
-    assert "file2" in titles
 
 
 def test_prompt_model_validation_edge_cases(tmp_path: Path) -> None:

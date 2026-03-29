@@ -16,7 +16,7 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 - ✅ **Git is your version control** - diff, branch, and experiment with ease
 - ✅ **No formatter headaches** - your prompts stay exactly as you wrote them
 - ✅ **Minimal markup** - just TOML front-matter when you need metadata (or no metadata if you prefer!)
-- ✅ **Lightweight dependencies** - minimal footprint with just fast-glob and TOML parser
+- ✅ **Lightweight dependencies** - minimal footprint with just TOML and YAML parsers
 - ✅ **Safe formatting** - catch missing variables before they cause problems
 - ✅ **Works with everything** - OpenAI, Anthropic, local models, function calls
 - ✅ **Node.js & Bun compatible** - works seamlessly with both runtimes
@@ -167,23 +167,6 @@ const partial = template.format(
   { skipValidation: true }
 );
 console.log(partial);  // "Hello Alice, your order {order_id} is {status}"
-```
-
-### Bulk Loading
-
-Load entire directories of prompts:
-
-```typescript
-import { loadPrompts } from "textprompts";
-
-// Load all prompts from a directory
-const prompts = await loadPrompts("prompts/", { recursive: true });
-
-// Create a lookup
-const promptMap = new Map(
-  prompts.map(p => [p.meta?.title ?? 'Untitled', p])
-);
-const greeting = promptMap.get("Customer Greeting");
 ```
 
 ### Simple & Flexible Metadata Handling
@@ -385,28 +368,6 @@ Returns a `Prompt` object with:
 - `prompt.meta`: Metadata from TOML front-matter (always present)
 - `prompt.prompt`: The prompt content as a `PromptString`
 - `prompt.path`: Path to the original file
-
-### `loadPrompts(paths, options?)`
-
-Load multiple prompts from files or directories.
-
-```typescript
-async function loadPrompts(
-  paths: string | string[],
-  options?: {
-    recursive?: boolean;
-    glob?: string;
-    meta?: MetadataMode | string | null;
-    maxFiles?: number | null;
-  }
-): Promise<Prompt[]>
-```
-
-- `paths`: File or directory path(s) to load
-- `recursive`: Search directories recursively (default: `false`)
-- `glob`: File pattern to match (default: `"*.txt"`)
-- `meta`: Metadata handling mode
-- `maxFiles`: Maximum files to process (default: `1000`)
 
 ### `setMetadata(mode)` / `getMetadata()`
 

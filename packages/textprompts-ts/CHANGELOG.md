@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **BREAKING**: `loadPrompts()` function and `LoadPromptsOptions` type (multi-file/directory scanning)
+- `fast-glob` dependency — eliminates transitive `node:fs` imports that broke edge runtimes
+
+### Migration
+- Implement your own file discovery and call `loadPrompt()` for each file
+
 ## [0.7.0] - 2026-03-19
 
 ### Changed

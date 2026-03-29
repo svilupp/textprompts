@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- Removed `load_prompts()` function. Multi-file/directory scanning is too platform-specific and hard to maintain cross-compatibility. Users should implement their own file discovery and call `load_prompt()` per file.
+
 ## [1.5.0] - 2026-03-19
 
 ### Changed

@@ -44,62 +44,6 @@ const alt = await Prompt.fromPath("prompts/greeting.txt");
 
 ---
 
-### `loadPrompts()`
-
-Load multiple prompts from files or directories.
-
-```typescript
-async function loadPrompts(
-  paths: string | string[],
-  options?: LoadPromptsOptions
-): Promise<Prompt[]>
-
-// Alternative signature with multiple string arguments
-async function loadPrompts(
-  path: string,
-  ...rest: Array<string | LoadPromptsOptions>
-): Promise<Prompt[]>
-```
-
-**Parameters:**
-- `paths: string | string[]` - Single path or array of paths to files/directories
-- `options?: LoadPromptsOptions` - Optional configuration
-  - `recursive?: boolean` - Search directories recursively (default: `false`)
-  - `glob?: string` - File pattern to match (default: `"*.txt"`)
-  - `meta?: MetadataMode | string | null` - Metadata handling mode
-  - `maxFiles?: number | null` - Maximum files to process (default: `1000`)
-
-**Returns:** `Promise<Prompt[]>` - Array of loaded prompts
-
-**Throws:**
-- `FileMissingError` - A specified path does not exist
-- `TextPromptsError` - Max files limit exceeded
-
-**Examples:**
-```typescript
-import { loadPrompts } from "textprompts";
-
-// Load from directory
-const prompts = await loadPrompts("prompts/");
-
-// Load recursively with custom glob
-const all = await loadPrompts("prompts/", {
-  recursive: true,
-  glob: "**/*.txt"
-});
-
-// Load specific files
-const specific = await loadPrompts([
-  "prompts/system.txt",
-  "prompts/user.txt"
-]);
-
-// With file limit
-const limited = await loadPrompts("prompts/", { maxFiles: 10 });
-```
-
----
-
 ### `loadSection()`
 
 Load a single section body from a prompt file.
@@ -546,20 +490,6 @@ interface LoadPromptOptions {
 
 ---
 
-### `LoadPromptsOptions`
-
-Options for `loadPrompts()`.
-
-```typescript
-interface LoadPromptsOptions extends LoadPromptOptions {
-  recursive?: boolean;
-  glob?: string;
-  maxFiles?: number | null;
-}
-```
-
----
-
 ### `FormatOptions`
 
 Options for `format()` method (object syntax).
@@ -764,7 +694,6 @@ import type {
   PromptInit,
   PromptString,
   LoadPromptOptions,
-  LoadPromptsOptions,
   FormatOptions,
   FormatCallOptions,
   MetadataMode,

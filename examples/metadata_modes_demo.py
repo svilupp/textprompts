@@ -216,15 +216,23 @@ def demonstrate_use_cases(test_dir):
 
     # Development: Use ALLOW mode for flexibility
     textprompts.set_metadata("allow")
+    from pathlib import Path
+
     try:
-        dev_prompts = textprompts.load_prompts(test_dir, meta="allow")
+        dev_prompts = [
+            textprompts.load_prompt(str(p), meta="allow")
+            for p in sorted(Path(test_dir).glob("*.txt"))
+        ]
         print(f"✅ Development: Loaded {len(dev_prompts)} prompts with ALLOW mode")
     except Exception as e:
         print(f"❌ Development: {e}")
 
     # Production: Use STRICT mode for safety
     try:
-        prod_prompts = textprompts.load_prompts(test_dir, meta="strict")
+        prod_prompts = [
+            textprompts.load_prompt(str(p), meta="strict")
+            for p in sorted(Path(test_dir).glob("*.txt"))
+        ]
         print(f"✅ Production: {len(prod_prompts)} prompts passed STRICT validation")
     except Exception as e:
         print(f"❌ Production: Failed STRICT validation - {type(e).__name__}")

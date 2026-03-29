@@ -7,6 +7,9 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- `LoadPrompts()` and related options (`WithRecursive`, `WithGlob`, `WithMaxFiles`) -- multi-file/directory scanning is too platform-specific and hard to maintain cross-compatibility. Users should implement their own file discovery and call `LoadPrompt()` per file.
+
 ## [0.3.0] - 2026-03-19
 
 ### Changed

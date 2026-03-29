@@ -353,11 +353,15 @@ response = query_engine.query("What are the main benefits?")
 
 ```python
 import streamlit as st
-from textprompts import load_prompts, PromptString
+from pathlib import Path
+from textprompts import load_prompt, PromptString
 
 # Load available prompts
-prompts = load_prompts("prompts/", recursive=True)
-prompt_dict = {p.meta.title: p for p in prompts if p.meta}
+prompt_dict = {}
+for path in Path("prompts/").rglob("*.txt"):
+    p = load_prompt(path)
+    if p.meta and p.meta.title:
+        prompt_dict[p.meta.title] = p
 
 # UI
 st.title("Prompt Builder")
@@ -402,9 +406,10 @@ if selected_prompt:
 ### Prompt Management API
 
 ```python
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from textprompts import load_prompts, TextPromptsError
+from textprompts import load_prompt, TextPromptsError
 from typing import Dict, Optional
 
 app = FastAPI()
@@ -416,8 +421,10 @@ prompts = {}
 async def load_all_prompts():
     global prompts
     try:
-        prompt_list = load_prompts("prompts/", recursive=True)
-        prompts = {p.meta.title: p for p in prompt_list if p.meta}
+        for path in Path("prompts/").rglob("*.txt"):
+            p = load_prompt(path)
+            if p.meta and p.meta.title:
+                prompts[p.meta.title] = p
     except TextPromptsError as e:
         print(f"Failed to load prompts: {e}")
 
@@ -453,14 +460,18 @@ async def list_prompts():
 
 ### 1. Prompt Versioning
 ```python
-from textprompts import load_prompts
+from pathlib import Path
+from textprompts import load_prompt
 from packaging import version
 
 def get_prompt_version(name: str, version_req: str = "latest"):
     """Get specific version of a prompt."""
-    prompts = load_prompts("prompts/", recursive=True)
-    matching = [p for p in prompts if p.meta and p.meta.title == name]
-    
+    matching = []
+    for path in Path("prompts/").rglob("*.txt"):
+        p = load_prompt(path)
+        if p.meta and p.meta.title == name:
+            matching.append(p)
+
     if version_req == "latest":
         return max(matching, key=lambda p: version.parse(p.meta.version or "0.0.0"))
     else:
@@ -496,18 +507,19 @@ def cached_prompt(path: str):
 
 ### 4. Validation Pipeline
 ```python
-from textprompts import load_prompts
+from pathlib import Path
+from textprompts import load_prompt
 import re
 
 def validate_prompt_collection(directory: str):
     """Validate all prompts in a directory."""
-    prompts = load_prompts(directory, recursive=True)
-    
-    for prompt in prompts:
+    for path in Path(directory).rglob("*.txt"):
+        prompt = load_prompt(path)
+
         # Check metadata
         if not prompt.meta or not prompt.meta.title:
             print(f"WARNING: {prompt.path} missing title")
-        
+
         # Check for common issues
         if "{" in prompt.prompt and "}" in prompt.prompt:
             variables = re.findall(r'\{([^}]+)\}', prompt.prompt)

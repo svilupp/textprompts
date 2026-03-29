@@ -37,26 +37,6 @@ const message = prompt.format({
 console.log(message);
 ```
 
-### Loading Multiple Prompts
-
-```typescript
-import { loadPrompts } from "textprompts";
-
-// Load all prompts from a directory
-const prompts = await loadPrompts("prompts/", { recursive: true });
-
-// Create a lookup by title
-const promptMap = new Map(
-  prompts.map(p => [p.meta?.title ?? 'Untitled', p])
-);
-
-// Use by title
-const greeting = promptMap.get("Customer Greeting");
-if (greeting) {
-  console.log(greeting.format({ customer_name: "Bob" }));
-}
-```
-
 ### Safe String Formatting
 
 ```typescript
@@ -367,50 +347,6 @@ const cache = new PromptCache();
 const prompt = await cache.get("prompts/system.txt");
 ```
 
-### Preloading All Prompts
-
-```typescript
-import { loadPrompts, Prompt } from "textprompts";
-
-class PromptManager {
-  private prompts = new Map<string, Prompt>();
-
-  async initialize(): Promise<void> {
-    const loaded = await loadPrompts("prompts/", {
-      recursive: true,
-      meta: "allow"
-    });
-
-    for (const prompt of loaded) {
-      if (prompt.meta?.title) {
-        this.prompts.set(prompt.meta.title, prompt);
-      }
-    }
-
-    console.log(`Loaded ${this.prompts.size} prompts`);
-  }
-
-  get(title: string): Prompt | undefined {
-    return this.prompts.get(title);
-  }
-
-  has(title: string): boolean {
-    return this.prompts.has(title);
-  }
-
-  list(): string[] {
-    return Array.from(this.prompts.keys());
-  }
-}
-
-// At app startup
-const manager = new PromptManager();
-await manager.initialize();
-
-// Later
-const greeting = manager.get("Customer Greeting");
-```
-
 ### LRU Cache
 
 ```typescript
@@ -512,31 +448,6 @@ async function safeLoadPrompt(path: string) {
       console.error(`Unknown error:`, error);
     }
     throw error;
-  }
-}
-```
-
-### Validation with Error Collection
-
-```typescript
-import { loadPrompts } from "textprompts";
-
-async function validateAllPrompts(dir: string) {
-  const errors: Array<{ path: string; error: Error }> = [];
-
-  try {
-    const prompts = await loadPrompts(dir, {
-      recursive: true,
-      meta: "strict"
-    });
-
-    console.log(`✅ All ${prompts.length} prompts are valid`);
-    return { success: true, prompts, errors: [] };
-  } catch (error) {
-    if (error instanceof Error) {
-      errors.push({ path: dir, error });
-    }
-    return { success: false, prompts: [], errors };
   }
 }
 ```

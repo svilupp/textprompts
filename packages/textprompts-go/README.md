@@ -96,14 +96,6 @@ prompt, err := textprompts.LoadPrompt("prompts/greeting.txt")
 prompt, err := textprompts.LoadPrompt("prompts/greeting.txt",
     textprompts.WithMetadataMode(textprompts.ModeStrict))
 
-// Load multiple prompts from a directory
-prompts, err := textprompts.LoadPrompts(
-    []string{"prompts/"},
-    textprompts.WithRecursive(),
-    textprompts.WithGlob("*.txt"),
-    textprompts.WithMaxFiles(100),
-)
-
 // Create from string content
 prompt, err := textprompts.FromString(content)
 ```

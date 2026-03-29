@@ -12,7 +12,7 @@ from .errors import (
     MissingMetadataError,
     TextPromptsError,
 )
-from .loaders import load_prompt, load_prompts
+from .loaders import load_prompt
 from .models import Prompt, PromptMeta
 from .prompt_string import PromptString, SafeString
 from .savers import save_prompt
@@ -29,7 +29,6 @@ from .sections import (
 
 __all__ = [
     "load_prompt",
-    "load_prompts",
     "save_prompt",
     "Prompt",
     "PromptMeta",

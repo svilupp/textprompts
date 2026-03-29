@@ -53,30 +53,6 @@ print(message)  # "Hello Alice! Welcome to TextPrompts."
 
 ## Loading Multiple Prompts
 
-Create a directory structure:
-```
-prompts/
-├── greeting.txt
-├── farewell.txt
-└── support/
-    ├── billing.txt
-    └── technical.txt
-```
-
-Load all prompts:
-```python
-from textprompts import load_prompts
-
-# Load all .txt files in prompts/
-prompts = load_prompts("prompts/")
-
-# Load recursively
-prompts = load_prompts("prompts/", recursive=True)
-
-# Load with custom pattern
-prompts = load_prompts("prompts/", glob="*.prompt")
-```
-
 ## Safe String Formatting
 
 TextPrompts includes a `PromptString` class that prevents common formatting errors:
@@ -125,15 +101,6 @@ from textprompts import load_prompt
 @lru_cache(maxsize=None)
 def get_prompt(name):
     return load_prompt(f"prompts/{name}.txt")
-```
-
-### Validation
-```python
-from textprompts import load_prompts
-
-# Load all prompts and validate they can be loaded
-prompts = load_prompts("prompts/", recursive=True)
-print(f"Successfully loaded {len(prompts)} prompts")
 ```
 
 ## Next Steps

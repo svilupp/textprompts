@@ -10,7 +10,9 @@ import os
 import shutil
 import tempfile
 
-from textprompts import PromptString, load_prompt, load_prompts, save_prompt
+from pathlib import Path
+
+from textprompts import PromptString, load_prompt, save_prompt
 
 
 def create_example_prompts():
@@ -141,7 +143,10 @@ def demonstrate_multiple_prompt_loading(prompt_dir):
     print("-" * 30)
 
     # Load all prompts recursively (allow metadata parsing for files that have it)
-    prompts = load_prompts(prompt_dir, recursive=True, meta="allow")
+    prompts = [
+        load_prompt(str(p), meta="allow")
+        for p in sorted(Path(prompt_dir).rglob("*.txt"))
+    ]
 
     print(f"Loaded {len(prompts)} prompts:")
     for prompt in prompts:
@@ -281,7 +286,6 @@ def demonstrate_save_prompt(prompt_dir):
 
     # Save a full Prompt object
     from datetime import date
-    from pathlib import Path
 
     from textprompts import Prompt, PromptMeta, PromptString
 
@@ -325,13 +329,6 @@ def demonstrate_error_handling(prompt_dir):
         print(f"❌ File not found: {e}")
     except TextPromptsError as e:
         print(f"❌ TextPrompts error: {e}")
-
-    # Try to load directory with file limit
-    try:
-        prompts = load_prompts(prompt_dir, recursive=True, max_files=2)
-        print(f"✅ Loaded {len(prompts)} prompts with limit")
-    except TextPromptsError as e:
-        print(f"❌ File limit exceeded: {e}")
     print()
 
 

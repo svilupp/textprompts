@@ -243,12 +243,14 @@ TextPrompts validates:
 
 ## File Extensions
 
-TextPrompts looks for `.txt` files by default, but you can use any extension:
+TextPrompts works with any file extension -- just pass the path to `load_prompt()`:
 
 ```python
-# Load .prompt files
-prompts = load_prompts("templates/", glob="*.prompt")
+from textprompts import load_prompt
 
-# Load .md files
-prompts = load_prompts("docs/", glob="*.md")
+# Load a .prompt file
+prompt = load_prompt("templates/system.prompt")
+
+# Load a .md file
+prompt = load_prompt("docs/guide.md")
 ```

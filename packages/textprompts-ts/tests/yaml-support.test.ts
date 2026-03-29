@@ -391,28 +391,6 @@ describe("YAML saver", () => {
   });
 });
 
-describe("mixed format directory loading", () => {
-  test("loads directory with both TOML and YAML files", async () => {
-    const tempDir = await mkdtemp(join(tmpdir(), "textprompts-mixed-"));
-    const tomlContent =
-      '---\ntitle = "TOML File"\ndescription = "In TOML"\nversion = "1.0.0"\n---\n\nTOML body.';
-    const yamlContent =
-      '---\ntitle: YAML File\ndescription: In YAML\nversion: "1.0.0"\n---\n\nYAML body.';
-
-    await writeFile(join(tempDir, "toml.txt"), tomlContent);
-    await writeFile(join(tempDir, "yaml.txt"), yamlContent);
-
-    const { loadPrompts } = await import("../src/loaders");
-    const prompts = await loadPrompts(tempDir, { meta: MetadataMode.STRICT });
-    expect(prompts.length).toBe(2);
-
-    const titles = prompts.map((p) => p.meta?.title).sort();
-    expect(titles).toEqual(["TOML File", "YAML File"]);
-
-    await rm(tempDir, { recursive: true, force: true });
-  });
-});
-
 describe("YAML boolean keywords", () => {
   test("quoted yes/no preserved as strings", async () => {
     const tempDir = await mkdtemp(join(tmpdir(), "textprompts-bool-"));

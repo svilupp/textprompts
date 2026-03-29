@@ -5,7 +5,7 @@ import pytest
 from textprompts._parser import _split_front_matter, parse_file
 from textprompts.config import MetadataMode
 from textprompts.errors import InvalidMetadataError, TextPromptsError
-from textprompts.loaders import load_prompt, load_prompts
+from textprompts.loaders import load_prompt
 
 
 def test_empty_file(fixtures: Path) -> None:
@@ -32,31 +32,6 @@ def test_header_only_file(fixtures: Path) -> None:
     """Test file with header but no body content should fail."""
     with pytest.raises(ValueError, match="Prompt body is empty"):
         load_prompt(fixtures / "header_only.txt", meta="allow")
-
-
-def test_max_files_limit(fixtures: Path, tmp_path: Path) -> None:
-    """Test that max_files limit is enforced."""
-    # Create multiple valid files to test max_files limit
-    file1 = tmp_path / "file1.txt"
-    file2 = tmp_path / "file2.txt"
-
-    content = '---\ntitle = "Test"\n---\n\nTest content'
-    file1.write_text(content)
-    file2.write_text(content)
-
-    with pytest.raises(TextPromptsError, match="Exceeded max_files limit"):
-        load_prompts(file1, file2, max_files=1, meta="allow")
-
-
-def test_max_files_none_allows_unlimited(tmp_path: Path) -> None:
-    """Test that max_files=None allows unlimited files."""
-    # Create multiple valid files
-    content = '---\ntitle = "Test"\n---\n\nTest content'
-    for i in range(3):
-        (tmp_path / f"file{i}.txt").write_text(content)
-
-    prompts = load_prompts(tmp_path, max_files=None, meta="allow")
-    assert len(prompts) == 3  # Should load all files
 
 
 def test_cli_error_handling_missing_file(tmp_path: Path) -> None:

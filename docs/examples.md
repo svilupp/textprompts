@@ -15,19 +15,6 @@ message = prompt.prompt.format(name="Alice")
 print(message)
 ```
 
-### Directory Loading
-
-```python
-from textprompts import load_prompts
-
-# Load all prompts from a directory
-prompts = load_prompts("prompts/", recursive=True)
-
-# Create a prompt lookup
-prompt_dict = {p.meta.title: p for p in prompts}
-greeting = prompt_dict["Customer Greeting"]
-```
-
 ## Integration Examples
 
 ### Pydantic AI Integration
@@ -126,52 +113,26 @@ def get_system_prompt():
 system_prompt = get_system_prompt()
 ```
 
-### Prompt Versioning
-
-```python
-from textprompts import load_prompts
-from packaging import version
-
-def get_latest_prompt(name: str):
-    """Get the latest version of a named prompt."""
-    prompts = load_prompts("prompts/", recursive=True)
-    
-    # Filter by name and sort by version
-    named_prompts = [p for p in prompts if p.meta and p.meta.title == name]
-    if not named_prompts:
-        raise ValueError(f"No prompts found with name: {name}")
-    
-    # Sort by version (latest first)
-    named_prompts.sort(
-        key=lambda p: version.parse(p.meta.version or "0.0.0"),
-        reverse=True
-    )
-    
-    return named_prompts[0]
-
-# Get latest version
-latest_prompt = get_latest_prompt("Customer Support")
-```
-
 ### Prompt Registry
 
 ```python
+from pathlib import Path
 from typing import Dict
 
-from textprompts import Prompt, load_prompts
+from textprompts import Prompt, load_prompt
 
 class PromptRegistry:
     def __init__(self, directory: str):
         self.prompts: Dict[str, Prompt] = {}
-        self.load_prompts(directory)
-    
-    def load_prompts(self, directory: str):
+        self._load_directory(directory)
+
+    def _load_directory(self, directory: str):
         """Load all prompts from directory."""
-        prompts = load_prompts(directory, recursive=True)
-        for prompt in prompts:
+        for path in Path(directory).rglob("*.txt"):
+            prompt = load_prompt(path)
             if prompt.meta and prompt.meta.title:
                 self.prompts[prompt.meta.title] = prompt
-    
+
     def get(self, name: str) -> Prompt:
         """Get prompt by name."""
         if name not in self.prompts:
@@ -240,37 +201,6 @@ prompt = get_prompt_with_fallback(
 )
 ```
 
-### Validation
-
-```python
-from textprompts import load_prompts, PromptString
-import re
-
-def validate_prompts(directory: str):
-    """Validate all prompts in directory."""
-    prompts = load_prompts(directory, recursive=True)
-    errors = []
-    
-    for prompt in prompts:
-        # Check for required metadata
-        if not prompt.meta or not prompt.meta.title:
-            errors.append(f"{prompt.path}: Missing title")
-        
-        # Check for unsafe placeholders
-        placeholders = re.findall(r'\{([^}]+)\}', prompt.prompt)
-        unsafe = [p for p in placeholders if not p.isidentifier()]
-        if unsafe:
-            errors.append(f"{prompt.path}: Unsafe placeholders: {unsafe}")
-    
-    return errors
-
-# Usage
-errors = validate_prompts("prompts/")
-if errors:
-    for error in errors:
-        print(f"ERROR: {error}")
-```
-
 ## Testing Examples
 
 ### Unit Testing Prompts
@@ -312,38 +242,6 @@ class TestPrompts(unittest.TestCase):
         # Should fail with missing variables
         with self.assertRaises(ValueError):
             template.format()
-```
-
-### Integration Testing
-
-```python
-import tempfile
-import os
-from textprompts import load_prompts
-
-def test_prompt_loading():
-    """Test prompt loading in isolated environment."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Create test prompts (TOML front-matter)
-        prompt_content = """---
-title = "Test Prompt"
-version = "1.0.0"
----
-
-Hello {name}!"""
-
-        prompt_path = os.path.join(temp_dir, "test.txt")
-        with open(prompt_path, "w") as f:
-            f.write(prompt_content)
-
-        # Load and test
-        prompts = load_prompts(temp_dir)
-        assert len(prompts) == 1
-        assert prompts[0].meta.title == "Test Prompt"
-
-        # Test formatting
-        result = prompts[0].prompt.format(name="Test")
-        assert result == "Hello Test!"
 ```
 
 ### Saving with YAML Front-Matter

@@ -80,16 +80,6 @@ PromptString validates that all placeholders have values:
 	)
 	// partial = "Hello Alice, you are {role}"
 
-# Bulk Loading
-
-Load multiple prompts from a directory:
-
-	prompts, err := textprompts.LoadPrompts(
-		[]string{"prompts/"},
-		textprompts.WithRecursive(),
-		textprompts.WithGlob("*.txt"),
-	)
-
 # Error Handling
 
 The package provides specific error types:
