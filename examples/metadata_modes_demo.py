@@ -69,7 +69,9 @@ def demonstrate_ignore_mode(test_dir):
     """Demonstrate IGNORE mode - simple file loading."""
     print("2. IGNORE Mode - Simple File Loading")
     print("=" * 50)
-    print("✨ Perfect for: Treating prompts as plain text and skipping metadata parsing\n")
+    print(
+        "✨ Perfect for: Treating prompts as plain text and skipping metadata parsing\n"
+    )
 
     # Set global mode to IGNORE explicitly and suppress warnings for the demo
     textprompts.skip_metadata(skip_warning=True)
@@ -260,7 +262,9 @@ def main():
         print("🎉 All metadata mode demonstrations completed!")
         print()
         print("💡 Quick Reference:")
-        print("   textprompts.set_metadata('allow')   # Default: load metadata when available")
+        print(
+            "   textprompts.set_metadata('allow')   # Default: load metadata when available"
+        )
         print("   textprompts.set_metadata('ignore')  # Simple: no metadata parsing")
         print("   textprompts.set_metadata('strict')  # Production-safe validation")
         print("   load_prompt('file.txt', meta='...')  # Per-prompt override")
