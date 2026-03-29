@@ -446,7 +446,7 @@ export const renderToc = (result: ParseResult, path: string): string => {
 };
 
 const coerceText = (text: string | Uint8Array): string => {
-  return typeof text === "string" ? text : Buffer.from(text).toString("utf8");
+  return typeof text === "string" ? text : new TextDecoder().decode(text);
 };
 
 const detectFrontmatter = (lines: string[], result: ParseResult): number => {
@@ -1048,7 +1048,7 @@ const computeWindowStatsSkippingLines = (
 
   let chars = 0;
   for (const [idx, segment] of segments.entries()) {
-    chars += Buffer.byteLength(segment, "utf8");
+    chars += new TextEncoder().encode(segment).byteLength;
     if (idx < segments.length - 1) {
       chars += 1;
     }

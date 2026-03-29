@@ -7,13 +7,17 @@ MetadataMode
 PromptMeta
 PromptString
 Prompt
+Section
+Link
+FrontmatterBlock
+ParseResult
 ```
 
 ## Loading and Saving
 
 ```@docs
 load_prompt
-load_prompts
+load_section
 save_prompt
 ```
 
@@ -21,6 +25,17 @@ save_prompt
 
 ```@docs
 TextPrompts.format
+```
+
+## Section Parsing
+
+```@docs
+parse_sections
+generate_slug
+normalize_anchor_id
+inject_anchors
+render_toc
+get_section_text
 ```
 
 ## Configuration

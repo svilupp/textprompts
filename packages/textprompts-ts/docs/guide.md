@@ -541,6 +541,16 @@ const response = await model.invoke([
 ]);
 ```
 
+## Edge Runtimes
+
+For environments without Node.js file-system APIs (Cloudflare Workers, Deno Deploy, Vercel Edge, browsers), import from `textprompts/core` -- it has zero `node:` imports:
+
+```typescript
+import { Prompt, PromptString } from "textprompts/core";
+```
+
+All pure-string APIs (`Prompt.fromString`, `PromptString`, `parseSections`, etc.) are available. Only `loadPrompt`, `loadSection`, and `savePrompt` are excluded.
+
 ## Advanced Patterns
 
 ### Prompt Composition

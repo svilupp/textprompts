@@ -21,6 +21,7 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 - ✅ **Works with everything** - OpenAI, Anthropic, local models, function calls
 - ✅ **Node.js & Bun compatible** - works seamlessly with both runtimes
 - ✅ **Dual ESM/CJS build support** - works with both module systems
+- ✅ **Edge-ready** - `textprompts/core` entry point with zero `node:` imports for Cloudflare Workers, Deno Deploy, Vercel Edge
 
 ## Installation
 
@@ -139,6 +140,16 @@ console.log(prompt.meta?.version);   // Works like fromPath
 - Use `fromPath()` for Node.js/Bun server-side code
 - Use `fromString()` for bundled frontend code (Vite, Webpack, etc.)
 - Use `fromString()` when loading prompts from APIs or databases
+
+### Edge Runtimes
+
+```typescript
+// Edge runtimes (Cloudflare Workers, Deno Deploy, Vercel Edge, browsers)
+import { Prompt, parseString, PromptString } from "textprompts/core";
+
+// Node.js (includes file-system APIs)
+import { loadPrompt, savePrompt } from "textprompts";
+```
 
 ## Core Features
 

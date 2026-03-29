@@ -11,6 +11,7 @@ textprompts is a TypeScript/JavaScript library that helps you manage AI prompts 
 - **No formatter headaches** - your prompts stay exactly as you wrote them
 - **Flexible metadata** - add structure when you need it, skip it when you don't
 - **Type safety** - full TypeScript support
+- **Edge-ready** - `textprompts/core` entry point with zero `node:` imports for Cloudflare Workers, Deno Deploy, and Vercel Edge
 
 ## Installation
 

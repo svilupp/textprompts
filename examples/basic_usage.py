@@ -9,7 +9,6 @@ including loading single prompts, multiple prompts, and using PromptString.
 import os
 import shutil
 import tempfile
-
 from pathlib import Path
 
 from textprompts import PromptString, load_prompt, save_prompt

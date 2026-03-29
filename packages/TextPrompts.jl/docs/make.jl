@@ -16,7 +16,8 @@ makedocs(;
         "Home" => "index.md",
         "API Reference" => "api.md"
     ],
-    warnonly = [:missing_docs]
+    warnonly = [:missing_docs],
+    remotes = nothing
 )
 
 # Deployment is handled by the main repo's docs workflow

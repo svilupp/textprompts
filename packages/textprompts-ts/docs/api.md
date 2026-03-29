@@ -2,6 +2,8 @@
 
 Complete API documentation for textprompts.
 
+> For edge runtimes, import from `textprompts/core` -- it exports all APIs below except `loadPrompt`, `loadSection`, and `savePrompt` (which depend on `node:` modules).
+
 ## Functions
 
 ### `loadPrompt()`
