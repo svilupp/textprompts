@@ -1,0 +1,145 @@
+name: Elixir CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/textprompts-ex/**'
+      - 'testdata/**'
+      - '.github/workflows/ex-ci.yml'
+  pull_request:
+    paths:
+      - 'packages/textprompts-ex/**'
+      - 'testdata/**'
+      - '.github/workflows/ex-ci.yml'
+
+jobs:
+  test:
+    name: Test (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - elixir: '1.17.3'
+            otp: '26.2'
+            primary: false
+          - elixir: '1.18.3'
+            otp: '27.2'
+            primary: true
+    defaults:
+      run:
+        working-directory: packages/textprompts-ex
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+
+      - name: Cache deps and _build
+        uses: actions/cache@v4
+        with:
+          path: |
+            packages/textprompts-ex/deps
+            packages/textprompts-ex/_build
+          key: ex-${{ runner.os }}-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('packages/textprompts-ex/mix.lock') }}
+          restore-keys: |
+            ex-${{ runner.os }}-${{ matrix.elixir }}-${{ matrix.otp }}-
+
+      - name: Install deps
+        run: mix deps.get
+
+      - name: Check formatting
+        run: mix format --check-formatted
+
+      - name: Compile (warnings as errors)
+        run: mix compile --warnings-as-errors
+
+      - name: Credo (strict)
+        run: mix credo --strict
+
+      - name: Run tests (including parity)
+        run: mix test --include parity
+
+      - name: Coverage (excoveralls)
+        if: matrix.primary
+        run: mix coveralls.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload coverage artifact
+        if: matrix.primary
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: packages/textprompts-ex/cover/excoveralls.json
+          if-no-files-found: ignore
+
+      - name: Build escript
+        if: matrix.primary
+        run: mix escript.build
+
+      - name: Smoke test escript
+        if: matrix.primary
+        run: |
+          ./textprompts --help
+          ./textprompts --help | grep -q "textprompts"
+
+      - name: Upload escript artifact
+        if: matrix.primary
+        uses: actions/upload-artifact@v4
+        with:
+          name: textprompts-escript
+          path: packages/textprompts-ex/textprompts
+          if-no-files-found: error
+
+  dialyzer:
+    name: Dialyzer (best-effort)
+    runs-on: ubuntu-latest
+    needs: test
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: packages/textprompts-ex
+    env:
+      MIX_ENV: dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.3'
+          otp-version: '27.2'
+
+      - name: Cache deps and _build
+        uses: actions/cache@v4
+        with:
+          path: |
+            packages/textprompts-ex/deps
+            packages/textprompts-ex/_build
+          key: ex-dialyzer-${{ runner.os }}-1.18.3-27.2-${{ hashFiles('packages/textprompts-ex/mix.lock') }}
+          restore-keys: |
+            ex-dialyzer-${{ runner.os }}-1.18.3-27.2-
+
+      - name: Cache Dialyzer PLTs
+        uses: actions/cache@v4
+        with:
+          path: packages/textprompts-ex/priv/plts
+          key: ex-plt-${{ runner.os }}-1.18.3-27.2-${{ hashFiles('packages/textprompts-ex/mix.lock') }}
+          restore-keys: |
+            ex-plt-${{ runner.os }}-1.18.3-27.2-
+
+      - name: Install deps
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile
+
+      - name: Dialyzer
+        run: mix dialyzer --format github

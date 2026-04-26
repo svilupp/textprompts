@@ -1,4 +1,4 @@
-.PHONY: help install install-dev lint format typecheck test test-cov clean build publish docs docs-serve all check
+.PHONY: help install install-dev lint format typecheck test test-cov clean build publish docs docs-serve all check ex-test ex-check ex-docs ex-test-examples test-examples-ai
 .DEFAULT_GOAL := help
 
 # Colors for terminal output
@@ -48,12 +48,22 @@ test-cov: ## Run tests with coverage
 	uv run pytest tests/ --cov=textprompts --cov-report=term-missing --cov-report=html
 	@echo "$(GREEN)✓ Tests with coverage completed$(RESET)"
 
-test-examples: ## Test example scripts
-	@echo "$(BLUE)Testing example scripts...$(RESET)"
+test-examples: ## Test offline example scripts
+	@echo "$(BLUE)Testing offline example scripts...$(RESET)"
 	uv run python examples/simple_format_demo.py > /dev/null
 	uv run python examples/basic_usage.py > /dev/null
-	uv run python examples/pydantic_ai_example.py > /dev/null
-	@echo "$(GREEN)✓ All examples work$(RESET)"
+	@echo "$(GREEN)✓ Offline examples work$(RESET)"
+
+# Runs examples that require provider credentials
+# OPENAI_API_KEY must be present.
+test-examples-ai: ## Test AI SDK example scripts (requires OPENAI_API_KEY)
+	@echo "$(BLUE)Testing AI example scripts...$(RESET)"
+	@if [ -z "$$OPENAI_API_KEY" ]; then \
+		echo "$(YELLOW)Skipping AI examples: OPENAI_API_KEY is not set$(RESET)"; \
+	else \
+		uv run python examples/pydantic_ai_example.py > /dev/null; \
+		echo "$(GREEN)✓ AI examples work$(RESET)"; \
+	fi
 
 clean: ## Clean build artifacts and cache
 	@echo "$(BLUE)Cleaning build artifacts...$(RESET)"
@@ -103,6 +113,34 @@ check: lint typecheck test test-examples ## Run all checks (lint, typecheck, tes
 
 all: clean install-dev check build ## Full development setup and check
 	@echo "$(GREEN)✓ Full development setup completed!$(RESET)"
+
+ex-test: ## Run Elixir port tests
+	@echo "$(BLUE)Running Elixir package tests...$(RESET)"
+	cd packages/textprompts-ex && mix test
+	@echo "$(GREEN)✓ Elixir tests passed$(RESET)"
+
+ex-check: ## Run Elixir pre-release gate (format, compile, credo, tests, dialyzer)
+	@echo "$(BLUE)Running Elixir package checks...$(RESET)"
+	cd packages/textprompts-ex && mix deps.get
+	cd packages/textprompts-ex && mix format --check-formatted
+	cd packages/textprompts-ex && mix compile --warnings-as-errors
+	cd packages/textprompts-ex && mix credo --strict || echo "$(YELLOW)credo reported issues (non-fatal)$(RESET)"
+	cd packages/textprompts-ex && mix test --include parity
+	cd packages/textprompts-ex && mix dialyzer || echo "$(YELLOW)dialyzer reported issues (non-fatal)$(RESET)"
+	@echo "$(GREEN)✓ Elixir checks passed$(RESET)"
+
+ex-docs: ## Build Elixir docs
+	@echo "$(BLUE)Building Elixir docs...$(RESET)"
+	cd packages/textprompts-ex && mix docs
+	@echo "$(GREEN)✓ Elixir docs built$(RESET)"
+
+ex-test-examples: ## Run all Elixir example scripts
+	@echo "$(BLUE)Running Elixir example scripts...$(RESET)"
+	cd packages/textprompts-ex && mix run examples/basic_load.exs \
+		&& mix run examples/format_with_placeholders.exs \
+		&& mix run examples/sections_toc.exs \
+		&& mix run examples/round_trip.exs
+	@echo "$(GREEN)✓ Elixir examples passed$(RESET)"
 
 # Development workflow targets
 dev-setup: install-dev ## Set up development environment
