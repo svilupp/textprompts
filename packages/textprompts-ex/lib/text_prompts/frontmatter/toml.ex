@@ -28,17 +28,8 @@ defmodule TextPrompts.Frontmatter.Toml do
       {:ok, map} when is_map(map) ->
         {:ok, stringify_keys(map)}
 
-      {:ok, other} ->
-        {:error,
-         %InvalidMetadata{
-           reason: "TOML frontmatter must decode to a table, got: #{inspect(other)}"
-         }}
-
-      {:error, %{} = err} ->
+      {:error, err} ->
         {:error, %InvalidMetadata{reason: safe_message(err)}}
-
-      {:error, reason} ->
-        {:error, %InvalidMetadata{reason: inspect(reason)}}
     end
   rescue
     err ->

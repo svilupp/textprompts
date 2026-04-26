@@ -34,11 +34,8 @@ defmodule TextPrompts.Frontmatter.Yaml do
            reason: "YAML frontmatter must decode to a mapping, got: #{inspect(other)}"
          }}
 
-      {:error, %{} = err} ->
+      {:error, err} ->
         {:error, %InvalidMetadata{reason: safe_message(err)}}
-
-      {:error, reason} ->
-        {:error, %InvalidMetadata{reason: inspect(reason)}}
     end
   rescue
     err ->

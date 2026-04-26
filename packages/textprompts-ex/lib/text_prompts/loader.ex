@@ -142,9 +142,6 @@ defmodule TextPrompts.Loader do
 
       {:error, %InvalidMetadata{} = e} ->
         {:error, %{e | path: path}}
-
-      {:error, other} ->
-        {:error, other}
     end
   end
 
@@ -166,9 +163,6 @@ defmodule TextPrompts.Loader do
 
       {:error, %InvalidMetadata{} = e} ->
         {:error, %{e | path: path}}
-
-      {:error, other} ->
-        {:error, other}
     end
   end
 

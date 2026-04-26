@@ -221,20 +221,11 @@ defmodule TextPrompts.Frontmatter do
             {:error,
              %InvalidMetadata{
                reason:
-                 "Invalid TOML in frontmatter: #{format_reason(toml_reason)}. " <>
+                 "Invalid TOML in frontmatter: #{toml_reason}. " <>
                    "YAML fallback also failed. " <>
                    "Use `meta: :ignore` to skip metadata parsing."
              }}
-
-          {:error, other} ->
-            {:error, other}
         end
-
-      {:error, other} ->
-        {:error, other}
     end
   end
-
-  defp format_reason(reason) when is_binary(reason), do: reason
-  defp format_reason(reason), do: inspect(reason)
 end
