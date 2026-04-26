@@ -67,3 +67,4 @@ uv add textprompts
 - [API Reference](api-reference.md)
 - [Examples](examples.md)
 - [Integration Guides](integrations.md)
+- [Elixir Port Scope](elixir-port-scope.md)
