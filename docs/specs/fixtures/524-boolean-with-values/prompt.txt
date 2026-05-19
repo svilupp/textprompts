@@ -1,0 +1,11 @@
+---
+title = "x"
+version = "1.0"
+description = "d"
+
+[flags.foo]
+type = "boolean"
+values = ["a"]
+description = "F"
+---
+{if foo}x{end}

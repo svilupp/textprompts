@@ -1,0 +1,7 @@
+{
+  "flags": {
+    "outer": true,
+    "middle": true,
+    "inner": true
+  }
+}

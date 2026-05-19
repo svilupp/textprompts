@@ -1,0 +1,6 @@
+---
+title = "T"
+version = "1.0"
+description = "D"
+---
+{if undeclared}x{end}

@@ -1,0 +1,9 @@
+---
+title = "x"
+version = "1.0"
+description = "d"
+
+[flags.foo]
+type = "blarg"
+---
+hi

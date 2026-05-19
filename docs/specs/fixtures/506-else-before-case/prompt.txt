@@ -1,0 +1,6 @@
+{switch t}
+{else}
+O
+{case a}
+A
+{end}

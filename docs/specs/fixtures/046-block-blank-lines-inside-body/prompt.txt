@@ -1,0 +1,7 @@
+A
+{if flag}
+
+B
+
+{end}
+C

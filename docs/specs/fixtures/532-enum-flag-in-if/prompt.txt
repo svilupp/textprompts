@@ -1,0 +1,11 @@
+---
+title = "T"
+version = "1.0"
+description = "D"
+
+[flags.tier]
+type = "enum"
+values = ["free", "premium"]
+description = "Tier"
+---
+{if tier}x{end}

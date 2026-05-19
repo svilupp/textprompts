@@ -1,0 +1,6 @@
+{switch tier}
+{case free}
+Free plan.
+{case premium}
+Premium plan.
+{end}

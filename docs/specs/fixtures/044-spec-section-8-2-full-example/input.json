@@ -1,0 +1,10 @@
+{
+  "flags": {
+    "tier": "premium",
+    "has_history": true
+  },
+  "variables": {
+    "user_name": "Jan",
+    "last_question": "How do I upgrade?"
+  }
+}

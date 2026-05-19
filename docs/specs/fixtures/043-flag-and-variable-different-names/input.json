@@ -1,0 +1,8 @@
+{
+  "flags": {
+    "greet": true
+  },
+  "variables": {
+    "name": "Alice"
+  }
+}

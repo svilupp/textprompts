@@ -1,0 +1,5 @@
+Items:
+	{if show}
+	- one
+	{end}
+Done.

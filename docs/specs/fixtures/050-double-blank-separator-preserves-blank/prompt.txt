@@ -1,0 +1,8 @@
+---
+title = "Two blanks"
+description = "Tests SPEC §4.1 preservation"
+version = "1.0"
+---
+
+
+Body for {name}.

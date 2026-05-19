@@ -1,0 +1,12 @@
+---
+title = "TOML demo"
+version = "1.0"
+description = "Demonstrates TOML flags and variables declarations."
+
+[flags.premium]
+description = "Premium subscriber"
+
+[variables.name]
+description = "User name"
+---
+{if premium}Hello premium {name}{else}Hello {name}{end}.

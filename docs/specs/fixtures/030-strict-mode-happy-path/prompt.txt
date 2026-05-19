@@ -1,0 +1,16 @@
+---
+title = "Strict happy path"
+version = "1.0"
+description = "Loads cleanly under strict mode."
+
+[flags.tier]
+type = "enum"
+values = ["free", "premium"]
+description = "Tier"
+---
+{switch tier}
+{case free}
+Free.
+{case premium}
+Premium.
+{end}

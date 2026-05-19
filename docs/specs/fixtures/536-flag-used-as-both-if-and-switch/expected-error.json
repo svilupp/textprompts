@@ -1,0 +1,5 @@
+{
+  "code": "E_FLAG_USED_AS_BOTH_IF_AND_SWITCH",
+  "category": "semantic",
+  "messageContains": "foo"
+}

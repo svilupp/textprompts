@@ -1,0 +1,5 @@
+{switch t}
+hello
+{case a}
+A
+{end}

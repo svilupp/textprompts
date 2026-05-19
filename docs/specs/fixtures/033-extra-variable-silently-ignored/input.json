@@ -1,0 +1,6 @@
+{
+  "variables": {
+    "name": "Alice",
+    "unused_var": "x"
+  }
+}

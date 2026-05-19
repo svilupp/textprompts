@@ -1,0 +1,18 @@
+---
+title = "Tiered"
+version = "1.0"
+description = "Switch with declared else and exhaustive cases."
+
+[flags.tier]
+type = "enum"
+values = ["free", "premium"]
+description = "Subscription tier"
+---
+{switch tier}
+{case free}
+Free plan.
+{case premium}
+Premium plan.
+{else}
+Unknown plan.
+{end}

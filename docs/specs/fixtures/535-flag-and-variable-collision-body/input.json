@@ -1,0 +1,8 @@
+{
+  "flags": {
+    "foo": true
+  },
+  "variables": {
+    "foo": "x"
+  }
+}
