@@ -40,6 +40,12 @@ Integration example with Pydantic AI:
 - Safe formatting with validation
 - Mock implementation (works without Pydantic AI installed)
 
+### `conditional/`
+Worked examples for the v2 conditional/switch syntax (one subdirectory per
+SPEC §8 example, each with a `prompt.txt` and a `run.py`). See
+[`conditional/README.md`](conditional/README.md). Reference content until the
+v2 engine lands in Python.
+
 ## Key Concepts Demonstrated
 
 ### 1. Prompt File Format

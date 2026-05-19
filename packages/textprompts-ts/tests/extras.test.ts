@@ -6,7 +6,6 @@ import { tmpdir } from "os";
 import { loadPrompt } from "../src/loaders";
 import { savePrompt } from "../src/savers";
 import { Prompt } from "../src/models";
-import { PromptString } from "../src/prompt-string";
 import { MetadataMode } from "../src/config";
 
 describe("extras: basic custom fields", () => {
@@ -30,7 +29,7 @@ describe("extras: basic custom fields", () => {
       '---\ntitle: My Skill\ndescription: Does things\nversion: "1.0.0"\ncustom_field: hello\npriority: high\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("My Skill");
     expect(prompt.meta?.extras?.custom_field).toBe("hello");
     expect(prompt.meta?.extras?.priority).toBe("high");
@@ -46,7 +45,7 @@ describe("extras: basic custom fields", () => {
       '---\ntitle: Test\ndescription: Test\nversion: "1.0.0"\ndisable-model-invocation: true\nuser-invocable: false\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.extras?.["disable-model-invocation"]).toBe(true);
     expect(prompt.meta?.extras?.["user-invocable"]).toBe(false);
 
@@ -61,7 +60,7 @@ describe("extras: basic custom fields", () => {
       '---\ntitle: Test\ndescription: Test\nversion: "1.0.0"\ntimeout: 30\nmax-retries: 3\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.extras?.timeout).toBe(30);
     expect(prompt.meta?.extras?.["max-retries"]).toBe(3);
 
@@ -76,15 +75,17 @@ describe("extras: basic custom fields", () => {
       '---\ntitle: Test\ndescription: A desc\nversion: "1.0.0"\nauthor: Me\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
-    expect(prompt.meta?.extras).toBeUndefined();
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
+    // v2: extras is always present (empty object when no custom fields).
+    expect(prompt.meta?.extras).toEqual({});
 
     await cleanup();
   });
 
-  test("extras absent when no frontmatter", () => {
+  test("extras empty object when no frontmatter", () => {
     const prompt = Prompt.fromString("Just body content");
-    expect(prompt.meta?.extras).toBeUndefined();
+    // v2: extras is always present (empty object when no custom fields).
+    expect(prompt.meta?.extras).toEqual({});
   });
 });
 
@@ -109,7 +110,7 @@ describe("extras: arrays", () => {
       '---\ntitle: Test\ndescription: Test\nversion: "1.0.0"\npermissions:\n  - read\n  - write\n  - admin\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.extras?.permissions).toEqual(["read", "write", "admin"]);
 
     await cleanup();
@@ -123,7 +124,7 @@ describe("extras: arrays", () => {
       '---\ntitle: Test\ndescription: Test\nversion: "1.0.0"\ntriggers:\n  - cron: "0 9 * * 1"\n  - voice: "check inventory"\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.extras?.triggers).toEqual([
       { cron: "0 9 * * 1" },
       { voice: "check inventory" },
@@ -140,7 +141,7 @@ describe("extras: arrays", () => {
       '---\ntitle: Test\ndescription: Test\nversion: "1.0.0"\ntags:\n  - alpha\n  - 42\n  - true\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     const tags = prompt.meta?.extras?.tags as unknown[];
     expect(tags).toContain("alpha");
     expect(tags).toContain(42);
@@ -171,7 +172,7 @@ describe("extras: nested objects", () => {
       '---\ntitle: Test\ndescription: Test\nversion: "1.0.0"\nhooks:\n  pre-run: echo hello\n  post-run: echo done\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.extras?.hooks).toEqual({
       "pre-run": "echo hello",
       "post-run": "echo done",
@@ -188,7 +189,7 @@ describe("extras: nested objects", () => {
       '---\ntitle: Test\ndescription: Test\nversion: "1.0.0"\nconfig:\n  deep:\n    nested:\n      value: 42\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     const config = prompt.meta?.extras?.config as Record<string, unknown>;
     expect((config?.deep as Record<string, unknown>)?.nested).toEqual({ value: 42 });
 
@@ -235,7 +236,7 @@ compatibility: Requires ast-grep CLI installed
 Use this skill to search code structurally.`,
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
 
     // Known fields
     expect(prompt.meta?.description).toBe(
@@ -283,7 +284,7 @@ hooks:
 Run tests.`,
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     const hooks = prompt.meta?.extras?.hooks as Record<string, unknown>;
     expect(hooks?.["pre-tool-use"]).toEqual({ command: 'echo "before"' });
     expect(hooks?.["post-tool-use"]).toEqual({ command: 'echo "after"' });
@@ -308,7 +309,7 @@ permissions:
 Check inventory levels.`,
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.extras?.permissions).toEqual([
       "shopify:read_products",
       "shopify:read_inventory",
@@ -334,7 +335,7 @@ triggers:
 Instructions here.`,
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.extras?.triggers).toEqual([
       { cron: "0 9 * * 1" },
       { voice: "check my inventory" },
@@ -356,7 +357,7 @@ description: A simple skill.
 Do the thing.`,
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.extras?.name).toBe("simple-skill");
     expect(prompt.meta?.description).toBe("A simple skill.");
     expect(prompt.meta?.extras?.version).toBeUndefined(); // Not in extras if not present
@@ -384,7 +385,7 @@ license: MIT
 Track issues.`,
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.description).toContain("Tracks complex");
     expect(prompt.meta?.description).toContain("dependency graphs");
     expect(prompt.meta?.extras?.name).toBe("beads");
@@ -410,7 +411,7 @@ tags:
 
 Body content.`;
 
-    const prompt = Prompt.fromString(content, { meta: MetadataMode.ALLOW });
+    const prompt = Prompt.fromString(content, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("Test");
     expect(prompt.meta?.extras?.custom).toBe("value");
     expect(prompt.meta?.extras?.flag).toBe(true);
@@ -431,7 +432,7 @@ tags = ["a", "b"]
 
 Body content.`;
 
-    const prompt = Prompt.fromString(content, { meta: MetadataMode.ALLOW });
+    const prompt = Prompt.fromString(content, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("Test");
     expect(prompt.meta?.extras?.custom).toBe("value");
     expect(prompt.meta?.extras?.flag).toBe(true);
@@ -452,7 +453,7 @@ describe("extras: constructor passthrough", () => {
           "disable-model-invocation": true,
         },
       },
-      prompt: new PromptString("Body."),
+      prompt: "Body.",
     });
 
     expect(prompt.meta?.extras?.name).toBe("my-skill");
@@ -488,11 +489,11 @@ describe("extras: YAML save round-trip", () => {
           license: "MIT",
         },
       },
-      prompt: new PromptString("Do the thing."),
+      prompt: "Do the thing.",
     });
 
     await savePrompt(filePath, prompt, { format: "yaml" });
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(loaded.meta?.title).toBe("Skill");
     expect(loaded.meta?.extras?.name).toBe("my-skill");
     expect(loaded.meta?.extras?.license).toBe("MIT");
@@ -514,11 +515,11 @@ describe("extras: YAML save round-trip", () => {
           "user-invocable": false,
         },
       },
-      prompt: new PromptString("Body."),
+      prompt: "Body.",
     });
 
     await savePrompt(filePath, prompt, { format: "yaml" });
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(loaded.meta?.extras?.["disable-model-invocation"]).toBe(true);
     expect(loaded.meta?.extras?.["user-invocable"]).toBe(false);
 
@@ -538,11 +539,11 @@ describe("extras: YAML save round-trip", () => {
           permissions: ["read", "write", "admin"],
         },
       },
-      prompt: new PromptString("Body."),
+      prompt: "Body.",
     });
 
     await savePrompt(filePath, prompt, { format: "yaml" });
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(loaded.meta?.extras?.permissions).toEqual(["read", "write", "admin"]);
 
     await cleanup();
@@ -563,11 +564,11 @@ describe("extras: YAML save round-trip", () => {
           decimal: "3.14",
         },
       },
-      prompt: new PromptString("Body."),
+      prompt: "Body.",
     });
 
     await savePrompt(filePath, prompt, { format: "yaml" });
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(loaded.meta?.extras?.code).toBe("42");
     expect(loaded.meta?.extras?.zip).toBe("00123");
     expect(loaded.meta?.extras?.decimal).toBe("3.14");
@@ -594,11 +595,11 @@ describe("extras: YAML save round-trip", () => {
           },
         },
       },
-      prompt: new PromptString("Body."),
+      prompt: "Body.",
     });
 
     await savePrompt(filePath, prompt, { format: "yaml" });
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(loaded.meta?.extras?.hooks).toEqual({
       "pre-run": "echo hello",
       "post-run": "echo done",
@@ -623,11 +624,11 @@ describe("extras: YAML save round-trip", () => {
           tags: ["a", "b"],
         },
       },
-      prompt: new PromptString("Body."),
+      prompt: "Body.",
     });
 
     await savePrompt(filePath, prompt); // default TOML format
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(loaded.meta?.extras?.name).toBe("my-skill");
     expect(loaded.meta?.extras?.flag).toBe(true);
     expect(loaded.meta?.extras?.count).toBe(42);
@@ -636,7 +637,7 @@ describe("extras: YAML save round-trip", () => {
     await cleanup();
   });
 
-  test("TOML save skips mixed-type extras arrays", async () => {
+  test("TOML save rejects mixed-type extras arrays instead of dropping them", async () => {
     await setup();
     const filePath = join(tempDir, "test.txt");
     const prompt = new Prompt({
@@ -650,13 +651,12 @@ describe("extras: YAML save round-trip", () => {
           keep: ["x", "y"],
         },
       },
-      prompt: new PromptString("Body."),
+      prompt: "Body.",
     });
 
-    await savePrompt(filePath, prompt); // default TOML format
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
-    expect(loaded.meta?.extras?.mixed).toBeUndefined();
-    expect(loaded.meta?.extras?.keep).toEqual(["x", "y"]);
+    await expect(savePrompt(filePath, prompt)).rejects.toThrow(
+      /Cannot serialize top-level extras key 'mixed'/,
+    );
 
     await cleanup();
   });
@@ -675,7 +675,7 @@ describe("extras: YAML save round-trip", () => {
           "disable-model-invocation": true,
         },
       },
-      prompt: new PromptString("Body."),
+      prompt: "Body.",
     });
 
     await savePrompt(filePath, prompt, { format: "yaml" });
@@ -716,7 +716,7 @@ allowed-tools: "Read, Grep"
 Body.`,
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.STRICT });
     expect(prompt.meta?.title).toBe("Strict Skill");
     expect(prompt.meta?.extras?.name).toBe("strict-test");
     expect(prompt.meta?.extras?.["allowed-tools"]).toBe("Read, Grep");
@@ -736,7 +736,7 @@ version: "1.0.0"
 
 Body.`;
 
-    const prompt = Prompt.fromString(content, { meta: MetadataMode.ALLOW });
+    const prompt = Prompt.fromString(content, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("true");
   });
 
@@ -749,7 +749,7 @@ version: 2.0
 
 Body.`;
 
-    const prompt = Prompt.fromString(content, { meta: MetadataMode.ALLOW });
+    const prompt = Prompt.fromString(content, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.version).toBe("2");
   });
 
@@ -763,7 +763,7 @@ flag: true
 
 Body.`;
 
-    const prompt = Prompt.fromString(content, { meta: MetadataMode.ALLOW });
+    const prompt = Prompt.fromString(content, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.extras?.flag).toBe(true);
     expect(typeof prompt.meta?.extras?.flag).toBe("boolean");
   });

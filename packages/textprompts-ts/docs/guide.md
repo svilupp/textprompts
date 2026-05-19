@@ -1,467 +1,452 @@
-# Usage Guide
+# Authoring guide
 
-Best practices and advanced patterns for textprompts.
+This is the practical guide to writing v2 textprompts files: variables,
+conditional tags, flags, metadata modes, and provider integrations. For the
+formal grammar, see [file-format.md](./file-format.md) and the
+[cross-language SPEC](../../../docs/specs/SPEC_conditional_syntax_v2.md).
 
-## Table of Contents
+For an LLM-friendly cheat sheet aimed at agent skill loading, see the
+[authoring skill](../../../docs/writing-prompts-with-textprompts/SKILL.md).
 
-- [Project Organization](#project-organization)
-- [Metadata Strategies](#metadata-strategies)
-- [String Formatting Patterns](#string-formatting-patterns)
-- [Performance Optimization](#performance-optimization)
-- [Error Handling](#error-handling)
-- [Testing Prompts](#testing-prompts)
-- [Version Control](#version-control)
-- [AI Framework Integration](#ai-framework-integration)
+## v2 breaking changes
 
-## Project Organization
+- Positional placeholders (`{0}`, `{1}`) are gone — use named placeholders.
+- Empty placeholders (`{}`) are gone.
+- The double-brace escape `{{...}}` is gone — use `\{`, `\}`, `\\`.
+- `Prompt.format(args, kwargs, options)` is gone — use `prompt.format({ flags, ...vars })`.
+- `PromptString` is no longer exported — use `Prompt.fromString` or `loadPrompt`.
 
-### Directory Structure
+---
 
-Organize prompts by purpose, not by format:
+## Variables: `{name}`
 
 ```
-project/
+Hello {customer_name}!
+```
+
+- Identifier rule: `[a-zA-Z_][a-zA-Z0-9_]*` (ASCII, snake_case, no dashes).
+- Every variable referenced in the body must be passed at `format()` time.
+- Reserved keywords (`if`, `else`, `end`, `switch`, `case`, `flags`) cannot be
+  variable **names**, but they **are** allowed as variable **values**. Passing
+  `{ role: "end" }` renders the literal text `end`.
+- Whitespace inside braces is a parse error: `{ name }` does not parse.
+
+Declare variables for documentation (and to make them appear in
+`prompt.meta.variables`) — declarations are optional:
+
+```toml
+[variables.customer_name]
+description = "Display name shown to the customer"
+```
+
+Variables are never required to be declared; declaring them just gives the
+prompt's consumers a discovery surface (`Object.keys(prompt.meta.variables)`).
+
+---
+
+## Inline `{if flag}`
+
+Inline form keeps everything on one line:
+
+```
+You are a {role}{if is_admin} (administrator){end}.
+```
+
+- `is_admin = true` → `You are a Jan (administrator).`
+- `is_admin = false` → `You are a Jan.`
+
+The text outside the tag (the trailing `.`) is preserved untouched. Inline
+`{if}` is for short phrase-level insertions.
+
+### Negation: `{if !flag}`
+
+```
+You are a {role}{if !is_admin} (read-only){end}.
+```
+
+There must be **no space** between `!` and the flag: `{if !is_admin}` parses,
+`{if ! is_admin}` is a parse error. Keep the negated form as `{if !flag}`;
+extra spaces between `if` and `!` are intentionally rejected.
+
+### Inline `{else}`
+
+```
+The user is on the {if premium_tier}premium{else}free{end} plan.
+```
+
+Both branches sit between `{if}` and `{end}`, separated by `{else}`. The same
+form works for `{switch}` (see below).
+
+---
+
+## Block `{if flag}`
+
+Block form puts the opener, `{else}`, and `{end}` each alone on their own
+lines:
+
+```
+Hello
+{if flag}
+World
+{end}
+!
+```
+
+With `flag = true`:
+
+```
+Hello
+World
+!
+```
+
+With `flag = false`:
+
+```
+Hello
+!
+```
+
+Rules:
+
+- Each keyword line is removed in its entirety — leading whitespace included.
+- Body line indentation is preserved exactly as authored.
+- Inactive branches contribute zero bytes — no stray whitespace.
+
+### Block with `{else}`
+
+```
+{if include_diagnostics}
+Diagnostics:
+  - Latency: {latency_ms} ms
+  - Error rate: {error_rate}%
+{else}
+Diagnostics not collected.
+{end}
+```
+
+### Indented nested blocks
+
+Block tags can sit at any indentation level; the entire keyword line is
+removed regardless of leading whitespace:
+
+```
+{if outer}
+  {if inner}
+  body line
+  {end}
+{end}
+```
+
+`body line` keeps its two-space indent; the inner `{if}` / `{end}` keyword
+lines disappear with their indents.
+
+Keep nesting shallow. Two levels is usually fine; three is a hint to refactor
+into separate prompts or compose at the call site.
+
+---
+
+## `{switch flag}` over an enum
+
+Block form (recommended):
+
+```
+{switch tier}
+{case free}
+Free plan. Mention upgrade options.
+{case premium}
+Premium plan. Skip the upgrade pitch.
+{case enterprise}
+Enterprise plan. Connect to a dedicated account manager.
+{end}
+```
+
+Inline form (allowed but discouraged):
+
+```
+Plan: {switch tier}{case free}free{case premium}premium{else}unknown{end}.
+```
+
+Rules:
+
+- At least one `{case}` is required.
+- No content between `{switch}` and the first `{case}`.
+- Duplicate `{case X}` values fail to parse.
+- `{else}` is optional and must come last.
+- Case order is cosmetic — matching is by value, not position.
+
+### Exhaustiveness for declared enums
+
+When you declare an enum and `{switch}` over it, you must either:
+
+1. Cover every declared value with a `{case}`, **or**
+2. End with `{else}`.
+
+Otherwise the loader throws `SemanticError(code: "E_NON_EXHAUSTIVE_SWITCH")`
+naming the missing cases.
+
+---
+
+## Escapes
+
+| Source | Renders as |
+|---|---|
+| `\{` | `{` |
+| `\}` | `}` |
+| `\\` | `\` |
+
+No other escape sequences. `\n`, `\t`, and friends render as two literal
+characters; use real newlines or tabs if you need them.
+
+---
+
+## Frontmatter
+
+### Standard fields
+
+```toml
+title = "Customer support agent"
+version = "2.1.0"
+description = "Customer support prompt with tier-based routing"
+author = "@support-eng"
+created = "2026-04-30"
+```
+
+YAML equivalent uses `:` separators (`title: ...`). The library auto-detects
+TOML first, then YAML, unless you pin `frontmatterFormat`.
+
+### Flag declarations
+
+Boolean (shorthand — `type` defaults to `"boolean"`):
+
+```toml
+[flags.persona]
+description = "Include the persona line"
+```
+
+Boolean (full form):
+
+```toml
+[flags.persona]
+type = "boolean"
+description = "Include the persona line"
+```
+
+Enum:
+
+```toml
+[flags.tier]
+type = "enum"
+values = ["free", "premium", "enterprise"]
+description = "User subscription tier"
+```
+
+Any field beyond `type`, `values`, and `description` is preserved on
+`prompt.meta.flags[name].extras`:
+
+```toml
+[flags.tier]
+type = "enum"
+values = ["free", "premium", "enterprise"]
+description = "User subscription tier"
+owner = "@product"
+expires = "2026-12-01"
+jira_ticket = "PROD-1234"
+```
+
+```typescript
+const tier = prompt.meta.flags.tier;
+if (tier.kind === "enum") {
+  console.log(tier.values);          // ["free", "premium", "enterprise"]
+  console.log(tier.extras.owner);    // "@product"
+}
+```
+
+### Variable declarations
+
+```toml
+[variables.user_name]
+description = "Display name shown to the model"
+```
+
+Variables are documentation, not enforcement. Declared variables never become
+required at format time — but every variable **referenced in the body** is
+required (see below).
+
+Any field beyond `description` lands in
+`prompt.meta.variables[name].extras`.
+
+---
+
+## Metadata modes
+
+The loader's `metadata` option:
+
+### `"allow"` (default)
+
+- Frontmatter is optional.
+- Body-referenced flags can be undeclared — implicit declarations are derived
+  from the body (`{if flag}` → boolean flag, `{switch flag}` → enum with the
+  inferred value set).
+- Use during prototyping.
+
+### `"strict"`
+
+- Frontmatter is **required**.
+- `title`, `description`, `version` must be non-empty.
+- Every flag referenced in the body **must** be declared in `[flags.*]` with a
+  non-empty `description`.
+- Every declared flag must have a non-empty `description`, even if the current
+  body does not reference it.
+- Variables are still not required to be declared.
+- Use in production / CI.
+
+### `"ignore"`
+
+- Frontmatter is **not parsed at all** — the whole file is body.
+- Useful for files that intentionally do not use the textprompts schema, or
+  to bypass a malformed header you want to keep verbatim.
+- `prompt.meta.title` defaults to the filename stem.
+
+```typescript
+await loadPrompt("prompts/legacy.txt", { metadata: "ignore" });
+```
+
+---
+
+## The required-input rule (the one that bites)
+
+> Every variable and flag **referenced anywhere in the body** must be passed
+> to `format()`, regardless of which branch fires (SPEC §5.2).
+
+```
+{if has_history}
+Previous question: {last_question}
+{end}
+```
+
+`has_history` and `last_question` are **both** required at format time. Even
+when `has_history = false` and the body never renders, `last_question` must
+still be passed.
+
+This is intentional. The alternative is a bug that hides until a flag flips
+later in production and a previously unreachable branch becomes reachable.
+If a variable is genuinely optional from the caller's perspective, pass an
+empty string explicitly — that decision belongs at the call site.
+
+---
+
+## Reading metadata at runtime
+
+```typescript
+const prompt = await loadPrompt("prompts/support.txt");
+
+console.log(prompt.meta.title);          // "Customer support agent"
+console.log(prompt.meta.version);        // "2.1.0"
+console.log(prompt.meta.extras.owner);   // "@support-eng"
+
+// Flag introspection
+for (const [name, decl] of Object.entries(prompt.meta.flags)) {
+  if (decl.kind === "enum") {
+    console.log(`${name} enum: ${decl.values.join(", ")}`);
+  } else {
+    console.log(`${name} boolean: ${decl.description}`);
+  }
+}
+
+// Detect unused inputs yourself (extras at format time are silently ignored)
+const myInputs = { user_name: "Jan", flags: { tier: "premium", legacy: true } };
+const declared = new Set(Object.keys(prompt.meta.flags));
+const unused = Object.keys(myInputs.flags).filter((f) => !declared.has(f));
+if (unused.length) console.warn(`Unused flags: ${unused.join(", ")}`);
+```
+
+---
+
+## Project organization
+
+```
+my-app/
 ├── src/
-│   └── index.ts
+│   └── ...
 ├── prompts/
-│   ├── system/              # System prompts
+│   ├── system/
 │   │   ├── base.txt
-│   │   ├── expert.txt
-│   │   └── creative.txt
-│   ├── customer/            # Customer-facing
-│   │   ├── greeting.txt
-│   │   ├── support.txt
-│   │   └── farewell.txt
-│   ├── internal/            # Internal tools
-│   │   ├── code-review.txt
-│   │   └── summarization.txt
-│   └── tools/               # Function schemas
-│       ├── search.txt
-│       └── calculator.txt
+│   │   └── expert.txt
+│   ├── support/
+│   │   └── support.txt
+│   └── tools/
+│       └── search.txt
 └── package.json
 ```
 
-### Naming Conventions
-
-Use descriptive, hyphenated names:
-
-✅ **Good:**
-- `customer-greeting-v2.txt`
-- `code-review-python.txt`
-- `system-expert-mode.txt`
-
-❌ **Bad:**
-- `prompt1.txt`
-- `test.txt`
-- `GREETING_FINAL_FINAL_v3.txt`
-
-### Environment-Specific Prompts
-
-Organize by environment when prompts differ:
-
-```
-prompts/
-├── development/
-│   ├── system.txt  # Verbose, helpful
-│   └── error.txt   # Detailed errors
-├── production/
-│   ├── system.txt  # Concise, efficient
-│   └── error.txt   # User-friendly
-└── staging/
-    ├── system.txt
-    └── error.txt
-```
-
-Load based on environment:
-
-```typescript
-import { loadPrompt } from "textprompts";
-
-const env = process.env.NODE_ENV || "development";
-const systemPrompt = await loadPrompt(`prompts/${env}/system.txt`);
-```
-
-## Metadata Strategies
-
-### When to Use Each Mode
-
-#### ALLOW Mode (Default)
-
-Best for:
-- Mixed projects (some prompts have metadata, some don't)
-- Gradual migration to metadata
-- Flexible development
-- Getting started with the library
-
-```typescript
-import { setMetadata, MetadataMode } from "textprompts";
-
-setMetadata(MetadataMode.ALLOW);
-```
-
-#### IGNORE Mode
-
-Best for:
-- Quick prototyping
-- Simple projects
-- Prompts without versioning needs
-- Treating prompts as plain text
-
-```typescript
-setMetadata(MetadataMode.IGNORE);
-```
-
-#### STRICT Mode
-
-Best for:
-- Production applications
-- Team environments
-- Regulated industries
-- When prompt versioning is critical
-
-```typescript
-setMetadata(MetadataMode.STRICT);
-```
-
-### Semantic Versioning
-
-Use semantic versioning for prompts (shown here in TOML; YAML front-matter is also supported):
-
-```
----
-version = "1.2.3"
----
-```
-
-- **Major** (1.x.x): Breaking changes to variables or output format
-- **Minor** (x.2.x): New features, backward compatible
-- **Patch** (x.x.3): Bug fixes, clarifications
-
-### Metadata Best Practices
-
-Include enough information for future you. You can use either TOML or YAML front-matter:
-
-```
----
-title = "Customer Support Greeting"
-version = "2.1.0"
-author = "Support Team"
-description = "Greeting for premium tier customers. Requires: customer_name, tier, agent_name"
-created = "2024-01-15"
----
-```
-
-The same metadata in YAML:
-
-```
----
-title: Customer Support Greeting
-version: "2.1.0"
-author: Support Team
-description: "Greeting for premium tier customers. Requires: customer_name, tier, agent_name"
-created: "2024-01-15"
----
-```
-
-Document:
-- Required variables in description
-- Purpose and use case
-- Any special conditions
-
-## String Formatting Patterns
-
-### Basic Formatting
-
-```typescript
-import { PromptString } from "textprompts";
-
-const template = new PromptString("Hello {name}!");
-const result = template.format({ name: "Alice" });
-```
-
-### Positional Arguments
-
-```typescript
-const template = new PromptString("User {0} ordered {1}");
-const result = template.format(["Alice", "Widget"]);
-```
-
-### Mixed Arguments
-
-```typescript
-const template = new PromptString("{0} ordered {item} on {1}");
-const result = template.format(
-  ["Alice", "2024-01-15"],
-  { item: "Widget" }
-);
-```
-
-### Partial Formatting
-
-Build templates in stages:
-
-```typescript
-// Stage 1: Fill in company info
-const baseTemplate = new PromptString(
-  "Welcome to {company}! {user_greeting}"
-);
-
-const withCompany = baseTemplate.format(
-  { company: "ACME Corp" },
-  { skipValidation: true }
-);
-
-// Stage 2: Fill in user info later
-const final = new PromptString(withCompany).format({
-  user_greeting: "Hello Alice!"
-});
-```
-
-### Escaping Braces
-
-To use literal braces, double them:
-
-```typescript
-const template = new PromptString("Set {{variable}} to {value}");
-const result = template.format({ value: "42" });
-// Result: "Set {variable} to 42"
-```
-
-## Performance Optimization
-
-### Caching Prompts
-
-Cache loaded prompts to avoid repeated file I/O:
+Cache loaded prompts — `loadPrompt` is async and reads from disk:
 
 ```typescript
 import { Prompt, loadPrompt } from "textprompts";
 
 class PromptCache {
-  private cache = new Map<string, Prompt>();
+  private cache = new Map<string, Promise<Prompt>>();
 
-  async get(path: string): Promise<Prompt> {
+  load(path: string): Promise<Prompt> {
     if (!this.cache.has(path)) {
-      this.cache.set(path, await loadPrompt(path));
+      this.cache.set(path, loadPrompt(path));
     }
     return this.cache.get(path)!;
   }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  invalidate(path: string): void {
-    this.cache.delete(path);
-  }
 }
-
-// Usage
-const cache = new PromptCache();
-const prompt = await cache.get("prompts/greeting.txt");
 ```
 
-### Lazy Loading
-
-For large prompt sets, load on demand:
+For per-environment prompts, split by directory:
 
 ```typescript
-class LazyPromptLoader {
-  private cache = new Map<string, Promise<Prompt>>();
-
-  load(name: string): Promise<Prompt> {
-    if (!this.cache.has(name)) {
-      this.cache.set(name, loadPrompt(`prompts/${name}.txt`));
-    }
-    return this.cache.get(name)!;
-  }
-}
+const env = process.env.NODE_ENV ?? "development";
+const prompt = await loadPrompt(`prompts/${env}/system.txt`);
 ```
 
-## Error Handling
+---
 
-### Graceful Degradation
-
-Provide fallbacks for missing prompts:
-
-```typescript
-import { loadPrompt, FileMissingError } from "textprompts";
-
-async function getPromptWithFallback(
-  path: string,
-  fallback: string
-): Promise<Prompt> {
-  try {
-    return await loadPrompt(path);
-  } catch (error) {
-    if (error instanceof FileMissingError) {
-      console.warn(`Prompt not found: ${path}, using fallback`);
-      return new Prompt({
-        path: "fallback",
-        meta: { title: "Fallback" },
-        prompt: new PromptString(fallback)
-      });
-    }
-    throw error;
-  }
-}
-```
-
-### Validation Errors
-
-Handle missing variables clearly:
-
-```typescript
-import { PromptString } from "textprompts";
-
-function safeFormat(
-  template: PromptString,
-  vars: Record<string, unknown>
-): string | null {
-  try {
-    return template.format(vars);
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("Missing format variables")) {
-      console.error("Template validation failed:", error.message);
-      return null;
-    }
-    throw error;
-  }
-}
-```
-
-### Type-Safe Error Handling
+## Error handling
 
 ```typescript
 import {
+  FormatError,
+  FrontmatterError,
+  ParseError,
+  SemanticError,
   TextPromptsError,
-  FileMissingError,
-  InvalidMetadataError,
-  MissingMetadataError,
+  loadPrompt,
 } from "textprompts";
 
-async function loadPromptSafe(path: string) {
-  try {
-    return await loadPrompt(path, { meta: "strict" });
-  } catch (error) {
-    if (error instanceof FileMissingError) {
-      console.error("File not found:", path);
-    } else if (error instanceof MissingMetadataError) {
-      console.error("Missing required metadata:", path);
-    } else if (error instanceof InvalidMetadataError) {
-      console.error("Invalid TOML/YAML:", path);
-    } else if (error instanceof TextPromptsError) {
-      console.error("Prompt error:", error.message);
-    } else {
-      console.error("Unknown error:", error);
-    }
+try {
+  const prompt = await loadPrompt("prompts/support.txt", { metadata: "strict" });
+  prompt.format({
+    user_name: "Jan",
+    last_question: "How do I upgrade?",
+    flags: { tier: "premium", has_urgent: false },
+  });
+} catch (error) {
+  if (error instanceof FormatError) {
+    console.error(`format-time error [${error.code}]:`, error.message);
+  } else if (error instanceof SemanticError) {
+    console.error(`semantic error [${error.code}]:`, error.message);
+  } else if (error instanceof FrontmatterError) {
+    console.error(`frontmatter error [${error.code}]:`, error.message);
+  } else if (error instanceof ParseError) {
+    console.error(`parse error [${error.code}]:`, error.message);
+  } else if (error instanceof TextPromptsError) {
+    console.error("textprompts error:", error.message);
+  } else {
     throw error;
   }
 }
 ```
 
-## Testing Prompts
+Stable `code` strings let you pattern-match without parsing English messages.
 
-### Unit Testing
-
-Test prompt loading and formatting:
-
-```typescript
-import { test, expect } from "bun:test";
-import { loadPrompt } from "textprompts";
-
-test("greeting prompt loads correctly", async () => {
-  const prompt = await loadPrompt("prompts/greeting.txt");
-
-  expect(prompt.meta?.title).toBe("Customer Greeting");
-  expect(prompt.meta?.version).toBe("1.0.0");
-});
-
-test("greeting prompt formats correctly", async () => {
-  const prompt = await loadPrompt("prompts/greeting.txt");
-
-  const result = prompt.format({
-    customer_name: "Alice",
-    company_name: "ACME",
-    issue_type: "billing",
-    agent_name: "Bob"
-  });
-
-  expect(result).toContain("Alice");
-  expect(result).toContain("ACME");
-  expect(result).toContain("billing");
-});
-
-test("greeting prompt requires all variables", async () => {
-  const prompt = await loadPrompt("prompts/greeting.txt");
-
-  expect(() => {
-    prompt.format({ customer_name: "Alice" });
-  }).toThrow(/Missing format variables/);
-});
-```
-
-### Snapshot Testing
-
-Test prompt output doesn't change unexpectedly:
-
-```typescript
-import { test, expect } from "bun:test";
-import { loadPrompt } from "textprompts";
-
-test("greeting prompt output matches snapshot", async () => {
-  const prompt = await loadPrompt("prompts/greeting.txt");
-
-  const result = prompt.format({
-    customer_name: "Test User",
-    company_name: "Test Corp",
-    issue_type: "test issue",
-    agent_name: "Test Agent"
-  });
-
-  expect(result).toMatchSnapshot();
-});
-```
-
-## Version Control
-
-### .gitignore
-
-Don't ignore your prompts! They're part of your code:
-
-```gitignore
-# Don't add prompts/ to .gitignore
-# DO commit them
-
-# But you might ignore generated/cached prompts
-generated-prompts/
-.prompt-cache
-```
-
-### Branching Strategy
-
-- `main` - Production prompts
-- `develop` - Development prompts
-- `experiment/*` - Experimental prompt variations
-
-### Diffing Prompts
-
-Git shows prompt changes clearly:
-
-```bash
-git diff prompts/system.txt
-```
-
-```diff
 ---
--version = "1.0.0"
-+version = "1.1.0"
----
- You are a helpful assistant.
--Be concise.
-+Be concise and friendly.
-```
 
-## AI Framework Integration
+## AI provider integration
 
 ### OpenAI
 
@@ -469,141 +454,99 @@ git diff prompts/system.txt
 import OpenAI from "openai";
 import { loadPrompt } from "textprompts";
 
-const openai = new OpenAI();
-const systemPrompt = await loadPrompt("prompts/system.txt");
+const system = await loadPrompt("prompts/support.txt", { metadata: "strict" });
+const client = new OpenAI();
 
-async function chat(userMessage: string) {
-  const response = await openai.chat.completions.create({
-    model: "gpt-4",
-    messages: [
-      {
-        role: "system",
-        content: systemPrompt.format({ company: "ACME" })
-      },
-      { role: "user", content: userMessage }
-    ]
-  });
-
-  return response.choices[0].message.content;
-}
-```
-
-### Anthropic Claude
-
-```typescript
-import Anthropic from "@anthropic-ai/sdk";
-import { loadPrompt } from "textprompts";
-
-const anthropic = new Anthropic();
-const systemPrompt = await loadPrompt("prompts/system.txt");
-
-async function chat(userMessage: string) {
-  const response = await anthropic.messages.create({
-    model: "claude-3-5-sonnet-20241022",
-    max_tokens: 1024,
-    system: systemPrompt.format({ company: "ACME" }),
-    messages: [{ role: "user", content: userMessage }]
-  });
-
-  return response.content[0].text;
-}
+const response = await client.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [
+    {
+      role: "system",
+      content: system.format({
+        user_name: "Jan",
+        last_question: "How do I upgrade?",
+        flags: { tier: "premium", has_urgent: false },
+      }),
+    },
+    { role: "user", content: "Hi!" },
+  ],
+});
 ```
 
 ### Vercel AI SDK
 
 ```typescript
-import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { streamText } from "ai";
 import { loadPrompt } from "textprompts";
 
-const systemPrompt = await loadPrompt("prompts/system.txt");
+const system = await loadPrompt("prompts/support.txt");
 
-const { text } = await generateText({
-  model: openai("gpt-4"),
-  system: systemPrompt.format({ company: "ACME" }),
-  prompt: "Hello!"
+const result = streamText({
+  model: openai("gpt-4o-mini"),
+  messages: [
+    {
+      role: "system",
+      content: system.format({
+        user_name: "Jan",
+        last_question: "How do I upgrade?",
+        flags: { tier: "premium", has_urgent: false },
+      }),
+    },
+    { role: "user", content: "Hello!" },
+  ],
 });
-```
 
-### LangChain
-
-```typescript
-import { ChatOpenAI } from "@langchain/openai";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { loadPrompt } from "textprompts";
-
-const systemPrompt = await loadPrompt("prompts/system.txt");
-const model = new ChatOpenAI();
-
-const response = await model.invoke([
-  new SystemMessage(systemPrompt.format({ company: "ACME" })),
-  new HumanMessage("Hello!")
-]);
-```
-
-## Edge Runtimes
-
-For environments without Node.js file-system APIs (Cloudflare Workers, Deno Deploy, Vercel Edge, browsers), import from `textprompts/core` -- it has zero `node:` imports:
-
-```typescript
-import { Prompt, PromptString } from "textprompts/core";
-```
-
-All pure-string APIs (`Prompt.fromString`, `PromptString`, `parseSections`, etc.) are available. Only `loadPrompt`, `loadSection`, and `savePrompt` are excluded.
-
-## Advanced Patterns
-
-### Prompt Composition
-
-Build complex prompts from smaller pieces:
-
-```typescript
-const baseSystem = await loadPrompt("prompts/base-system.txt");
-const expertMode = await loadPrompt("prompts/expert-addon.txt");
-
-const combinedPrompt = new PromptString(
-  baseSystem.toString() + "\n\n" + expertMode.toString()
-);
-
-const formatted = combinedPrompt.format({
-  company: "ACME",
-  expertise_level: "advanced"
-});
-```
-
-### Dynamic Prompt Loading
-
-Load prompts based on user tier or context:
-
-```typescript
-async function getSystemPrompt(userTier: string) {
-  const promptMap: Record<string, string> = {
-    free: "prompts/system-basic.txt",
-    premium: "prompts/system-premium.txt",
-    enterprise: "prompts/system-enterprise.txt"
-  };
-
-  const path = promptMap[userTier] || promptMap.free;
-  return await loadPrompt(path);
+for await (const delta of result.textStream) {
+  process.stdout.write(delta);
 }
 ```
 
-### A/B Testing
-
-Test different prompt variants:
+### Anthropic
 
 ```typescript
-function selectPromptVariant(userId: string): string {
-  const hash = hashCode(userId);
-  return hash % 2 === 0 ? "prompts/variant-a.txt" : "prompts/variant-b.txt";
-}
+import Anthropic from "@anthropic-ai/sdk";
+import { loadPrompt } from "textprompts";
 
-const variant = selectPromptVariant(user.id);
-const prompt = await loadPrompt(variant);
+const system = await loadPrompt("prompts/support.txt");
+const anthropic = new Anthropic();
+
+const message = await anthropic.messages.create({
+  model: "claude-3-5-sonnet-20241022",
+  max_tokens: 1024,
+  system: system.format({
+    user_name: "Jan",
+    last_question: "How do I upgrade?",
+    flags: { tier: "premium", has_urgent: false },
+  }),
+  messages: [{ role: "user", content: "Hello!" }],
+});
 ```
 
-## See Also
+---
 
-- [API Reference](./api.md) - Complete API documentation
-- [Examples](./examples.md) - Real-world code examples
-- [File Format](./file-format.md) - Prompt file format specification
+## Edge runtimes
+
+`textprompts/core` has zero `node:*` imports, safe for Cloudflare Workers,
+Deno Deploy, Vercel Edge, and the browser:
+
+```typescript
+import { Prompt, parseString } from "textprompts/core";
+
+const prompt = Prompt.fromString("Hello {name}!");
+prompt.format({ name: "Alice" });
+```
+
+The `core` entry point excludes `loadPrompt`, `loadSection`, `savePrompt`, and
+`parseFile`. Use bundler raw imports (Vite `?raw`, Webpack `raw-loader`) to
+get prompt text into the runtime.
+
+---
+
+## See also
+
+- [Authoring skill](../../../docs/writing-prompts-with-textprompts/SKILL.md) — the canonical guide
+- [File format](./file-format.md)
+- [API reference](./api.md)
+- [Examples](./examples.md)
+- [Cross-language SPEC](../../../docs/specs/SPEC_conditional_syntax_v2.md)

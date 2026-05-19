@@ -1,98 +1,107 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
- * Simple demonstration of the core TextPrompts formatting feature.
+ * Example: in-memory prompts with `Prompt.fromString` (v2 API).
  *
- * This shows how PromptString prevents the common problem of missing variables
- * in prompt templates, making your AI applications more reliable.
+ * Demonstrates:
+ * - Building a `Prompt` from a string at runtime (no file system needed)
+ * - Using a `{var}` placeholder
+ * - Using a `{if flag}` conditional
+ * - Format-time validation: missing variables raise `FormatError`
  */
 
-import { PromptString } from "../src/index";
+import { FormatError, Prompt } from "../src/index";
+
+function plainVariable() {
+  console.log("1. Plain variable substitution");
+  console.log("-".repeat(40));
+
+  const prompt = Prompt.fromString("Hello {name}!");
+  const result = prompt.format({ name: "Alice" });
+
+  console.log(`Source : ${prompt.toString()}`);
+  console.log(`Output : ${result}`);
+  console.log();
+}
+
+function inlineConditional() {
+  console.log("2. Inline `{if}` conditional");
+  console.log("-".repeat(40));
+
+  // Implicit mode: the `{if friendly}` reference declares `friendly` as a
+  // boolean flag with no extra setup.
+  const prompt = Prompt.fromString("Hello {name}{if friendly}, friend{end}!");
+
+  console.log(`Inferred flags: ${Object.keys(prompt.meta.flags).join(", ") || "(none declared)"}`);
+
+  console.log(
+    `\nfriendly = true  -> ${prompt.format({ name: "Alice", flags: { friendly: true } })}`,
+  );
+  console.log(
+    `friendly = false -> ${prompt.format({ name: "Alice", flags: { friendly: false } })}`,
+  );
+  console.log();
+}
+
+function blockConditional() {
+  console.log("3. Block `{if}` / `{else}`");
+  console.log("-".repeat(40));
+
+  const prompt = Prompt.fromString(
+    [
+      "Status report for {team}:",
+      "{if blocked}",
+      "  status: BLOCKED",
+      "  next step: unblock the team",
+      "{else}",
+      "  status: on track",
+      "{end}",
+    ].join("\n"),
+  );
+
+  const blocked = prompt.format({
+    team: "platform",
+    flags: { blocked: true },
+  });
+  const ok = prompt.format({
+    team: "platform",
+    flags: { blocked: false },
+  });
+
+  console.log("blocked = true:");
+  console.log(blocked);
+  console.log("\nblocked = false:");
+  console.log(ok);
+  console.log();
+}
+
+function missingVariableError() {
+  console.log("4. Missing variable -> FormatError");
+  console.log("-".repeat(40));
+
+  const prompt = Prompt.fromString("Hello {name}!");
+
+  try {
+    prompt.format({});
+  } catch (error) {
+    if (error instanceof FormatError) {
+      console.log(`code:    ${error.code}`);
+      console.log(`message: ${error.message}`);
+    } else {
+      throw error;
+    }
+  }
+  console.log();
+}
 
 function main() {
-  console.log("TextPrompts PromptString Demo");
-  console.log("=".repeat(30));
+  console.log("textprompts v2 — Prompt.fromString demo");
+  console.log("=".repeat(40));
   console.log();
 
-  // The problem with regular template strings
-  console.log("❌ Problem with regular template strings:");
-  const regularTemplate = "Hello {name}, your order #{order_id} is {status}";
-
-  // Template strings don't have a format method like Python
-  // But if we tried to use string replacement, we'd have issues
-  console.log(`   Template: "${regularTemplate}"`);
-  console.log("   ^ If you forget to replace {order_id}, it stays in the string!");
-  console.log();
-
-  // The solution with PromptString
-  console.log("✅ Solution with PromptString:");
-  const safeTemplate = new PromptString("Hello {name}, your order #{order_id} is {status}");
-
-  try {
-    // This fails fast with a clear error message
-    const result = safeTemplate.format({
-      name: "Alice",
-      status: "shipped",
-      // Missing: order_id
-    });
-    console.log(`   PromptString result: '${result}'`);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(`   ValueError: ${error.message}`);
-      console.log("   ^ Clear error message about missing variables!");
-    }
-  }
-
-  console.log();
-
-  // Partial formatting with skipValidation
-  console.log("✅ Partial formatting (skipValidation: true):");
-  const partialResult = safeTemplate.format({ name: "Alice" }, { skipValidation: true });
-  console.log(`   Partial result: '${partialResult}'`);
-  console.log("   ^ Only {name} was replaced, others remain as placeholders!");
-
-  console.log();
-
-  // Correct usage
-  console.log("✅ Correct usage (all placeholders provided):");
-  try {
-    const result = safeTemplate.format({
-      name: "Alice",
-      order_id: "12345",
-      status: "shipped",
-    });
-    console.log(`   Correct result: '${result}'`);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(`   Error: ${error.message}`);
-    }
-  }
-
-  console.log();
-
-  // PromptString has string-like properties
-  console.log("✅ PromptString properties:");
-  console.log(`   Length: ${safeTemplate.length}`);
-  console.log(`   Contains 'order': ${safeTemplate.value.includes("order")}`);
-  console.log(`   Type: ${typeof safeTemplate}`);
-  console.log(`   Placeholders: ${JSON.stringify([...safeTemplate.placeholders])}`);
-
-  console.log();
-
-  // Demonstrate mixed positional and named placeholders
-  console.log("✅ Mixed placeholders:");
-  const mixedTemplate = new PromptString("User {0} ordered {item} on {1}");
-
-  try {
-    const result = mixedTemplate.format(["Alice", "2024-01-15"], { item: "Widget" });
-    console.log(`   Result: '${result}'`);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(`   Error: ${error.message}`);
-    }
-  }
-
-  console.log();
-  console.log("Use textprompts to load prompts from files and get PromptString automatically!");
+  plainVariable();
+  inlineConditional();
+  blockConditional();
+  missingVariableError();
 }
 
 main();

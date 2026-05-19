@@ -1,717 +1,362 @@
-# API Reference
+# API reference
 
-Complete API documentation for textprompts.
+Complete v2 API surface. For Cloudflare Workers, Deno Deploy, Vercel Edge, or
+browser builds, import from `textprompts/core` — it has zero `node:*` imports
+but excludes `loadPrompt`, `loadSection`, `savePrompt`, and `parseFile`.
 
-> For edge runtimes, import from `textprompts/core` -- it exports all APIs below except `loadPrompt`, `loadSection`, and `savePrompt` (which depend on `node:` modules).
+## v2 breaking changes
 
-## Functions
+- `Prompt.format(args, kwargs, options)` overloads are gone. The only
+  signature is `prompt.format({ flags?, ...vars })`.
+- `PromptString` is no longer exported. Use `Prompt.fromString` (or
+  `loadPrompt`) instead.
+- The loader option is `metadata` (not `meta`).
+- New top-level error classes: `ParseError`, `FrontmatterError`,
+  `SemanticError`, `FormatError`. Each carries a stable string `code`.
 
-### `loadPrompt()`
+See [Migrating from v1](../README.md#migrating-from-v1) for a diff-style guide.
 
-Load a single prompt file.
+---
+
+## Loading prompts
+
+### `loadPrompt(path, options?)`
 
 ```typescript
 async function loadPrompt(
   path: string,
-  options?: LoadPromptOptions
+  options?: PromptLoadOptions,
 ): Promise<Prompt>
 ```
 
-**Parameters:**
-- `path: string` - Path to the prompt file (relative or absolute)
-- `options?: LoadPromptOptions` - Optional configuration
-  - `meta?: MetadataMode | string | null` - Metadata handling mode (default: uses global setting)
+Loads a prompt file from disk and returns a `Prompt`.
 
-**Returns:** `Promise<Prompt>` - The loaded prompt object
+```typescript
+interface PromptLoadOptions {
+  metadata?: "allow" | "strict" | "ignore" | MetadataMode | null;
+  frontmatterFormat?: "auto" | "toml" | "yaml";
+}
+```
 
-**Throws:**
-- `FileMissingError` - File does not exist or is not accessible
-- `MissingMetadataError` - Metadata required but not found (in STRICT mode)
-- `InvalidMetadataError` - TOML/YAML syntax error or invalid metadata
-- `MalformedHeaderError` - Front-matter structure is incorrect
+- `metadata` (default `"allow"`) — see [File format §4.6](./file-format.md#metadata-modes).
+- `frontmatterFormat` (default `"auto"`) — try TOML then YAML; or pin to one.
 
-**Example:**
+Throws (all extend `TextPromptsError`): `FileMissingError`, `ParseError`,
+`FrontmatterError`, `SemanticError`, `MissingMetadataError`,
+`InvalidMetadataError`, `MalformedHeaderError`.
+
 ```typescript
 import { loadPrompt } from "textprompts";
 
-// Simple usage
-const prompt = await loadPrompt("prompts/greeting.txt");
-
-// With metadata mode
-const strict = await loadPrompt("prompts/system.txt", { meta: "strict" });
-
-// Alternative static method
-const alt = await Prompt.fromPath("prompts/greeting.txt");
+const prompt = await loadPrompt("prompts/system.txt", {
+  metadata: "strict",
+  frontmatterFormat: "toml",
+});
 ```
 
----
-
-### `loadSection()`
-
-Load a single section body from a prompt file.
+### `loadSection(path, anchorId, options?)`
 
 ```typescript
 async function loadSection(
   path: string,
   anchorId: string,
-  options?: LoadPromptOptions
+  options?: PromptLoadOptions,
 ): Promise<Prompt>
 ```
 
-**Parameters:**
-- `path: string` - Path to the prompt file
-- `anchorId: string` - Section anchor id or XML tag name; normalized lookups accept hyphens and underscores
-- `options?: LoadPromptOptions` - Optional metadata handling configuration for the extracted section
+Loads one named XML/Markdown section from a multi-section file and returns it
+as a `Prompt`. Anchor lookup tolerates `-` vs `_` and case differences.
 
-**Returns:** `Promise<Prompt>` - The extracted section as a prompt
+### `parseFile(path, options?)` / `parseString(content, options?)`
 
----
-
-### `savePrompt()`
-
-Save a prompt to a file.
-
-```typescript
-async function savePrompt(
-  path: string,
-  content: string | Prompt,
-  options?: { format?: "toml" | "yaml" }
-): Promise<void>
-```
-
-**Parameters:**
-- `path: string` - Path where the file will be saved
-- `content: string | Prompt` - Content to save
-  - If `string`: Creates a template with empty metadata fields
-  - If `Prompt`: Saves with full metadata
-- `options?.format?: "toml" | "yaml"` - Front-matter format to use (default: `"toml"`)
-
-**Returns:** `Promise<void>`
-
-**Examples:**
-```typescript
-import { savePrompt, Prompt, PromptString } from "textprompts";
-
-// Save simple string (creates template with TOML front-matter)
-await savePrompt("new.txt", "Hello {name}!");
-
-// Save with YAML front-matter
-await savePrompt("new.txt", "Hello {name}!", { format: "yaml" });
-
-// Save Prompt object
-const prompt = new Prompt({
-  path: "greeting.txt",
-  meta: {
-    title: "Greeting",
-    version: "1.0.0",
-    description: "Simple greeting"
-  },
-  prompt: new PromptString("Hello {name}!")
-});
-await savePrompt("greeting.txt", prompt);
-
-// Save Prompt object with YAML front-matter
-await savePrompt("greeting.txt", prompt, { format: "yaml" });
-```
+Lower-level entry points that bypass the existence check. `parseFile` reads
+from disk; `parseString` reads from an in-memory string. Both accept the same
+`PromptLoadOptions`. `parseString` also takes the source path as its second
+positional argument (used in error messages); use `Prompt.fromString` for the
+ergonomic form.
 
 ---
 
-### `parseSections()`
-
-Parse mixed Markdown/XML prompt structure directly from text.
-
-```typescript
-function parseSections(text: string | Uint8Array): ParseResult
-```
-
-**Returns:** `ParseResult` with:
-- `sections`: Ordered section tree with `kind`, `tagName`, `heading`, `anchorId`, `level`, `startLine`, `endLine`, `contentStartLine`, `contentStartCol`, `contentEndLine`, `contentEndCol`, `charCount`, `parentIdx`, `children`, and `links`
-- `anchors`: Canonical anchor id to first section index
-- `duplicateAnchors`: Explicit duplicate anchors preserved by the parser
-- `frontmatter`: Detected YAML/TOML frontmatter block, if present
-- `totalChars`: UTF-8 byte count of the body after frontmatter
-
-**Related utilities:**
-- `generateSlug(heading: string): string`
-- `normalizeAnchorId(id: string): string`
-- `getSectionText(text: string | Uint8Array, anchorId: string): string | null`
-- `sliceSectionContent(text: string | Uint8Array, section: Section): string`
-- `injectAnchors(text: string | Uint8Array): { text: string; result: ParseResult }`
-- `renderToc(result: ParseResult, path: string): string`
-
-**Example:**
-```typescript
-import { parseSections, renderToc } from "textprompts";
-
-const result = parseSections("## Intro\n\nSee [Docs](#docs).");
-console.log(result.sections[0].links[0].fragment); // "docs"
-console.log(renderToc(result, "prompt.txt"));
-```
-
----
-
-### `setMetadata()`
-
-Set the global metadata handling mode.
-
-```typescript
-function setMetadata(mode: MetadataMode | string): void
-```
-
-**Parameters:**
-- `mode: MetadataMode | string` - One of: `"strict"`, `"allow"`, `"ignore"`, or `MetadataMode` enum values
-
-**Example:**
-```typescript
-import { setMetadata, MetadataMode } from "textprompts";
-
-// Using enum
-setMetadata(MetadataMode.STRICT);
-
-// Using string
-setMetadata("allow");
-```
-
----
-
-### `getMetadata()`
-
-Get the current global metadata handling mode.
-
-```typescript
-function getMetadata(): MetadataMode
-```
-
-**Returns:** `MetadataMode` - Current metadata mode
-
-**Example:**
-```typescript
-import { getMetadata } from "textprompts";
-
-const current = getMetadata();
-console.log(current);  // "allow", "ignore", or "strict"
-```
-
----
-
-### `skipMetadata()`
-
-Convenience function to set IGNORE mode with optional warning suppression.
-
-```typescript
-function skipMetadata(options?: { skipWarning?: boolean }): void
-```
-
-**Parameters:**
-- `options?.skipWarning?: boolean` - Suppress warnings about ignored metadata (default: `false`)
-
-**Example:**
-```typescript
-import { skipMetadata } from "textprompts";
-
-// Skip metadata but still warn if present
-skipMetadata();
-
-// Skip metadata and suppress warnings
-skipMetadata({ skipWarning: true });
-```
-
----
-
-### `extractPlaceholders()`
-
-Extract placeholder names from a template string.
-
-```typescript
-function extractPlaceholders(text: string): Set<string>
-```
-
-**Parameters:**
-- `text: string` - Template string with `{placeholder}` syntax
-
-**Returns:** `Set<string>` - Set of unique placeholder names
-
-**Example:**
-```typescript
-import { extractPlaceholders } from "textprompts";
-
-const placeholders = extractPlaceholders("Hello {name}, you ordered {item}");
-console.log([...placeholders]);  // ["name", "item"]
-```
-
----
-
-### `getPlaceholderInfo()`
-
-Get detailed information about placeholders in a template.
-
-```typescript
-function getPlaceholderInfo(text: string): {
-  count: number;
-  names: Set<string>;
-  hasPositional: boolean;
-  hasNamed: boolean;
-  isMixed: boolean;
-}
-```
-
-**Parameters:**
-- `text: string` - Template string
-
-**Returns:** Object with:
-- `count: number` - Total number of unique placeholders
-- `names: Set<string>` - Set of placeholder names
-- `hasPositional: boolean` - Has numeric placeholders like `{0}`, `{1}`
-- `hasNamed: boolean` - Has named placeholders like `{name}`
-- `isMixed: boolean` - Has both positional and named placeholders
-
-**Example:**
-```typescript
-import { getPlaceholderInfo } from "textprompts";
-
-const info = getPlaceholderInfo("User {0} ordered {item} on {1}");
-console.log(info);
-// {
-//   count: 3,
-//   names: Set(3) { "0", "item", "1" },
-//   hasPositional: true,
-//   hasNamed: true,
-//   isMixed: true
-// }
-```
-
----
-
-## Classes
-
-### `Prompt`
-
-The main prompt object containing metadata and content.
+## The `Prompt` class
 
 ```typescript
 class Prompt {
   readonly path: string;
-  readonly meta: PromptMeta | null;
-  readonly prompt: PromptString;
+  readonly meta: PromptMeta;
 
-  constructor(init: PromptInit);
+  static fromPath(path: string, options?: PromptLoadOptions): Promise<Prompt>;
+  static fromString(content: string, options?: PromptLoadOptions & { path?: string }): Prompt;
 
-  static async fromPath(
-    path: string,
-    options?: { meta?: MetadataMode | string | null }
-  ): Promise<Prompt>;
+  format(inputs?: { flags?: Record<string, boolean | string> } & Record<string, unknown>): string;
 
   toString(): string;
   valueOf(): string;
-  strip(): string;
-  format(options?: FormatOptions): string;
-  format(args: unknown[], kwargs?: Record<string, unknown>, options?: FormatCallOptions): string;
-  get length(): number;
-  slice(start?: number, end?: number): string;
 }
 ```
 
-**Constructor Parameters:**
-```typescript
-interface PromptInit {
-  path: string;
-  meta: PromptMeta | null;
-  prompt: string | PromptString;
-}
-```
+### `Prompt.fromPath(path, options?)`
 
-**Methods:**
+Async alternative to `loadPrompt`. Internally dynamically imports the file
+system entry points so `textprompts/core` stays node-free.
 
-#### `Prompt.fromPath()` (static)
-Alternative way to load a prompt.
+### `Prompt.fromString(content, options?)`
+
+Builds a prompt from an in-memory string. Frontmatter, conditional tags, and
+metadata modes work exactly like `loadPrompt`. Pass `path` for nicer error
+messages (defaults to `"<string>"`).
 
 ```typescript
-const prompt = await Prompt.fromPath("greeting.txt", { meta: "allow" });
-```
+import { Prompt } from "textprompts";
 
-#### `toString()` / `valueOf()`
-Returns the raw prompt text.
-
-```typescript
-const text = prompt.toString();
-const value = String(prompt);  // Uses valueOf()
-```
-
-#### `strip()`
-Returns the prompt text with leading/trailing whitespace removed.
-
-```typescript
-const trimmed = prompt.strip();
-```
-
-#### `format()`
-Format the prompt with variables (delegates to `PromptString.format()`).
-
-```typescript
-// Object syntax
-const result = prompt.format({
-  name: "Alice",
-  role: "admin"
-});
-
-// Array syntax
-const result = prompt.format(["Alice", "admin"]);
-
-// With options
-const partial = prompt.format(
-  { name: "Alice" },
-  { skipValidation: true }
+const prompt = Prompt.fromString(
+  "Hello {name}{if friendly}, friend{end}!",
 );
+prompt.format({ name: "Alice", flags: { friendly: true } });
+// "Hello Alice, friend!"
 ```
 
-#### `slice()`
-Get a substring of the prompt.
+### `prompt.format(inputs)`
+
+One signature, no overloads:
 
 ```typescript
-const preview = prompt.slice(0, 100);
+prompt.format({
+  // Optional reserved key — every flag the body references must appear here.
+  flags: { tier: "premium", has_urgent: true },
+
+  // Every other top-level key is a variable substitution. Every variable
+  // referenced anywhere in the body must be present, regardless of branch.
+  user_name: "Jan",
+  last_question: "How do I upgrade?",
+});
 ```
+
+Extra keys (variables or flags that the body never references) are silently
+ignored (SPEC §5.7). If you want to detect unused inputs, diff your keys
+against `prompt.meta.flags` and `prompt.meta.variables` yourself.
+
+Throws `FormatError` for missing required inputs, wrong flag types,
+unrecognized enum values, or reserved keywords used as input keys.
+
+### `toString()` / `valueOf()`
+
+Return the prompt's raw source text (after BOM / CRLF normalization). Useful
+when you want to pipe the unformatted prompt elsewhere or when you embed a
+`Prompt` in a template literal.
 
 ---
 
-### `PromptString`
-
-Safe string wrapper with format validation.
-
-```typescript
-class PromptString {
-  readonly value: string;
-  readonly placeholders: Set<string>;
-
-  constructor(value: string);
-
-  format(options?: FormatOptions): string;
-  format(args: unknown[], kwargs?: Record<string, unknown>, options?: FormatCallOptions): string;
-
-  toString(): string;
-  valueOf(): string;
-  strip(): string;
-  slice(start?: number, end?: number): string;
-  get length(): number;
-}
-```
-
-**Constructor:**
-```typescript
-const template = new PromptString("Hello {name}!");
-```
-
-**Properties:**
-- `value: string` - The raw template string
-- `placeholders: Set<string>` - Set of placeholder names found in the template
-
-**Methods:**
-
-#### `format()`
-Format the template with values.
-
-**Signatures:**
-```typescript
-// Object syntax
-format(options?: {
-  args?: unknown[];
-  kwargs?: Record<string, unknown>;
-  skipValidation?: boolean;
-}): string
-
-// Array + kwargs syntax
-format(
-  args: unknown[],
-  kwargs?: Record<string, unknown>,
-  options?: { skipValidation?: boolean }
-): string
-```
-
-**Examples:**
-```typescript
-const template = new PromptString("Hello {name}, you are {role}");
-
-// Object syntax with kwargs
-template.format({ name: "Alice", role: "admin" });
-
-// Array syntax (positional)
-const t2 = new PromptString("Hello {0}, you are {1}");
-t2.format(["Alice", "admin"]);
-
-// Mixed
-const t3 = new PromptString("{0} ordered {item}");
-t3.format(["Alice"], { item: "widget" });
-
-// Partial formatting
-template.format({ name: "Alice" }, {}, { skipValidation: true });
-// or
-template.format({ name: "Alice" }, { skipValidation: true });
-```
-
-#### Other Methods
-Same as `Prompt` methods: `toString()`, `valueOf()`, `strip()`, `slice()`, `length`.
-
----
-
-## Interfaces
-
-### `PromptMeta`
-
-Metadata extracted from TOML or YAML front-matter.
+## `PromptMeta`
 
 ```typescript
 interface PromptMeta {
   title?: string | null;
   version?: string | null;
+  description?: string | null;
   author?: string | null;
   created?: string | null;
-  description?: string | null;
+
+  // Any top-level frontmatter field that isn't one of the standard ones above.
+  // Original TOML/YAML types preserved.
+  extras: Record<string, unknown>;
+
+  // Parsed [flags.*] / flags: declarations plus implicit body-referenced flags.
+  flags: Record<string, FlagDecl>;
+
+  // Parsed [variables.*] / variables: declarations.
+  variables: Record<string, VarDecl>;
+}
+
+type FlagDecl = BooleanFlag | EnumFlag;
+
+interface BooleanFlag {
+  kind: "boolean";
+  description?: string;
+  extras: Record<string, unknown>;
+}
+
+interface EnumFlag {
+  kind: "enum";
+  values: string[];
+  description?: string;
+  extras: Record<string, unknown>;
+}
+
+interface VarDecl {
+  description?: string;
+  extras: Record<string, unknown>;
 }
 ```
 
-**Example:**
+`extras` is always a plain object (never `null`). Same for `flags` and
+`variables`. That means `prompt.meta.flags` is safe to iterate over without
+null-guards.
+
 ```typescript
-const meta: PromptMeta = {
-  title: "Customer Greeting",
-  version: "1.0.0",
-  author: "Support Team",
-  description: "Standard greeting template"
+const expected = new Set(Object.keys(prompt.meta.flags));
+const passed = new Set(Object.keys(myFlags));
+const unused = [...passed].filter((f) => !expected.has(f));
+if (unused.length) {
+  console.warn(`Passing flags the prompt does not use: ${unused.join(", ")}`);
+}
+```
+
+---
+
+## Saving prompts
+
+### `savePrompt(path, content, options?)`
+
+```typescript
+async function savePrompt(
+  path: string,
+  content: string | Prompt,
+  options?: { format?: "toml" | "yaml" },
+): Promise<void>
+```
+
+- `content: string` — writes a minimal template with empty `title` /
+  `description` / `version` placeholders followed by the body.
+- `content: Prompt` — round-trips standard fields, `meta.extras`,
+  `[flags.*]` (kind, values, description, extras), and `[variables.*]`
+  (description, extras).
+- `format` (default `"toml"`) — output frontmatter format.
+
+```typescript
+import { savePrompt, Prompt } from "textprompts";
+
+const prompt = Prompt.fromString(`---
+title = "Saved"
+version = "1.0.0"
+description = "Round-trip test"
+---
+Hi {name}!`);
+
+await savePrompt("output.txt", prompt, { format: "yaml" });
+```
+
+---
+
+## Sections (Markdown / XML)
+
+```typescript
+function parseSections(text: string | Uint8Array): ParseResult;
+function generateSlug(heading: string): string;
+function normalizeAnchorId(id: string): string;
+function getSectionText(text: string | Uint8Array, anchorId: string): string | null;
+function sliceSectionContent(text: string | Uint8Array, section: Section): string;
+function injectAnchors(text: string | Uint8Array): { text: string; result: ParseResult };
+function renderToc(result: ParseResult, path: string): string;
+```
+
+These cover the multi-section file pattern (`<system id="default">…</system>`,
+`<system id="expert">…</system>`). Anchor IDs are normalized: lowercase,
+non-alphanumeric runs collapsed to `_`, leading/trailing `_` stripped. That
+means `loadSection(file, "my-section")`, `"my_section"`, and `"MY_SECTION"`
+all resolve to the same section.
+
+See [`examples/sections-usage.ts`](../examples/sections-usage.ts) for a full
+walk-through.
+
+---
+
+## Metadata mode helpers
+
+```typescript
+function setMetadata(mode: MetadataMode | string): void;
+function getMetadata(): MetadataMode;
+function skipMetadata(options?: { skipWarning?: boolean }): void;
+function warnOnIgnoredMetadata(): boolean;
+
+const MetadataMode: {
+  STRICT: "strict";
+  ALLOW: "allow";
+  IGNORE: "ignore";
 };
+type MetadataMode = "strict" | "allow" | "ignore";
 ```
+
+These adjust the **process-global** default. The per-call `metadata` option
+on `loadPrompt` / `Prompt.fromString` always takes precedence.
+
+Environment variable override: set `TEXTPROMPTS_METADATA_MODE` to `"strict"`,
+`"allow"`, or `"ignore"` before importing the library.
 
 ---
 
-### `LoadPromptOptions`
+## Errors
 
-Options for `loadPrompt()`.
+All errors extend `TextPromptsError`. Each carries a stable string `code`
+where applicable, plus optional `path` / `line` / `column` context.
 
 ```typescript
-interface LoadPromptOptions {
-  meta?: MetadataMode | string | null;
+class TextPromptsError extends Error {}
+
+// Lexer / body parser
+class ParseError extends TextPromptsError {
+  readonly code?: string;       // "E_BAD_TAG", "E_UNCLOSED_IF", "E_DUPLICATE_CASE", ...
+  readonly path?: string;
+  readonly line?: number;
+  readonly column?: number;
 }
-```
 
----
-
-### `FormatOptions`
-
-Options for `format()` method (object syntax).
-
-```typescript
-interface FormatOptions {
-  args?: unknown[];
-  kwargs?: Record<string, unknown>;
-  skipValidation?: boolean;
+// Frontmatter schema validation
+class FrontmatterError extends TextPromptsError {
+  readonly code?: FrontmatterErrorCode;
+  // E_INVALID_IDENTIFIER | E_RESERVED_IDENTIFIER | E_DUPLICATE_NAME |
+  // E_INVALID_FLAG_TYPE | E_INVALID_FLAG_VALUES | E_BAD_SCHEMA_SHAPE
 }
-```
 
----
-
-### `FormatCallOptions`
-
-Options for `format()` method (when using separate args parameter).
-
-```typescript
-interface FormatCallOptions {
-  skipValidation?: boolean;
+// Body-vs-declaration mismatches at load time
+class SemanticError extends TextPromptsError {
+  readonly code?: SemanticErrorCode;
+  // E_UNDECLARED_FLAG | E_FLAG_USED_AS_BOTH_IF_AND_SWITCH |
+  // E_NON_EXHAUSTIVE_SWITCH | E_INVALID_CASE_VALUE |
+  // E_FLAG_AND_VARIABLE_COLLISION
 }
-```
 
----
-
-## Enums
-
-### `MetadataMode`
-
-Metadata handling modes.
-
-```typescript
-const MetadataMode = {
-  STRICT: "strict",
-  ALLOW: "allow",
-  IGNORE: "ignore",
-} as const;
-
-type MetadataMode = (typeof MetadataMode)[keyof typeof MetadataMode];
-```
-
-**Values:**
-- `MetadataMode.STRICT` (`"strict"`) - Require complete metadata with title, description, and version
-- `MetadataMode.ALLOW` (`"allow"`) - Load metadata if present, don't require it
-- `MetadataMode.IGNORE` (`"ignore"`) - Skip metadata parsing, use filename as title
-
-**Usage:**
-```typescript
-import { MetadataMode } from "textprompts";
-
-setMetadata(MetadataMode.STRICT);
-// or
-const prompt = await loadPrompt("file.txt", { meta: MetadataMode.ALLOW });
-```
-
----
-
-## Exceptions
-
-All exceptions extend `TextPromptsError`.
-
-### `TextPromptsError`
-
-Base exception for all textprompts errors.
-
-```typescript
-class TextPromptsError extends Error {
-  constructor(message: string);
+// Format-time input validation
+class FormatError extends TextPromptsError {
+  readonly code?: FormatErrorCode;
+  // E_MISSING_FLAGS_OBJECT | E_BAD_FLAGS_TYPE | E_MISSING_FLAG |
+  // E_MISSING_VARIABLE | E_WRONG_FLAG_TYPE | E_INVALID_FLAG_VALUE |
+  // E_RESERVED_KEY
 }
+
+// File IO
+class FileMissingError extends TextPromptsError {}
+
+// Legacy frontmatter errors (kept for backwards compatibility)
+class MissingMetadataError extends TextPromptsError {}
+class InvalidMetadataError extends TextPromptsError {}
+class MalformedHeaderError extends TextPromptsError {}
 ```
 
----
+Stable code reference: see [File format → stable error codes](./file-format.md#stable-error-codes).
 
-### `FileMissingError`
-
-Thrown when a file cannot be found or accessed.
+Example:
 
 ```typescript
-class FileMissingError extends TextPromptsError {
-  constructor(path: string);
-}
-```
-
-**Example:**
-```typescript
-try {
-  await loadPrompt("missing.txt");
-} catch (error) {
-  if (error instanceof FileMissingError) {
-    console.error("File not found:", error.message);
-  }
-}
-```
-
----
-
-### `MissingMetadataError`
-
-Thrown when metadata is required but not present (STRICT mode).
-
-```typescript
-class MissingMetadataError extends TextPromptsError {
-  constructor(message?: string);
-}
-```
-
----
-
-### `InvalidMetadataError`
-
-Thrown when metadata (TOML or YAML) is invalid or incomplete.
-
-```typescript
-class InvalidMetadataError extends TextPromptsError {
-  constructor(message: string);
-}
-```
-
----
-
-### `MalformedHeaderError`
-
-Thrown when front-matter delimiters are incorrect.
-
-```typescript
-class MalformedHeaderError extends TextPromptsError {
-  constructor(message: string);
-}
-```
-
----
-
-## Type Guards
-
-You can use `instanceof` checks for error handling:
-
-```typescript
-import {
-  TextPromptsError,
-  FileMissingError,
-  InvalidMetadataError,
-  MissingMetadataError,
-  MalformedHeaderError,
-} from "textprompts";
+import { FormatError, loadPrompt } from "textprompts";
 
 try {
-  const prompt = await loadPrompt("file.txt", { meta: "strict" });
+  const prompt = await loadPrompt("prompts/system.txt");
+  prompt.format({});
 } catch (error) {
-  if (error instanceof FileMissingError) {
-    console.error("File not found");
-  } else if (error instanceof MissingMetadataError) {
-    console.error("Missing required metadata");
-  } else if (error instanceof InvalidMetadataError) {
-    console.error("Invalid TOML/YAML syntax");
-  } else if (error instanceof MalformedHeaderError) {
-    console.error("Malformed front-matter");
-  } else if (error instanceof TextPromptsError) {
-    console.error("Other textprompts error");
+  if (error instanceof FormatError && error.code === "E_MISSING_VARIABLE") {
+    console.warn("Caller forgot a variable:", error.message);
   } else {
-    console.error("Unknown error");
+    throw error;
   }
 }
 ```
 
 ---
 
-## Environment Variables
+## See also
 
-### `TEXTPROMPTS_METADATA_MODE`
-
-Set the default metadata mode before the library is imported.
-
-**Values:** `"strict"`, `"allow"`, `"ignore"`
-
-**Example:**
-```bash
-# In your shell or .env file
-export TEXTPROMPTS_METADATA_MODE=strict
-
-# Or in Node.js before import
-process.env.TEXTPROMPTS_METADATA_MODE = "strict";
-```
-
-```typescript
-// Now all loads use strict mode by default
-import { loadPrompt } from "textprompts";
-
-const prompt = await loadPrompt("file.txt");  // Uses strict mode
-```
-
----
-
-## TypeScript Types
-
-All types are fully exported and available for import:
-
-```typescript
-import type {
-  Prompt,
-  PromptMeta,
-  PromptInit,
-  PromptString,
-  LoadPromptOptions,
-  FormatOptions,
-  FormatCallOptions,
-  MetadataMode,
-  TextPromptsError,
-  FileMissingError,
-  MissingMetadataError,
-  InvalidMetadataError,
-  MalformedHeaderError,
-} from "textprompts";
-```
-
----
-
-## See Also
-
-- [Getting Started](./index.md) - Introduction and basic usage
-- [Usage Guide](./guide.md) - Best practices and patterns
-- [File Format](./file-format.md) - Prompt file format specification
-- [Examples](./examples.md) - Real-world usage examples
+- [Authoring skill](../../../docs/writing-prompts-with-textprompts/SKILL.md)
+- [File format](./file-format.md)
+- [Usage guide](./guide.md)
+- [Examples](./examples.md)
+- [Cross-language SPEC](../../../docs/specs/SPEC_conditional_syntax_v2.md)

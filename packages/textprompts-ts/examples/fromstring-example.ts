@@ -1,189 +1,147 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
- * Example: Loading Prompts from Strings
+ * Example: building prompts from in-memory strings (v2 API).
  *
- * This demonstrates how to use Prompt.fromString() for scenarios where
- * you can't load files directly (e.g., bundled frontend code with Vite/Webpack).
+ * `Prompt.fromString` is the documented way to create a prompt from a string,
+ * whether that string came from a bundler `?raw` import, an HTTP response, a
+ * database row, or test fixtures.
  *
  * Use cases:
- * - Frontend apps using Vite with ?raw imports
- * - Webpack projects with raw-loader
+ * - Frontend apps using Vite with `?raw` imports
+ * - Webpack projects with `raw-loader`
  * - Loading prompts from APIs or databases
- * - Testing without file system access
+ * - Testing without filesystem access
  */
 
-import { Prompt, MetadataMode } from "../src/index";
+import { Prompt } from "../src/index";
 
-function demonstrateSimpleString() {
-  console.log("1. Simple String Loading");
+function plainString() {
+  console.log("1. Plain in-memory prompt");
   console.log("-".repeat(40));
 
-  // Load a simple prompt without metadata
-  const content = "Analyze this {data_type}: {data}";
-  const prompt = Prompt.fromString(content);
+  const prompt = Prompt.fromString("Analyze this {data_type}: {data}");
 
-  console.log(`Title: ${prompt.meta?.title}`); // "<string>" (default)
-  console.log(`Template: ${prompt.toString()}`);
+  console.log(`Title (default): ${prompt.meta.title ?? "(none)"}`);
+  console.log(`Body: ${prompt.toString()}`);
 
-  const result = prompt.format({
+  const rendered = prompt.format({
     data_type: "sales data",
-    data: "Q1: $100k, Q2: $150k, Q3: $200k",
+    data: "Q1: $100k, Q2: $150k",
   });
-
-  console.log(`Result: ${result}`);
+  console.log(`\nRendered: ${rendered}`);
   console.log();
 }
 
-function demonstrateWithMetadata() {
-  console.log("2. Loading with TOML Metadata");
+function frontmatterAndFlags() {
+  console.log("2. Frontmatter declarations and `prompt.meta.flags`");
   console.log("-".repeat(40));
 
-  // Simulate content from Vite import: `import content from "./prompt.txt?raw"`
+  // Simulate a Vite-style `?raw` import: full file contents in a string.
   const content = `---
-title = "Customer Greeting"
-version = "2.0.0"
-description = "Personalized customer support greeting"
-author = "Support Team"
----
-Hello {customer_name}!
-
-Welcome to {company_name}. We're here to help you with {issue_type}.
-
-Best regards,
-{agent_name}`;
-
-  const prompt = Prompt.fromString(content, {
-    meta: MetadataMode.ALLOW,
-    path: "greeting.txt", // Optional: for better error messages
-  });
-
-  console.log(`Title: ${prompt.meta?.title}`);
-  console.log(`Version: ${prompt.meta?.version}`);
-  console.log(`Author: ${prompt.meta?.author}`);
-  console.log(`Description: ${prompt.meta?.description}`);
-
-  const message = prompt.format({
-    customer_name: "Alice Johnson",
-    company_name: "Tech Solutions Inc",
-    issue_type: "billing inquiry",
-    agent_name: "Sarah",
-  });
-
-  console.log("\nFormatted message:");
-  console.log(message);
-  console.log();
-}
-
-function demonstrateVitePattern() {
-  console.log("3. Vite/Webpack Bundle Pattern");
-  console.log("-".repeat(40));
-
-  // In a real Vite project, you would do:
-  // import systemPromptContent from "./prompts/system.txt?raw";
-  //
-  // For this example, we'll simulate the imported content:
-  const systemPromptContent = `---
-title = "AI Assistant System Prompt"
+title = "Tier-aware system prompt"
 version = "1.0.0"
-description = "System prompt for customer support AI"
+description = "System prompt with tier-based routing"
+
+[flags.tier]
+type = "enum"
+values = ["free", "premium"]
+description = "User subscription tier"
+
+[variables.user_name]
+description = "Display name shown to the model"
 ---
-You are a helpful AI assistant for {company_name}.
-Your tone should be {tone}.
-Always be concise and accurate.`;
+You are talking to {user_name}.
 
-  // Load from the "imported" string
-  const prompt = Prompt.fromString(systemPromptContent, {
-    path: "system.txt",
-    meta: "allow",
-  });
+{switch tier}
+{case free}
+Politely mention upgrade options.
+{case premium}
+Greet them warmly and skip the upgrade pitch.
+{end}
+`;
 
-  console.log("✅ Loaded prompt from bundled string");
-  console.log(`   Title: ${prompt.meta?.title}`);
-  console.log(`   Version: ${prompt.meta?.version}`);
+  const prompt = Prompt.fromString(content, { path: "system.txt" });
 
-  const formatted = prompt.format({
-    company_name: "ACME Corp",
-    tone: "professional and friendly",
-  });
+  console.log("Standard metadata:");
+  console.log(`  title:       ${prompt.meta.title}`);
+  console.log(`  version:     ${prompt.meta.version}`);
+  console.log(`  description: ${prompt.meta.description}`);
 
-  console.log("\nFormatted system prompt:");
-  console.log(formatted);
-  console.log();
-}
-
-function demonstrateMetadataModes() {
-  console.log("4. Different Metadata Modes");
-  console.log("-".repeat(40));
-
-  const contentWithMeta = `---
-title = "Test Prompt"
-version = "1.0.0"
----
-Content here`;
-
-  // IGNORE mode - treats everything as content
-  const ignored = Prompt.fromString(contentWithMeta, {
-    meta: MetadataMode.IGNORE,
-    path: "test.txt",
-  });
-  console.log(`IGNORE mode - title from filename: ${ignored.meta?.title}`);
-
-  // ALLOW mode - parses metadata but doesn't require completeness
-  const allowed = Prompt.fromString(contentWithMeta, {
-    meta: MetadataMode.ALLOW,
-  });
-  console.log(`ALLOW mode - parsed title: ${allowed.meta?.title}`);
-
-  // STRICT mode - requires complete metadata
-  try {
-    Prompt.fromString(contentWithMeta, {
-      meta: MetadataMode.STRICT, // Missing 'description' field
-    });
-    console.log("STRICT mode - should have failed");
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(`STRICT mode - validation failed (expected): ${error.message.split(".")[0]}`);
+  console.log("\nFlag declarations:");
+  for (const [name, decl] of Object.entries(prompt.meta.flags)) {
+    if (decl.kind === "enum") {
+      console.log(
+        `  ${name}: enum, values=[${decl.values.join(", ")}], description="${decl.description ?? ""}"`,
+      );
+    } else {
+      console.log(`  ${name}: boolean, description="${decl.description ?? ""}"`);
     }
   }
 
+  console.log("\nVariable declarations:");
+  for (const [name, decl] of Object.entries(prompt.meta.variables)) {
+    console.log(`  ${name}: description="${decl.description ?? ""}"`);
+  }
+
+  const rendered = prompt.format({
+    user_name: "Jan",
+    flags: { tier: "premium" },
+  });
+  console.log("\nRendered output (tier = premium):");
+  console.log(rendered);
   console.log();
 }
 
-function demonstrateComparison() {
-  console.log("5. When to Use fromString vs fromPath");
+function metadataModes() {
+  console.log("3. Metadata modes");
   console.log("-".repeat(40));
 
-  console.log("Use fromPath():");
-  console.log("  ✓ Node.js/Bun server-side applications");
-  console.log("  ✓ CLI tools and scripts");
-  console.log("  ✓ When files are available at runtime");
-  console.log();
+  const content = `---
+title = "Test prompt"
+version = "1.0.0"
+description = "Three-mode example"
+---
+Hello {name}!`;
 
-  console.log("Use fromString():");
-  console.log("  ✓ Frontend apps with Vite/Webpack/Rollup");
-  console.log("  ✓ Loading prompts from APIs or databases");
-  console.log("  ✓ Testing without file system");
-  console.log("  ✓ Serverless/edge environments with bundled code");
-  console.log();
+  // "allow" (default) parses frontmatter if present.
+  const allow = Prompt.fromString(content, { metadata: "allow" });
+  console.log(`allow:  title="${allow.meta.title}"`);
 
-  console.log("Example Vite import pattern:");
-  console.log('  import promptContent from "./prompt.txt?raw";');
-  console.log("  const prompt = Prompt.fromString(promptContent);");
+  // "ignore" skips frontmatter parsing entirely; the whole file is body.
+  const ignore = Prompt.fromString(content, { metadata: "ignore", path: "test.txt" });
+  console.log(`ignore: title="${ignore.meta.title}" (filename stem)`);
+
+  // "strict" requires title/description/version, declared body flags, and a
+  // description on every declared flag.
+  const strict = Prompt.fromString(content, { metadata: "strict" });
+  console.log(`strict: title="${strict.meta.title}"`);
+
+  console.log();
+}
+
+function whenToUseFromString() {
+  console.log("4. When to use `fromString` vs `fromPath`");
+  console.log("-".repeat(40));
+  console.log("Use `loadPrompt` / `Prompt.fromPath` when:");
+  console.log("  - You are in Node.js or Bun with filesystem access");
+  console.log("  - You want hot-reloading from disk");
+  console.log();
+  console.log("Use `Prompt.fromString` when:");
+  console.log("  - You import prompts with a bundler (`./prompt.txt?raw`)");
+  console.log("  - Prompts come from an API, database, or test fixture");
+  console.log("  - You run on an edge runtime without `node:fs`");
   console.log();
 }
 
 function main() {
-  console.log("TextPrompts fromString() Examples");
+  console.log("textprompts v2 — Prompt.fromString");
   console.log("=".repeat(40));
   console.log();
 
-  demonstrateSimpleString();
-  demonstrateWithMetadata();
-  demonstrateVitePattern();
-  demonstrateMetadataModes();
-  demonstrateComparison();
-
-  console.log("All examples completed successfully! 🎉");
+  plainString();
+  frontmatterAndFlags();
+  metadataModes();
+  whenToUseFromString();
 }
 
 main();

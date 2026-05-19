@@ -1,141 +1,112 @@
 #!/usr/bin/env bun
 /**
- * Example: OpenAI Integration with TextPrompts
+ * Example: OpenAI integration with textprompts v2.
  *
- * This demonstrates how to use textprompts with OpenAI's API
- * for safe, version-controlled prompt management.
+ * Demonstrates how to:
+ * - Compose system + user messages from textprompts files
+ * - Switch prompt behavior per model tier with `{switch model_tier}`
+ * - Pass `flags` through to `format()`
  *
- * Prerequisites:
- * - OpenAI package (installed as dev dependency)
- * - OPENAI_API_KEY in .env file
+ * The example prints the rendered prompts unconditionally and only calls the
+ * OpenAI API if `OPENAI_API_KEY` is set, so it runs cleanly without an API key.
  */
 
 import { join } from "node:path";
-import { loadPrompt } from "../src/index";
-import OpenAI from "openai";
+import { Prompt, loadPrompt } from "../src/index";
 
 const PROMPTS_DIR = join(import.meta.dir, "prompts");
 
-async function demonstrateBasicIntegration() {
-  console.log("OpenAI Integration Example");
-  console.log("=".repeat(40));
-  console.log();
+// Inline system prompt that picks per-tier guidance via `{switch model_tier}`.
+const SYSTEM_TEMPLATE = `---
+title = "OpenAI assistant system prompt"
+version = "1.0.0"
+description = "Routes by model tier and adopts the requested tone"
 
-  // Load system and user prompts
-  const systemPrompt = await loadPrompt(join(PROMPTS_DIR, "system.txt"), {
-    meta: "allow",
-  });
-  const greetingPrompt = await loadPrompt(join(PROMPTS_DIR, "greeting.txt"), {
-    meta: "allow",
-  });
+[flags.model_tier]
+type = "enum"
+values = ["fast", "balanced", "premium"]
+description = "Which OpenAI model tier this prompt is being used with"
 
-  console.log("1. Loaded Prompts");
-  console.log("-".repeat(30));
-  console.log(
-    `System: ${systemPrompt.meta?.title ?? "Untitled"} (v${systemPrompt.meta?.version ?? "unknown"})`,
-  );
-  console.log(
-    `User: ${greetingPrompt.meta?.title ?? "Untitled"} (v${greetingPrompt.meta?.version ?? "unknown"})`,
-  );
-  console.log();
+[variables.company_name]
+description = "Company the assistant represents"
 
-  // Format the prompts with safe variable replacement
-  const systemMessage = systemPrompt.prompt.format({
+[variables.tone]
+description = "Tone of voice the assistant should adopt"
+---
+You are a helpful customer support assistant for {company_name}.
+Maintain a {tone} tone in every interaction.
+
+{switch model_tier}
+{case fast}
+Keep replies short, factual, and easy to scan.
+{case balanced}
+Be helpful and thorough, but avoid long-winded preamble.
+{case premium}
+Take the time to reason carefully. Show step-by-step thinking where it helps.
+{end}
+`;
+
+type ModelTier = "fast" | "balanced" | "premium";
+
+const MODEL_FOR_TIER: Record<ModelTier, string> = {
+  fast: "gpt-4o-mini",
+  balanced: "gpt-4o",
+  premium: "gpt-4o",
+};
+
+async function buildMessages(tier: ModelTier) {
+  const system = Prompt.fromString(SYSTEM_TEMPLATE, { path: "openai-system.txt" });
+  const greeting = await loadPrompt(join(PROMPTS_DIR, "greeting.txt"));
+
+  const systemContent = system.format({
     company_name: "Tech Solutions Inc",
     tone: "friendly and professional",
+    flags: { model_tier: tier },
   });
-
-  const userMessage = greetingPrompt.prompt.format({
+  const userContent = greeting.format({
     customer_name: "Alice Johnson",
     company_name: "Tech Solutions Inc",
-    issue_type: "cloud hosting setup",
-    agent_name: "AI Assistant",
   });
 
-  console.log("2. Formatted Messages");
-  console.log("-".repeat(30));
-  console.log("System message:");
-  console.log(`${systemMessage.slice(0, 100)}...`);
-  console.log("\nUser message:");
-  console.log(`${userMessage.slice(0, 100)}...`);
-  console.log();
-
-  // Call OpenAI API
-  const client = new OpenAI();
-  const response = await client.chat.completions.create({
-    model: "gpt-5-mini",
-    messages: [
-      { role: "system", content: systemMessage },
-      { role: "user", content: userMessage },
-    ],
-  });
-
-  console.log("3. OpenAI Response");
-  console.log("-".repeat(30));
-  console.log(response.choices[0].message.content);
-  console.log();
-}
-
-async function demonstrateErrorPrevention() {
-  console.log("4. Error Prevention with PromptString");
-  console.log("-".repeat(30));
-
-  const greetingPrompt = await loadPrompt(join(PROMPTS_DIR, "greeting.txt"), {
-    meta: "allow",
-  });
-
-  // This will fail because we're missing required variables
-  try {
-    const message = greetingPrompt.prompt.format({
-      customer_name: "Bob Smith",
-      // Missing: company_name, issue_type, agent_name
-    });
-    console.log("❌ This shouldn't succeed:", message);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log("✅ Caught missing variables:", error.message);
-      console.log("   ^ This prevents sending incomplete prompts to OpenAI!");
-    }
-  }
-
-  console.log();
-}
-
-async function demonstratePartialFormatting() {
-  console.log("5. Partial Formatting for Templates");
-  console.log("-".repeat(30));
-
-  const systemPrompt = await loadPrompt(join(PROMPTS_DIR, "system.txt"), {
-    meta: "allow",
-  });
-
-  // Create a base system prompt with company info
-  const baseSystem = systemPrompt.prompt.format(
-    {
-      company_name: "Tech Solutions Inc",
-      // Leave {tone} for runtime customization
-    },
-    { skipValidation: true },
-  );
-
-  console.log("Base system prompt (partial):");
-  console.log(`${baseSystem.slice(0, 150)}...`);
-  console.log("\n^ Notice {tone} placeholder is preserved for later replacement");
-  console.log();
+  return { systemContent, userContent };
 }
 
 async function main() {
-  try {
-    await demonstrateBasicIntegration();
-    await demonstrateErrorPrevention();
-    await demonstratePartialFormatting();
+  console.log("textprompts v2 + OpenAI");
+  console.log("=".repeat(40));
+  console.log();
 
-    console.log("=".repeat(40));
-    console.log("✅ All examples completed!");
-  } catch (error) {
-    console.error("Error:", error);
-    process.exit(1);
+  for (const tier of ["fast", "balanced", "premium"] as const) {
+    const { systemContent, userContent } = await buildMessages(tier);
+    console.log(`--- model_tier = ${tier} (model = ${MODEL_FOR_TIER[tier]}) ---`);
+    console.log("System message:");
+    console.log(systemContent);
+    console.log("User message:");
+    console.log(userContent);
+    console.log();
   }
+
+  if (!process.env.OPENAI_API_KEY) {
+    console.log("OPENAI_API_KEY not set; skipping live call. Rendered prompts above.");
+    return;
+  }
+
+  // Live call (only runs when an API key is available).
+  const OpenAI = (await import("openai")).default;
+  const client = new OpenAI();
+  const { systemContent, userContent } = await buildMessages("balanced");
+  const response = await client.chat.completions.create({
+    model: MODEL_FOR_TIER.balanced,
+    messages: [
+      { role: "system", content: systemContent },
+      { role: "user", content: userContent },
+    ],
+  });
+  console.log("OpenAI reply:");
+  console.log(response.choices[0]?.message?.content ?? "(no content)");
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
  * XML Sections — store multiple prompt variants in one file and extract by ID.
  *

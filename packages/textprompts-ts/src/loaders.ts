@@ -1,15 +1,10 @@
 import { lstat, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { type MetadataMode, resolveMetadataMode } from "./config";
 import { FileMissingError, TextPromptsError } from "./errors";
-import type { Prompt } from "./models";
+import type { Prompt, PromptLoadOptions } from "./models";
 import { parseFile, parseString } from "./parser";
 import { getSectionText } from "./sections";
-
-export interface LoadPromptOptions {
-  meta?: MetadataMode | string | null;
-}
 
 /**
  * Load the body text of a specific XML section from a file as a Prompt.
@@ -22,12 +17,12 @@ export interface LoadPromptOptions {
  *
  * @param path - Path to the prompt file
  * @param anchorId - The XML tag name or `id` attribute value to extract
- * @param options - Optional metadata mode configuration
+ * @param options - Optional loader options (`metadata`, `frontmatterFormat`)
  */
 export const loadSection = async (
   path: string,
   anchorId: string,
-  options: LoadPromptOptions = {},
+  options: PromptLoadOptions = {},
 ): Promise<Prompt> => {
   path = resolve(path);
   try {
@@ -48,13 +43,12 @@ export const loadSection = async (
     throw new TextPromptsError(`Section '${anchorId}' not found in ${path}`);
   }
 
-  const mode = resolveMetadataMode(options.meta ?? null);
-  return parseString(sectionText, path, mode);
+  return parseString(sectionText, path, options);
 };
 
 export const loadPrompt = async (
   path: string,
-  options: LoadPromptOptions = {},
+  options: PromptLoadOptions = {},
 ): Promise<Prompt> => {
   path = resolve(path);
   try {
@@ -66,10 +60,8 @@ export const loadPrompt = async (
     if (error instanceof FileMissingError) {
       throw error;
     }
-    // Any other error (e.g., ENOENT) means file is missing
     throw new FileMissingError(path);
   }
 
-  const mode = resolveMetadataMode(options.meta ?? null);
-  return parseFile(path, mode);
+  return parseFile(path, options);
 };

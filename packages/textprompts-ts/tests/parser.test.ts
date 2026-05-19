@@ -25,7 +25,7 @@ describe("parser edge cases", () => {
     const filePath = join(tempDir, "empty.txt");
     await writeFile(filePath, "");
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.IGNORE })).rejects.toThrow("Prompt body is empty");
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.IGNORE })).rejects.toThrow("prompt file is empty");
 
     await cleanupTempDir();
   });
@@ -35,7 +35,7 @@ describe("parser edge cases", () => {
     const filePath = join(tempDir, "whitespace.txt");
     await writeFile(filePath, "   \n\n  \t  ");
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.IGNORE })).rejects.toThrow("Prompt body is empty");
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.IGNORE })).rejects.toThrow("prompt file is empty");
 
     await cleanupTempDir();
   });
@@ -45,8 +45,8 @@ describe("parser edge cases", () => {
     const filePath = join(tempDir, "malformed.txt");
     await writeFile(filePath, "---\ntitle = 'Test'\nno closing delimiter");
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(InvalidMetadataError);
-    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(/Missing closing delimiter/);
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.ALLOW })).rejects.toThrow(InvalidMetadataError);
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.ALLOW })).rejects.toThrow(/Missing closing delimiter/);
 
     await cleanupTempDir();
   });
@@ -56,8 +56,8 @@ describe("parser edge cases", () => {
     const filePath = join(tempDir, "invalid-toml.txt");
     await writeFile(filePath, '---\ntitle = "Missing quote\n---\nContent');
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(InvalidMetadataError);
-    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(/Invalid TOML/);
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.ALLOW })).rejects.toThrow(InvalidMetadataError);
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.ALLOW })).rejects.toThrow(/Invalid TOML/);
 
     await cleanupTempDir();
   });
@@ -67,7 +67,7 @@ describe("parser edge cases", () => {
     const filePath = join(tempDir, "starts-with-dash.txt");
     await writeFile(filePath, "---\ninvalid content without closing\nBody content");
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow(/meta=MetadataMode.IGNORE/);
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.ALLOW })).rejects.toThrow(/metadata: "ignore"/);
 
     await cleanupTempDir();
   });
@@ -77,7 +77,7 @@ describe("parser edge cases", () => {
     const filePath = join(tempDir, "dashes.txt");
     await writeFile(filePath, "---\ntitle = 'Test'\n---\n\nSome content\n---\nMore dashes");
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.prompt.toString()).toContain("---");
     expect(prompt.prompt.toString()).toContain("More dashes");
 
@@ -92,7 +92,7 @@ describe("parser edge cases", () => {
       '---\ntitle = "A --- B"\ndescription = "Contains delimiter"\nversion = "1.0.0"\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("A --- B");
     expect(prompt.prompt.toString()).toBe("Body.");
 
@@ -107,7 +107,7 @@ describe("parser edge cases", () => {
       '---\ntitle: "A --- B"\ndescription: Contains delimiter\nversion: "1.0.0"\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("A --- B");
     expect(prompt.prompt.toString()).toBe("Body.");
 
@@ -119,7 +119,7 @@ describe("parser edge cases", () => {
     const filePath = join(tempDir, "header-only.txt");
     await writeFile(filePath, "---\ntitle = 'Test'\n---\n\n  \n");
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.ALLOW })).rejects.toThrow("Prompt body is empty");
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.ALLOW })).rejects.toThrow("prompt file is empty");
 
     await cleanupTempDir();
   });
@@ -129,7 +129,7 @@ describe("parser edge cases", () => {
     const filePath = join(tempDir, "indented.txt");
     await writeFile(filePath, "    Line 1\n    Line 2\n    Line 3");
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.IGNORE });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.IGNORE });
     expect(prompt.prompt.toString()).toBe("Line 1\nLine 2\nLine 3");
 
     await cleanupTempDir();
@@ -140,21 +140,56 @@ describe("parser edge cases", () => {
     const filePath = join(tempDir, "relative-indent.txt");
     await writeFile(filePath, "  Line 1\n    Line 2\n  Line 3");
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.IGNORE });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.IGNORE });
     expect(prompt.prompt.toString()).toBe("Line 1\n  Line 2\nLine 3");
 
     await cleanupTempDir();
   });
 
-  test("IGNORE mode includes metadata in body", async () => {
+  test("IGNORE mode preserves frontmatter-looking block as body (SPEC §4.6)", async () => {
     await createTempDir();
     const filePath = join(tempDir, "ignore-meta.txt");
     await writeFile(filePath, "---\ntitle = 'Test'\n---\nBody content");
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.IGNORE });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.IGNORE });
+    // Whole file is the body — `---` lines are preserved verbatim.
     expect(prompt.prompt.toString()).toContain("title = 'Test'");
     expect(prompt.prompt.toString()).toContain("Body content");
 
+    await cleanupTempDir();
+  });
+
+  test("IGNORE mode accepts malformed header without error", async () => {
+    await createTempDir();
+    const filePath = join(tempDir, "malformed-ignore.txt");
+    await writeFile(filePath, "---\n!!!not toml or yaml!!!\n---\nbody {var}\n");
+
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.IGNORE });
+    // SPEC §4.6: the whole file is body, including the `---` block.
+    expect(prompt.prompt.toString()).toBe("---\n!!!not toml or yaml!!!\n---\nbody {var}\n");
+    expect(prompt.meta?.title).toBe("malformed-ignore");
+    await cleanupTempDir();
+  });
+
+  test("IGNORE mode header-only file is NOT empty (SPEC §2.5)", async () => {
+    await createTempDir();
+    const filePath = join(tempDir, "header-only-ignore.txt");
+    await writeFile(filePath, "---\nrandom garbage\n---\n");
+
+    // In ignore mode the `---` block IS the body, so this is non-empty.
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.IGNORE });
+    expect(prompt.prompt.toString()).toBe("---\nrandom garbage\n---\n");
+    await cleanupTempDir();
+  });
+
+  test("IGNORE mode truly empty file throws empty-prompt error", async () => {
+    await createTempDir();
+    const filePath = join(tempDir, "empty-ignore.txt");
+    await writeFile(filePath, "");
+
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.IGNORE })).rejects.toThrow(
+      /prompt file is empty/i,
+    );
     await cleanupTempDir();
   });
 });

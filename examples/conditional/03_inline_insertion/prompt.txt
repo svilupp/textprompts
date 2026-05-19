@@ -1,0 +1,2 @@
+You are a {role}{if is_admin} (administrator){end}.
+The user is on the {if premium_tier}premium{else}free{end} plan.

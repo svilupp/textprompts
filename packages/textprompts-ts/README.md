@@ -1,680 +1,304 @@
 # textprompts
 
-> **So simple, it's not even worth vibe coding yet it just makes so much sense.**
+> Prompts as text files, with typed variables, conditional logic, and zero configuration.
 
-TypeScript/JavaScript companion to [textprompts](https://github.com/svilupp/textprompts) for loading and formatting prompt files.
+TypeScript/JavaScript port of [textprompts](https://github.com/svilupp/textprompts) for loading and formatting prompt files.
 
 Are you tired of vendors trying to sell you fancy UIs for prompt management that just make your system more confusing and harder to debug? Isn't it nice to just have your prompts **next to your code**?
 
 But then you worry: *Did my formatter change my prompt? Are those spaces at the beginning actually part of the prompt or just indentation?*
 
-**textprompts** solves this elegantly: treat your prompts as **text files** and keep your linters and formatters away from them. And you get prompt metadata headers for free!
+**textprompts** solves this elegantly: treat your prompts as **text files** and keep your linters and formatters away from them. v2 adds typed flags, `{if}` and `{switch}` conditionals, and AST-backed validation, while keeping the file-on-disk simplicity.
+
+## Authoring guide
+
+For deeper guidance on writing v2 prompts — `{if}` vs `{switch}`, flag patterns, anti-patterns, debugging, and v1 → v2 migration — see [`docs/writing-prompts-with-textprompts/SKILL.md`](../../docs/writing-prompts-with-textprompts/SKILL.md). The skill is also installable into Claude / Codex agents as `writing-prompts-with-textprompts`.
 
 ## Why textprompts?
 
-- ✅ **Prompts live next to your code** - no external systems to manage
-- ✅ **Git is your version control** - diff, branch, and experiment with ease
-- ✅ **No formatter headaches** - your prompts stay exactly as you wrote them
-- ✅ **Minimal markup** - just TOML front-matter when you need metadata (or no metadata if you prefer!)
-- ✅ **Lightweight dependencies** - minimal footprint with just TOML and YAML parsers
-- ✅ **Safe formatting** - catch missing variables before they cause problems
-- ✅ **Works with everything** - OpenAI, Anthropic, local models, function calls
-- ✅ **Node.js & Bun compatible** - works seamlessly with both runtimes
-- ✅ **Dual ESM/CJS build support** - works with both module systems
-- ✅ **Edge-ready** - `textprompts/core` entry point with zero `node:` imports for Cloudflare Workers, Deno Deploy, Vercel Edge
+- **Prompts live next to your code** — no external systems to manage
+- **Git is your version control** — diff, branch, and experiment
+- **No formatter headaches** — your prompts stay exactly as you wrote them
+- **Typed flags and variables** — declared in TOML or YAML frontmatter
+- **Conditional content** — `{if}`, `{switch}`, `{else}` with strict validation
+- **Strict mode** — require flag descriptions on production prompts
+- **Edge-ready** — `textprompts/core` has zero `node:*` imports for Cloudflare Workers, Deno Deploy, Vercel Edge, and the browser
+- **Lightweight** — TOML and YAML parsers, nothing more
 
 ## Installation
 
 ```bash
-# With npm
 npm install textprompts
-
-# With Bun
+# or
 bun add textprompts
-
-# With pnpm
+# or
 pnpm add textprompts
 ```
 
-## Quick Start
+## Quick start — flags + conditional
 
-**Super simple by default** - TextPrompts just loads text files with optional metadata:
+Create `prompts/support.txt`:
 
-### Loading from Files
-
-1. **Create a prompt file** (`greeting.txt`):
 ```
 ---
-title = "Customer Greeting"
-version = "1.0.0"
-description = "Friendly greeting for customer support"
+title = "Customer support agent"
+version = "2.1.0"
+description = "Customer support prompt with tier-based routing"
+
+[flags.tier]
+type = "enum"
+values = ["free", "premium", "enterprise"]
+description = "User subscription tier"
+
+[flags.has_urgent]
+description = "Whether the conversation has been flagged as urgent"
+
+[variables.user_name]
+description = "The user's display name"
+
+[variables.last_question]
+description = "Previous question, used when has_urgent is true"
 ---
-Hello {customer_name}!
+You are a helpful support agent assisting {user_name}.
 
-Welcome to {company_name}. We're here to help you with {issue_type}.
-
-Best regards,
-{agent_name}
+{switch tier}
+{case free}
+You have standard support. Response times may vary.
+{case premium}
+You have priority support with guaranteed response within 1 hour.
+{case enterprise}
+You have a dedicated account manager. Their name is on file.
+{end}
+{if has_urgent}
+This conversation has been flagged as urgent. The user previously asked: {last_question}
+{end}
+How can I help today?
 ```
 
-2. **Load and use it** (no configuration needed):
+Load and format it:
+
 ```typescript
 import { loadPrompt } from "textprompts";
 
-// Just load it - works with or without metadata
-const prompt = await loadPrompt("greeting.txt");
+const support = await loadPrompt("prompts/support.txt", { metadata: "strict" });
 
-// Or use the static method
-const alt = await Prompt.fromPath("greeting.txt");
-
-// Use it safely - all placeholders must be provided
-const message = prompt.prompt.format({
-  customer_name: "Alice",
-  company_name: "ACME Corp",
-  issue_type: "billing question",
-  agent_name: "Sarah"
+const message = support.format({
+  user_name: "Jan",
+  last_question: "How do I upgrade?",
+  flags: { tier: "premium", has_urgent: true },
 });
-
-console.log(message);
-
-// Or use partial formatting when needed
-const partial = prompt.prompt.format(
-  { customer_name: "Alice", company_name: "ACME Corp" },
-  { skipValidation: true }
-);
-// Result: "Hello Alice!\n\nWelcome to ACME Corp. We're here to help you with {issue_type}.\n\nBest regards,\n{agent_name}"
-
-// Prompt objects expose `.meta` and `.prompt`.
-// Use `prompt.prompt.format()` for safe formatting or `String(prompt)` for raw text.
 ```
 
-**Even simpler** - no metadata required:
-```typescript
-// simple_prompt.txt contains just: "Analyze this data: {data}"
-const prompt = await loadPrompt("simple_prompt.txt");  // Just works!
-const result = prompt.prompt.format({ data: "sales figures" });
+Output:
+
+```
+You are a helpful support agent assisting Jan.
+
+You have priority support with guaranteed response within 1 hour.
+This conversation has been flagged as urgent. The user previously asked: How do I upgrade?
+How can I help today?
 ```
 
-### Loading from Strings (for Bundlers)
+That's the full story. Variables go at the top level of `format()`. Flags go under a reserved `flags` key. Frontmatter declares both; missing inputs throw `FormatError` with a stable code; extra inputs are silently ignored.
 
-**Problem**: Modern bundlers (Vite, Webpack, Rollup) often don't include `.txt` files in your bundle by default.
+## In-memory prompts
 
-**Solution**: Load prompts directly from strings using `Prompt.fromString()`:
+When you can't load from disk (bundlers, edge runtimes, tests), use `Prompt.fromString`:
 
 ```typescript
 import { Prompt } from "textprompts";
 
-// Vite: Use ?raw suffix to import as string
-import greetingContent from "./greeting.txt?raw";
-
-// Or with Webpack using raw-loader
-// import greetingContent from "raw-loader!./greeting.txt";
-
-// Load from the string content
-const prompt = Prompt.fromString(greetingContent);
-
-// Works identically to file-based loading
-const message = prompt.format({
-  customer_name: "Alice",
-  company_name: "ACME Corp",
-  issue_type: "billing question",
-  agent_name: "Sarah"
-});
-```
-
-**With metadata support**:
-```typescript
-import promptContent from "./system-prompt.txt?raw";
-
-// The ?raw import includes TOML front-matter if present
-const prompt = Prompt.fromString(promptContent, {
-  meta: "allow",  // or MetadataMode.ALLOW
-  path: "system-prompt.txt"  // Optional: for better error messages
-});
-
-console.log(prompt.meta?.title);     // Access metadata
-console.log(prompt.meta?.version);   // Works like fromPath
-```
-
-**When to use `fromString` vs `fromPath`**:
-- Use `fromPath()` for Node.js/Bun server-side code
-- Use `fromString()` for bundled frontend code (Vite, Webpack, etc.)
-- Use `fromString()` when loading prompts from APIs or databases
-
-### Edge Runtimes
-
-```typescript
-// Edge runtimes (Cloudflare Workers, Deno Deploy, Vercel Edge, browsers)
-import { Prompt, parseString, PromptString } from "textprompts/core";
-
-// Node.js (includes file-system APIs)
-import { loadPrompt, savePrompt } from "textprompts";
-```
-
-## Core Features
-
-### Safe String Formatting
-
-Never ship a prompt with missing variables again:
-
-```typescript
-import { PromptString } from "textprompts";
-
-const template = new PromptString("Hello {name}, your order {order_id} is {status}");
-
-// ✅ Strict formatting - all placeholders must be provided
-const result = template.format({ name: "Alice", order_id: "12345", status: "shipped" });
-
-// ❌ This catches the error by default
-try {
-  template.format({ name: "Alice" });  // Missing order_id and status
-} catch (error) {
-  console.error(error.message);  // Missing format variables: ["order_id", "status"]
-}
-
-// ✅ Partial formatting - replace only what you have
-const partial = template.format(
-  { name: "Alice" },
-  { skipValidation: true }
+const prompt = Prompt.fromString(
+  "Hello {name}{if friendly}, friend{end}!",
 );
-console.log(partial);  // "Hello Alice, your order {order_id} is {status}"
+
+prompt.format({ name: "Alice", flags: { friendly: true } });
+// "Hello Alice, friend!"
 ```
 
-### Simple & Flexible Metadata Handling
-
-TextPrompts is designed to be **super simple** by default - just load text files with optional metadata when available. No configuration needed!
+With a bundler:
 
 ```typescript
-import { loadPrompt, setMetadata, MetadataMode } from "textprompts";
-
-// Default behavior: load metadata if available, otherwise just use the file content
-const prompt = await loadPrompt("my_prompt.txt");  // Just works!
-
-// Three modes available for different use cases:
-// 1. ALLOW (default): Load metadata if present, don't worry if it's incomplete
-setMetadata(MetadataMode.ALLOW);  // Flexible metadata loading (default)
-const flexible = await loadPrompt("prompt.txt");  // Loads any metadata found
-
-// 2. IGNORE: Treat as simple text file, use filename as title
-setMetadata(MetadataMode.IGNORE);  // Super simple file loading
-const simple = await loadPrompt("prompt.txt");  // No metadata parsing
-console.log(simple.meta?.title);  // "prompt" (from filename)
-
-// 3. STRICT: Require complete metadata for production use
-setMetadata(MetadataMode.STRICT);  // Prevent errors in production
-const strict = await loadPrompt("prompt.txt");  // Must have title, description, version
-
-// Override per prompt when needed
-const override = await loadPrompt("prompt.txt", { meta: "strict" });
-```
-
-**Why this design?**
-- **Default = Flexible**: Parse metadata if present, no friction if absent
-- **No configuration needed**: Just load files and it works
-- **Production-Safe**: Use strict mode to catch missing metadata before deployment
-
-## Real-World Examples
-
-### OpenAI Integration
-
-```typescript
-import OpenAI from "openai";
-import { loadPrompt } from "textprompts";
-
-const systemPrompt = await loadPrompt("prompts/system.txt");
-
-const client = new OpenAI();
-const response = await client.chat.completions.create({
-  model: "gpt-5-mini",
-  messages: [
-    {
-      role: "system",
-      content: systemPrompt.prompt.format({
-        company_name: "ACME Corp",
-        tone: "professional"
-      })
-    },
-    { role: "user", content: "Hello!" }
-  ]
-});
-```
-
-### Vercel AI SDK Integration
-
-```typescript
-import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
-import { loadPrompt } from "textprompts";
-
-const systemPrompt = await loadPrompt("prompts/system.txt");
-
-const result = streamText({
-  model: openai('gpt-5-mini'),
-  messages: [
-    {
-      role: 'system',
-      content: systemPrompt.prompt.format({
-        company_name: "ACME Corp",
-        tone: "friendly"
-      })
-    },
-    { role: 'user', content: 'Hello!' }
-  ]
-});
-
-for await (const delta of result.textStream) {
-  process.stdout.write(delta);
-}
-```
-
-### Anthropic Claude Integration
-
-```typescript
-import Anthropic from "@anthropic-ai/sdk";
-import { loadPrompt } from "textprompts";
-
-const systemPrompt = await loadPrompt("prompts/system.txt");
-
-const anthropic = new Anthropic();
-
-const message = await anthropic.messages.create({
-  model: "claude-3-5-sonnet-20241022",
-  max_tokens: 1024,
-  system: systemPrompt.prompt.format({
-    company_name: "ACME Corp",
-    tone: "professional"
-  }),
-  messages: [
-    { role: "user", content: "Hello!" }
-  ]
-});
-```
-
-### Environment-Specific Prompts
-
-```typescript
-import { loadPrompt } from "textprompts";
-
-const env = process.env.NODE_ENV || "development";
-const systemPrompt = await loadPrompt(`prompts/${env}/system.txt`);
-
-// prompts/development/system.txt - verbose logging
-// prompts/production/system.txt - concise responses
-```
-
-### Prompt Versioning & Experimentation
-
-```typescript
-import { loadPrompt } from "textprompts";
-
-// Easy A/B testing
-const promptVersion = "v2";  // or "v1", "experimental", etc.
-const prompt = await loadPrompt(`prompts/${promptVersion}/system.txt`);
-
-// Git handles the rest:
-// git checkout experiment-branch
-// git diff main -- prompts/
-```
-
-## File Format
-
-TextPrompts uses TOML front-matter (optional) followed by your prompt content:
-
-```
----
-title = "My Prompt"
-version = "1.0.0"
-author = "Your Name"
-description = "What this prompt does"
-created = "2024-01-15"
----
-Your prompt content goes here.
-
-Use {variables} for templating.
-```
-
-### Metadata Modes
-
-Choose the right level of strictness for your use case:
-
-1. **ALLOW** (default) - Load metadata if present, don't worry about completeness
-2. **IGNORE** - Simple text file loading, filename becomes title
-3. **STRICT** - Require complete metadata (title, description, version) for production safety
-
-You can also set the environment variable `TEXTPROMPTS_METADATA_MODE` to one of
-`strict`, `allow`, or `ignore` before importing the library to configure the
-default mode.
-
-```typescript
-import { setMetadata, MetadataMode } from "textprompts";
-
-// Set globally
-setMetadata(MetadataMode.ALLOW);    // Default: flexible metadata loading
-setMetadata(MetadataMode.IGNORE);   // Simple: no metadata parsing
-setMetadata(MetadataMode.STRICT);   // Production: require complete metadata
-
-// Or override per prompt
-const prompt = await loadPrompt("file.txt", { meta: "strict" });
-```
-
-## API Reference
-
-### `loadPrompt(path, options?)`
-
-Load a single prompt file.
-
-```typescript
-async function loadPrompt(
-  path: string,
-  options?: {
-    meta?: MetadataMode | string | null;
-  }
-): Promise<Prompt>
-```
-
-- `path`: Path to the prompt file
-- `meta`: Metadata handling mode - `MetadataMode.STRICT`, `MetadataMode.ALLOW`, `MetadataMode.IGNORE`, or string equivalents. `null` uses global config.
-
-Returns a `Prompt` object with:
-- `prompt.meta`: Metadata from TOML front-matter (always present)
-- `prompt.prompt`: The prompt content as a `PromptString`
-- `prompt.path`: Path to the original file
-
-### `setMetadata(mode)` / `getMetadata()`
-
-Set or get the global metadata handling mode.
-
-```typescript
-function setMetadata(mode: MetadataMode | string): void
-function getMetadata(): MetadataMode
-```
-
-- `mode`: `MetadataMode.STRICT`, `MetadataMode.ALLOW`, `MetadataMode.IGNORE`, or string equivalents
-
-### `savePrompt(path, content)`
-
-Save a prompt to a file.
-
-```typescript
-async function savePrompt(
-  path: string,
-  content: string | Prompt
-): Promise<void>
-```
-
-- `path`: Path to save the prompt file
-- `content`: Either a string (creates template with required fields) or a `Prompt` object
-
-### `parseSections(text)` and section utilities
-
-Parse mixed Markdown/XML prompt structure directly from a string or `Uint8Array`.
-
-- `parseSections(text)`: Returns a `ParseResult` with `sections`, `anchors`, `duplicateAnchors`, `frontmatter`, and `totalChars`
-- `generateSlug(heading)`: Creates the same auto-anchor slug used by the parser (lowercase, non-alphanumeric runs → `_`)
-- `normalizeAnchorId(id)`: Canonical normalization — lowercase, collapse non-alphanumeric runs to `_`, strip leading/trailing `_`
-- `injectAnchors(text)`: Inserts missing `<a id="..."></a>` lines before Markdown headings
-- `renderToc(result, path)`: Renders a human-readable table of contents
-- `getSectionText(text, anchorId)`: Look up a section body by anchor ID (fuzzy: normalizes both query and stored IDs)
-- `sliceSectionContent(text, section)`: Extract the body text of a section using its content boundary fields
-- `loadSection(path, anchorId, options?)`: Load a named section from a file as a `Prompt`
-
-```typescript
-import { injectAnchors, loadSection, parseSections, renderToc, getSectionText, sliceSectionContent, normalizeAnchorId } from "textprompts";
-
-const result = parseSections("## Intro\n\nBody.");
-console.log(result.sections[0].anchorId); // "intro"
-
-const anchored = injectAnchors("## Intro\n\nBody.");
-console.log(anchored.text); // <a id="intro"></a>\n## Intro...
-
-console.log(renderToc(anchored.result, "prompt.txt"));
-
-// Look up a section body (tolerates "my-section", "my_section", "MY_SECTION")
-const sectionText = getSectionText(text, "intro");
-console.log(sectionText); // "Body."
-
-// Extract body content of a section (excludes heading line)
-const text = "## Intro\n\nBody.";
-const body = sliceSectionContent(text, result.sections[0]);
-console.log(body); // "Body."
-
-// Load a named XML section from a multi-section file
-// agents.txt: <system id="default">...</system>  <system id="expert">...</system>
-const expert = await loadSection("agents.txt", "expert");
-console.log(String(expert)); // "You are an expert assistant..."
-
-// normalizeAnchorId is applied universally: XML tags, id= attrs, headings
-console.log(normalizeAnchorId("My-Section")); // "my_section"
-console.log(normalizeAnchorId("USER_TEMPLATE")); // "user_template"
-```
-
-#### Anchor ID normalization
-
-All anchor IDs use a single canonical form: lowercase, non-alphanumeric runs collapsed to `_`, leading/trailing `_` stripped.
-
-| Source | Raw | Normalized |
-|--------|-----|------------|
-| XML tag name | `<user_template>` | `user_template` |
-| XML `id=` attr | `id="my-section"` | `my_section` |
-| Markdown heading | `## My Section` | `my_section` |
-| `<a id="">` | `<a id="custom-ID">` | `custom_id` |
-
-This means `loadSection("file.txt", "my-section")`, `"my_section"`, and `"MY_SECTION"` all find the same section.
-
-### `PromptString`
-
-A string wrapper that validates `format()` calls:
-
-```typescript
-class PromptString {
-  readonly value: string;
-  readonly placeholders: Set<string>;
-
-  constructor(value: string);
-
-  format(options?: FormatOptions): string;
-  format(args: unknown[], kwargs?: Record<string, unknown>, options?: FormatCallOptions): string;
-
-  toString(): string;
-  valueOf(): string;
-  strip(): string;
-  slice(start?: number, end?: number): string;
-  get length(): number;
-}
-
-interface FormatOptions {
-  args?: unknown[];
-  kwargs?: Record<string, unknown>;
-  skipValidation?: boolean;
-}
-```
-
-**Examples:**
-```typescript
-import { PromptString } from "textprompts";
-
-const template = new PromptString("Hello {name}, you are {role}");
-
-// Strict formatting (default) - all placeholders required
-const result = template.format({ name: "Alice", role: "admin" });  // ✅ Works
-// template.format({ name: "Alice" });  // ❌ Throws Error
-
-// Partial formatting - replace only available placeholders
-const partial = template.format(
-  { name: "Alice" },
-  { skipValidation: true }
-);  // ✅ "Hello Alice, you are {role}"
-
-// Access placeholder information
-console.log([...template.placeholders]);  // ['name', 'role']
-```
-
-### `Prompt`
-
-The main prompt object:
-
-```typescript
-class Prompt {
-  readonly path: string;
-  readonly meta: PromptMeta | null;
-  readonly prompt: PromptString;
-
-  static async fromPath(path: string, options?: { meta?: MetadataMode | string | null }): Promise<Prompt>;
-  static fromString(content: string, options?: { path?: string; meta?: MetadataMode | string | null }): Prompt;
-
-  toString(): string;
-  valueOf(): string;
-  strip(): string;
-  format(options?: FormatOptions): string;
-  format(args: unknown[], kwargs?: Record<string, unknown>, options?: FormatCallOptions): string;
-  get length(): number;
-  slice(start?: number, end?: number): string;
-}
-
-interface PromptMeta {
-  title?: string | null;
-  version?: string | null;
-  author?: string | null;
-  created?: string | null;
-  description?: string | null;
-}
-```
-
-**`Prompt.fromString(content, options?)`**
-
-Load a prompt from a string (useful for bundlers):
-
-```typescript
-static fromString(
-  content: string,
-  options?: {
-    path?: string;  // Optional path for metadata/error messages (default: "<string>")
-    meta?: MetadataMode | string | null;  // Metadata mode (default: global config)
-  }
-): Prompt
-```
-
-- `content`: String containing the prompt (may include TOML front-matter)
-- `path`: Optional path for better error messages and metadata extraction (defaults to `"<string>"`)
-- `meta`: Metadata handling mode (same as `fromPath`)
-
-Returns a `Prompt` object with the same structure as `fromPath`.
-
-**Examples:**
-```typescript
-import { Prompt, MetadataMode } from "textprompts";
-
-// Simple usage
-const prompt = Prompt.fromString("Hello {name}!");
-
-// With Vite raw import
+// Vite — file is bundled as a string at build time
 import content from "./prompt.txt?raw";
 const prompt = Prompt.fromString(content, { path: "prompt.txt" });
-
-// With strict metadata validation
-const prompt = Prompt.fromString(content, { meta: MetadataMode.STRICT });
 ```
 
-## Error Handling
+## Edge runtimes
 
-TextPrompts provides specific exception types:
+```typescript
+// Cloudflare Workers, Deno Deploy, Vercel Edge, browser
+import { Prompt, parseString } from "textprompts/core";
+```
+
+The `core` entry point has zero `node:*` imports. It exposes `Prompt`, `parseString`, `parseSections`, error classes, and `MetadataMode`. File-system entry points (`loadPrompt`, `loadSection`, `savePrompt`, `parseFile`) live in the default `textprompts` entry only.
+
+## Conditional syntax at a glance
+
+```
+{var}                       — variable substitution
+{if flag}...{end}           — block conditional (each tag alone on a line)
+{if flag}...{else}...{end}  — with else branch
+{if !flag}...{end}          — negation
+{switch flag}{case x}...{case y}...{else}...{end}
+\{ \} \\                    — escapes (no double-brace {{...}})
+```
+
+Inline form keeps everything on one line:
+
+```
+You are a {role}{if is_admin} (administrator){end}.
+```
+
+Block form puts each control tag alone on its own line:
+
+```
+{switch tier}
+{case free}
+Free plan.
+{case premium}
+Premium plan.
+{end}
+```
+
+The keyword lines disappear; body line indentation is preserved exactly as written. See [`docs/file-format.md`](./docs/file-format.md) for the full grammar and [`docs/examples.md`](./docs/examples.md) for rendered examples.
+
+## Metadata modes
+
+```typescript
+const prompt = await loadPrompt("prompts/support.txt", {
+  metadata: "strict",          // "allow" (default) | "strict" | "ignore"
+  frontmatterFormat: "toml",   // "auto" (default) | "toml" | "yaml"
+});
+```
+
+- **`"allow"` (default)** — frontmatter optional; flags can be implicit.
+- **`"strict"`** — frontmatter required; `title`/`description`/`version` required; every body-referenced flag must be declared in `[flags.*]`, and every declared flag needs a non-empty description.
+- **`"ignore"`** — the source is not inspected for frontmatter at all; the whole file (including any leading `---...---` block) is treated as the prompt body. Title defaults to the filename stem.
+
+You can also set `setMetadata(MetadataMode.STRICT)` as a process-global default, or the `TEXTPROMPTS_METADATA_MODE` env var.
+
+## Migrating from v1
+
+v2 is a breaking release. The substantive changes:
+
+### Positional placeholders → named placeholders
+
+```diff
+- Hello {0}, your order {1} is {2}.
+- prompt.format(["Alice", "12345", "shipped"]);
++ Hello {name}, your order {order_id} is {status}.
++ prompt.format({ name: "Alice", order_id: "12345", status: "shipped" });
+```
+
+### Conditional logic — was string concatenation, now declarative
+
+```diff
+- // Before: branching in the caller
+- let body = baseTemplate;
+- if (isAdmin) body = body.replace("{admin_note}", " (administrator)");
+- else body = body.replace("{admin_note}", "");
++ // After: branching in the prompt
++ // You are a {role}{if is_admin} (administrator){end}.
++ prompt.format({ role: "analyst", flags: { is_admin: true } });
+```
+
+### Format call shape
+
+```diff
+- prompt.format({ name: "Alice", role: "admin" });
+- prompt.format(["Alice", "admin"]);
+- prompt.format({ name: "Alice" }, { item: "widget" }, { skipValidation: true });
++ prompt.format({ name: "Alice", role: "admin" });
++ prompt.format({ name: "Alice", role: "admin", flags: { premium: true } });
+```
+
+The new shape: one object, with optional reserved `flags` key, and every other top-level key is a variable.
+
+### In-memory prompts: `PromptString` → `Prompt.fromString`
+
+```diff
+- import { PromptString } from "textprompts";
+- const t = new PromptString("Hello {name}!");
+- t.format({ name: "Alice" });
++ import { Prompt } from "textprompts";
++ const t = Prompt.fromString("Hello {name}!");
++ t.format({ name: "Alice" });
+```
+
+`PromptString` is internal in v2; it is not exported from `textprompts` or `textprompts/core`.
+
+### Brace escapes
+
+```diff
+- Set the variable {{name}} to {value}.
++ Set the variable \{name\} to {value}.
+```
+
+### Loader option name
+
+```diff
+- await loadPrompt("file.txt", { meta: "strict" });
++ await loadPrompt("file.txt", { metadata: "strict" });
+```
+
+### `format` no longer takes `skipValidation`
+
+Partial / multi-stage formatting is no longer a first-class feature. If you need it, render the prompt once with the variables you have and compose the rest at the call site, or split the prompt into two files. The required-input rule (SPEC §5.2) makes "leave variables behind for later" silently ambiguous.
+
+For the full v2 design rationale and a longer-form migration walkthrough, see the [authoring skill](../../docs/writing-prompts-with-textprompts/SKILL.md) and the [cross-language SPEC](../../docs/specs/SPEC_conditional_syntax_v2.md).
+
+## API surface
 
 ```typescript
 import {
-  TextPromptsError,       // Base exception
-  FileMissingError,       // File not found
-  MissingMetadataError,   // No TOML front-matter when required
-  InvalidMetadataError,   // Invalid TOML syntax
-  MalformedHeaderError,   // Malformed front-matter structure
+  // Loading
+  loadPrompt,
+  loadSection,
+  parseFile,
+  parseString,
+  Prompt,                  // includes Prompt.fromPath, Prompt.fromString
+  // Saving
+  savePrompt,
+  // Sections (Markdown / XML multi-section files)
+  parseSections,
+  getSectionText,
+  sliceSectionContent,
+  injectAnchors,
+  renderToc,
+  normalizeAnchorId,
+  generateSlug,
+  // Metadata mode control
+  MetadataMode,
+  setMetadata,
+  getMetadata,
+  skipMetadata,
+  // Errors
+  TextPromptsError,
+  ParseError,
+  FrontmatterError,
+  SemanticError,
+  FormatError,
+  FileMissingError,
 } from "textprompts";
+
+// Edge-safe subset (no node:fs)
+import { Prompt, parseString /* ... */ } from "textprompts/core";
 ```
 
-## Best Practices
-
-1. **Organize by purpose**: Group related prompts in folders
-   ```
-   prompts/
-   ├── customer-support/
-   ├── content-generation/
-   └── code-review/
-   ```
-
-2. **Use semantic versioning**: Version your prompts like code
-   ```
-   version = "1.2.0"  # major.minor.patch
-   ```
-
-3. **Document your variables**: List expected variables in descriptions
-   ```
-   description = "Requires: customer_name, issue_type, agent_name"
-   ```
-
-4. **Test your prompts**: Write unit tests for critical prompts
-   ```typescript
-   import { test, expect } from "bun:test";
-   import { loadPrompt } from "textprompts";
-
-   test("greeting prompt formats correctly", async () => {
-     const prompt = await loadPrompt("greeting.txt");
-     const result = prompt.prompt.format({
-       customer_name: "Test",
-       company_name: "Test Corp",
-       issue_type: "test",
-       agent_name: "Bot"
-     });
-     expect(result).toContain("Test");
-   });
-   ```
-
-5. **Use environment-specific prompts**: Different prompts for dev/prod
-   ```typescript
-   const env = process.env.NODE_ENV || "development";
-   const prompt = await loadPrompt(`prompts/${env}/system.txt`);
-   ```
-
-## Why Not Just Use Template Strings?
-
-You could, but then you lose:
-- **Metadata tracking** (versions, authors, descriptions)
-- **Safe formatting** (catch missing variables)
-- **Organized storage** (searchable, documentable)
-- **Version control benefits** (proper diffs, blame, history)
-- **Tooling support** (CLI, validation, testing)
-
-## Examples
-
-See the [examples/](./examples/) directory for complete, runnable examples:
-
-- **[basic-usage.ts](./examples/basic-usage.ts)** - Core functionality demo
-- **[fromstring-example.ts](./examples/fromstring-example.ts)** - Loading from strings for bundlers
-- **[simple-format-demo.ts](./examples/simple-format-demo.ts)** - PromptString features
-- **[sections-usage.ts](./examples/sections-usage.ts)** - XML/Markdown section parsing and extraction
-- **[openai-example.ts](./examples/openai-example.ts)** - OpenAI integration
-- **[aisdk-example.ts](./examples/aisdk-example.ts)** - Vercel AI SDK streaming chat
-
-Run them with:
-```bash
-bun examples/basic-usage.ts
-bun examples/fromstring-example.ts
-bun examples/sections-usage.ts
-bun examples/openai-example.ts
-bun examples/aisdk-example.ts
-```
+Full details: [API reference](./docs/api.md).
 
 ## Documentation
 
-Full documentation is available in the [docs/](./docs/) directory:
-
-- [Getting Started](./docs/index.md)
-- [API Reference](./docs/api.md)
-- [Usage Guide](./docs/guide.md)
-- [File Format](./docs/file-format.md)
-- [Examples](./docs/examples.md)
+- [Getting started](./docs/index.md)
+- [Authoring guide](./docs/guide.md)
+- [File format](./docs/file-format.md)
+- [API reference](./docs/api.md)
+- [Examples (rendered)](./docs/examples.md)
+- [Runnable examples](./examples/)
+- [Authoring skill (the canonical guide)](../../docs/writing-prompts-with-textprompts/SKILL.md)
+- [Cross-language SPEC](../../docs/specs/SPEC_conditional_syntax_v2.md)
 
 ## License
 
-MIT License - see [LICENSE](../../LICENSE) for details.
-
----
-
-**textprompts** - Because your prompts deserve better than being buried in code strings. 🚀
+MIT — see [LICENSE](../../LICENSE).

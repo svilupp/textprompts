@@ -1,0 +1,16 @@
+{if is_authenticated}
+Welcome back, {user_name}.
+  {switch tier}
+  {case free}
+You're on the free plan.
+  {case premium}
+You're on premium. Priority support is active.
+    {if has_unread}
+You have {unread_count} unread messages.
+    {end}
+  {case enterprise}
+Enterprise support is active.
+  {end}
+{else}
+Please sign in.
+{end}

@@ -6,7 +6,6 @@ import * as core from "../src/core";
 import * as index from "../src/index";
 import { MetadataMode } from "../src/config";
 import { Prompt } from "../src/models";
-import { PromptString } from "../src/prompt-string";
 import { parseString } from "../src/parser-core";
 import { basename, extname } from "../src/path-utils";
 
@@ -28,15 +27,20 @@ describe("core ↔ index contract", () => {
     }
   });
 
-  // ---------------------------------------------------------------------------
-  // 2. index exports are a superset of core plus fs-dependent APIs
-  // ---------------------------------------------------------------------------
   test("index exports are a superset of core plus fs-dependent APIs", () => {
     const coreKeys = new Set(Object.keys(core));
     const indexKeys = Object.keys(index);
 
     const extras = indexKeys.filter((k) => !coreKeys.has(k)).sort();
-    expect(extras).toEqual(["loadPrompt", "loadSection", "savePrompt"]);
+    expect(extras).toEqual(["loadPrompt", "loadSection", "parseFile", "savePrompt"]);
+  });
+
+  test("PromptString is NOT exported from core or index", () => {
+    // Hard contract: PromptString must remain internal.
+    expect((core as Record<string, unknown>).PromptString).toBeUndefined();
+    expect((index as Record<string, unknown>).PromptString).toBeUndefined();
+    // @ts-expect-error PromptString is not a public export
+    type _shouldFail = typeof index.PromptString;
   });
 });
 
@@ -46,37 +50,32 @@ describe("core ↔ index contract", () => {
 describe("core purity", () => {
   const srcDir = resolve(__dirname, "..", "src");
 
-  /** Extract relative import paths from a TS source file. */
   const extractLocalImports = (source: string): string[] => {
     const matches: string[] = [];
-    // Match:  from "./foo"  or  from "./foo/bar"
     const re = /from\s+["'](\.[^"']+)["']/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {
-      matches.push(m[1]);
+      matches.push(m[1] as string);
     }
-    // Also match dynamic require("./foo")
     const reqRe = /require\(["'](\.[^"']+)["']\)/g;
     while ((m = reqRe.exec(source)) !== null) {
-      matches.push(m[1]);
+      matches.push(m[1] as string);
     }
     return matches;
   };
 
-  /** Extract any node: imports from a TS source file. */
   const extractNodeImports = (source: string): string[] => {
     const matches: string[] = [];
     const re = /(?:from|require\()\s*["'](node:[^"']+)["']/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {
-      matches.push(m[1]);
+      matches.push(m[1] as string);
     }
     return matches;
   };
 
-  /** Recursively walk the import graph starting from a file. */
   const walkImportGraph = (entryFile: string): Map<string, string[]> => {
-    const visited = new Map<string, string[]>(); // file -> node: imports
+    const visited = new Map<string, string[]>();
     const queue = [entryFile];
 
     while (queue.length > 0) {
@@ -87,7 +86,6 @@ describe("core purity", () => {
       try {
         source = readFileSync(file, "utf-8");
       } catch {
-        // Try with .ts extension
         try {
           source = readFileSync(file + ".ts", "utf-8");
         } catch {
@@ -100,7 +98,6 @@ describe("core purity", () => {
 
       for (const imp of extractLocalImports(source)) {
         const resolved = resolve(dirname(file), imp);
-        // Try exact path first, then with .ts
         const candidates = [resolved, resolved + ".ts"];
         for (const candidate of candidates) {
           try {
@@ -136,15 +133,21 @@ describe("core purity", () => {
       resolve(srcDir, "core.ts"),
       resolve(srcDir, "config.ts"),
       resolve(srcDir, "errors.ts"),
+      resolve(srcDir, "frontmatter-schema.ts"),
       resolve(srcDir, "models.ts"),
       resolve(srcDir, "parser-core.ts"),
       resolve(srcDir, "path-utils.ts"),
-      resolve(srcDir, "placeholder-utils.ts"),
       resolve(srcDir, "prompt-string.ts"),
       resolve(srcDir, "sections.ts"),
-      resolve(srcDir, "constants.ts"),
       resolve(srcDir, "toml.ts"),
       resolve(srcDir, "yaml.ts"),
+      // Phase 1-3 internals reachable from prompt-string + parser-core.
+      resolve(srcDir, "source.ts"),
+      resolve(srcDir, "lexer.ts"),
+      resolve(srcDir, "body-parser.ts"),
+      resolve(srcDir, "ast.ts"),
+      resolve(srcDir, "renderer.ts"),
+      resolve(srcDir, "format-validation.ts"),
     ]);
 
     const denylist = new Set([
@@ -165,7 +168,6 @@ describe("core purity", () => {
     }
     expect(deniedFiles).toEqual([]);
 
-    // Every file in the graph should be in the allowlist
     const unknownFiles: string[] = [];
     for (const file of graph.keys()) {
       if (!allowlist.has(file)) {
@@ -176,9 +178,6 @@ describe("core purity", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// 4. core parseString works without node:fs
-// ---------------------------------------------------------------------------
 describe("core parseString", () => {
   test("parseString works with TOML frontmatter", () => {
     const content = `---
@@ -188,7 +187,7 @@ version = "1.0"
 ---
 Hello {name}, welcome to {place}.`;
 
-    const prompt = parseString(content, "<test>", MetadataMode.ALLOW);
+    const prompt = parseString(content, "<test>", { metadata: MetadataMode.ALLOW });
 
     expect(prompt).toBeInstanceOf(Prompt);
     expect(prompt.meta?.title).toBe("Test Prompt");
@@ -200,14 +199,11 @@ Hello {name}, welcome to {place}.`;
   });
 });
 
-// ---------------------------------------------------------------------------
-// 5. core Prompt.fromString works without node:fs
-// ---------------------------------------------------------------------------
 describe("core Prompt.fromString", () => {
   test("Prompt.fromString returns a valid Prompt", () => {
     const prompt = Prompt.fromString("Hello {name}", {
       path: "test.txt",
-      meta: "allow",
+      metadata: "allow",
     });
 
     expect(prompt).toBeInstanceOf(Prompt);
@@ -215,19 +211,6 @@ describe("core Prompt.fromString", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// 6. core PromptString.format works
-// ---------------------------------------------------------------------------
-describe("core PromptString.format", () => {
-  test("PromptString.format substitutes placeholders", () => {
-    const ps = new PromptString("Hello {name}");
-    expect(ps.format({ name: "world" })).toBe("Hello world");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 7. path-utils basename matches node:path basename
-// ---------------------------------------------------------------------------
 describe("path-utils basename", () => {
   test("strips directory and extension", () => {
     expect(basename("foo/bar/baz.txt", ".txt")).toBe("baz");
@@ -254,9 +237,6 @@ describe("path-utils basename", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// 8. path-utils extname matches node:path extname
-// ---------------------------------------------------------------------------
 describe("path-utils extname", () => {
   test("returns extension with dot", () => {
     expect(extname("foo.txt")).toBe(".txt");

@@ -1,0 +1,21 @@
+---
+title = "Production prompt"
+version = "1.0"
+description = "Production prompt with subscription tier and onboarding tip variants"
+
+[flags.tier]
+type = "enum"
+values = ["free", "premium"]
+description = "Subscription tier"
+
+[flags.show_tips]
+description = "Whether to include onboarding tips"
+---
+{switch tier}
+{case free}
+{if show_tips}
+Tip: upgrade to premium for faster responses.
+{end}
+{case premium}
+You're on premium.
+{end}

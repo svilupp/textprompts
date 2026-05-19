@@ -1,291 +1,162 @@
-# Getting Started with textprompts
+# textprompts (TypeScript) — getting started
 
-Welcome to textprompts! This guide will help you get started with managing your AI prompts as text files.
+textprompts treats prompt files as first-class artifacts: text plus optional
+TOML/YAML frontmatter, a small `{var}` placeholder language, and conditional
+tags (`{if}`, `{switch}`) for branchy content. Files are loaded once, formatted
+many times with typed inputs.
 
-## What is textprompts?
+## v2 breaking changes
 
-textprompts is a TypeScript/JavaScript library that helps you manage AI prompts as simple text files with optional metadata. It provides:
+If you are coming from v1, four things to know up front:
 
-- **Safe string formatting** - catch missing variables before they cause problems
-- **Version control** - treat prompts like code with git
-- **No formatter headaches** - your prompts stay exactly as you wrote them
-- **Flexible metadata** - add structure when you need it, skip it when you don't
-- **Type safety** - full TypeScript support
-- **Edge-ready** - `textprompts/core` entry point with zero `node:` imports for Cloudflare Workers, Deno Deploy, and Vercel Edge
+- **Positional placeholders are gone.** `{0}`, `{1}`, … no longer parse.
+- **Empty placeholders are gone.** `{}` no longer parses.
+- **The double-brace escape is gone.** Use backslash escapes (`\{`, `\}`, `\\`) for
+  literal braces.
+- **`Prompt.format(args, kwargs, options)` is gone.** The only signature is
+  `prompt.format({ flags, ...vars })`.
+- **`PromptString` is no longer a public export.** Use `Prompt.fromString` for
+  in-memory strings, or `loadPrompt` for files.
+
+See the [migration section in the README](../README.md#migrating-from-v1) for
+diff-style examples and the
+[authoring skill](../../../docs/writing-prompts-with-textprompts/SKILL.md)
+for the full v2 design rationale.
 
 ## Installation
 
-Choose your package manager:
-
 ```bash
-# npm
 npm install textprompts
-
-# Bun
+# or
 bun add textprompts
-
-# pnpm
+# or
 pnpm add textprompts
-
-# yarn
-yarn add textprompts
 ```
 
-## Your First Prompt
+## Your first prompt
 
-### 1. Create a prompt file
-
-Create a file called `greeting.txt`:
+Create `prompts/greeting.txt`:
 
 ```
 ---
 title = "Customer Greeting"
 version = "1.0.0"
 description = "Friendly greeting template"
+
+[variables.customer_name]
+description = "Display name shown to the customer"
+
+[variables.company_name]
+description = "Company the greeting is on behalf of"
 ---
 Hello {customer_name}!
 
 Welcome to {company_name}.
 ```
 
-### 2. Load and use it
+Load and format it:
 
 ```typescript
 import { loadPrompt } from "textprompts";
 
-// Load the prompt
-const prompt = await loadPrompt("greeting.txt");
-
-// Use it with safe variable replacement
-const message = prompt.prompt.format({
+const prompt = await loadPrompt("prompts/greeting.txt");
+const message = prompt.format({
   customer_name: "Alice",
-  company_name: "ACME Corp"
+  company_name: "ACME Corp",
 });
-
 console.log(message);
-// Output:
 // Hello Alice!
 //
 // Welcome to ACME Corp.
 ```
 
-That's it! You've created your first prompt.
+## Add a conditional
 
-## Key Concepts
-
-### Prompts are Text Files
-
-Your prompts live in `.txt` files (or any text file) alongside your code. This means:
-
-- ✅ Git tracks every change
-- ✅ Code review applies to prompts too
-- ✅ Formatters don't touch them
-- ✅ Easy to read and edit
-
-### Metadata is Optional
-
-You can include TOML or YAML front-matter for metadata:
+Optional content goes inside `{if flag}...{end}`. Declare the flag in
+`[flags.*]` so callers know it exists:
 
 ```
 ---
-title = "My Prompt"
-version = "1.0.0"
-description = "What this does"
+title = "Greeting with persona"
+version = "1.1.0"
+description = "Optional persona line gated by `persona` flag"
+
+[flags.persona]
+description = "Include the persona line"
+
+[variables.customer_name]
+description = "Display name"
 ---
-Prompt content here...
+Hello {customer_name}!
+{if persona}
+I am Aria, your assistant for today.
+{end}
+How can I help?
 ```
-
-Or equivalently with YAML:
-
-```
----
-title: My Prompt
-version: "1.0.0"
-description: What this does
----
-Prompt content here...
-```
-
-Or skip it entirely:
-
-```
-Just the prompt content with {variables}.
-```
-
-Both work! The library adapts to your needs.
-
-### Safe Formatting
-
-Never ship a prompt with missing variables:
 
 ```typescript
-import { PromptString } from "textprompts";
+const greeting = await loadPrompt("prompts/greeting.txt");
 
-const template = new PromptString("Hello {name}!");
-
-// ✅ This works
-template.format({ name: "Alice" });
-
-// ❌ This throws an error
-template.format({});  // Error: Missing format variables: ["name"]
-```
-
-## Common Use Cases
-
-### Environment-Specific Prompts
-
-```typescript
-const env = process.env.NODE_ENV || "development";
-const prompt = await loadPrompt(`prompts/${env}/system.txt`);
-```
-
-### Partial Formatting
-
-Sometimes you want to fill in some variables now and others later:
-
-```typescript
-const template = new PromptString("Hello {name}, your {item} costs ${price}");
-
-// Fill in what you know
-const partial = template.format(
-  { name: "Alice" },
-  { skipValidation: true }
-);
-// Result: "Hello Alice, your {item} costs ${price}"
-
-// Fill in the rest later
-const final = new PromptString(partial).format({
-  item: "widget",
-  price: "29.99"
+greeting.format({
+  customer_name: "Alice",
+  flags: { persona: true },
 });
-// Result: "Hello Alice, your widget costs $29.99"
+// Hello Alice!
+// I am Aria, your assistant for today.
+// How can I help?
+
+greeting.format({
+  customer_name: "Alice",
+  flags: { persona: false },
+});
+// Hello Alice!
+// How can I help?
 ```
 
-### OpenAI Integration
+The keyword lines (`{if persona}` and `{end}`) and the body line render or
+disappear together. Whitespace stays exactly as you wrote it.
+
+## In-memory prompts
+
+When you cannot load from disk — bundlers, edge runtimes, tests — use
+`Prompt.fromString`:
 
 ```typescript
-import OpenAI from "openai";
-import { loadPrompt } from "textprompts";
+import { Prompt } from "textprompts";
 
-const systemPrompt = await loadPrompt("prompts/system.txt");
-const openai = new OpenAI();
+const prompt = Prompt.fromString("Hello {name}{if friendly}, friend{end}!");
 
-const response = await openai.chat.completions.create({
-  model: "gpt-4",
-  messages: [
-    {
-      role: "system",
-      content: systemPrompt.prompt.format({
-        company_name: "ACME Corp"
-      })
-    },
-    {
-      role: "user",
-      content: "Hello!"
-    }
-  ]
+prompt.format({ name: "Alice", flags: { friendly: true } });
+// Hello Alice, friend!
+```
+
+Use `textprompts/core` for an entry point with zero `node:*` imports
+(Cloudflare Workers, Deno Deploy, Vercel Edge, the browser).
+
+## Metadata modes
+
+The loader takes a `metadata` option (SPEC §4.6):
+
+- `"allow"` (default) — parse frontmatter if present, fall back to implicit
+  inference for flags referenced in the body.
+- `"strict"` — require frontmatter, require non-empty descriptions on every
+  declared flag, require `title`/`description`/`version`.
+- `"ignore"` — the source is not inspected for frontmatter at all. The whole
+  file is treated as the prompt body, including any leading `---...---` block.
+  Useful for files that intentionally do not use the textprompts schema.
+
+```typescript
+const prompt = await loadPrompt("prompts/system.txt", {
+  metadata: "strict",
+  frontmatterFormat: "toml", // "auto" (default) | "toml" | "yaml"
 });
 ```
 
-## Metadata Modes
+## Where next
 
-textprompts has three modes for handling metadata:
-
-### ALLOW (Default)
-
-Flexible mode - loads metadata if present, doesn't require it:
-
-```typescript
-import { setMetadata, MetadataMode } from "textprompts";
-
-setMetadata(MetadataMode.ALLOW);
-const prompt = await loadPrompt("prompt.txt");
-// Works with or without metadata
-```
-
-### IGNORE
-
-Simple mode - just loads text, uses filename as title:
-
-```typescript
-setMetadata(MetadataMode.IGNORE);
-const prompt = await loadPrompt("simple.txt");
-console.log(prompt.meta?.title);  // "simple"
-```
-
-### STRICT
-
-Production mode - requires complete metadata (title, description, version):
-
-```typescript
-setMetadata(MetadataMode.STRICT);
-const prompt = await loadPrompt("prompt.txt");
-// Throws error if metadata is missing or incomplete
-```
-
-You can also override the mode per-prompt:
-
-```typescript
-const prompt = await loadPrompt("prompt.txt", { meta: "strict" });
-```
-
-## Project Structure
-
-A typical project might look like:
-
-```
-my-app/
-├── src/
-│   └── index.ts
-├── prompts/
-│   ├── system/
-│   │   ├── base.txt
-│   │   └── expert.txt
-│   ├── user/
-│   │   ├── query.txt
-│   │   └── followup.txt
-│   └── tools/
-│       └── search.txt
-└── package.json
-```
-
-## Next Steps
-
-Now that you understand the basics:
-
-1. **[Read the API Reference](./api.md)** - Learn about all available functions and types
-2. **[Check out the Guide](./guide.md)** - Best practices and advanced patterns
-3. **[View Examples](./examples.md)** - Real-world usage examples
-4. **[Understand the File Format](./file-format.md)** - Deep dive into prompt files
-
-## Quick Tips
-
-### Use TypeScript for Type Safety
-
-```typescript
-import type { Prompt, PromptMeta } from "textprompts";
-
-const prompt: Prompt = await loadPrompt("greeting.txt");
-const meta: PromptMeta = prompt.meta;
-```
-
-### Cache Prompts for Performance
-
-```typescript
-const cache = new Map<string, Prompt>();
-
-async function getPrompt(name: string): Promise<Prompt> {
-  if (!cache.has(name)) {
-    cache.set(name, await loadPrompt(`prompts/${name}.txt`));
-  }
-  return cache.get(name)!;
-}
-```
-
-## Getting Help
-
-- **[Examples](../examples/)** - Runnable code examples
-- **[API Reference](./api.md)** - Complete API documentation
-- **[GitHub Issues](https://github.com/svilupp/textprompts/issues)** - Report bugs or request features
-
-Happy prompting! 🚀
+- [Authoring guide (skill)](../../../docs/writing-prompts-with-textprompts/SKILL.md)
+  — full guidance for writing v2 prompts
+- [File format reference](./file-format.md) — every recognized field and tag
+- [API reference](./api.md) — every public export
+- [Usage guide](./guide.md) — patterns, AI provider integrations
+- [Examples](./examples.md) — rendered source/output pairs for each conditional form
