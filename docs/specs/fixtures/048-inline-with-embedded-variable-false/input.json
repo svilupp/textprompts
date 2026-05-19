@@ -1,0 +1,9 @@
+{
+  "flags": {
+    "is_admin": false
+  },
+  "variables": {
+    "role": "Jan",
+    "admin_name": "Mira"
+  }
+}

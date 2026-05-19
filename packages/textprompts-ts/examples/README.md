@@ -1,185 +1,93 @@
-# TextPrompts TypeScript Examples
+# textprompts (TypeScript) — examples
 
-This directory contains practical examples showing how to use textprompts in real applications.
+Runnable examples for the v2 API. Every script uses the new `format({ flags, ...vars })`
+call shape and demonstrates at least one conditional form (`{if}`, `{switch}`, or
+strict-mode loading).
 
-## Running the Examples
+## Running
 
-All examples are self-contained and can be run directly with Bun:
+All examples are written for [Bun](https://bun.sh):
 
 ```bash
-# Basic usage demonstration
 bun examples/basic-usage.ts
-
-# PromptString formatting demo
 bun examples/simple-format-demo.ts
-
-# OpenAI integration example
+bun examples/fromstring-example.ts
+bun examples/sections-usage.ts
 bun examples/openai-example.ts
-
-# AI SDK interactive chat example
 bun examples/aisdk-example.ts
 ```
 
-## Example Files
+OpenAI and AI SDK examples print rendered prompts unconditionally and only
+make a live API call when `OPENAI_API_KEY` is available.
+
+## Example files
 
 ### `basic-usage.ts`
-Comprehensive demonstration of core TextPrompts functionality:
-- Loading single prompts with metadata
-- Using PromptString for safe formatting
-- Loading prompts without metadata
-- Error handling examples
 
-**Run it:**
-```bash
-bun examples/basic-usage.ts
-```
+Loads three prompt files from `prompts/` and shows the v2 surface:
+
+- Variables (`{customer_name}`) with declared `[variables.*]` frontmatter
+- Block `{if flag}` for an optional persona line
+- `{switch tier}` over an enum flag (`free` / `premium` / `enterprise`)
+- Reading `prompt.meta.flags`, `prompt.meta.variables`, and `prompt.meta.extras`
 
 ### `simple-format-demo.ts`
-Focused demonstration of the PromptString feature:
-- Shows the problem with regular template strings
-- Demonstrates how PromptString prevents silent failures
-- Shows placeholder extraction and validation
-- Demonstrates partial formatting
 
-**Run it:**
-```bash
-bun examples/simple-format-demo.ts
-```
+In-memory prompts built with `Prompt.fromString`:
+
+- Plain `{var}` substitution
+- Inline `{if flag}...{end}`
+- Block `{if}` / `{else}` / `{end}`
+- Format-time validation: missing variables raise a typed `FormatError`
+
+### `fromstring-example.ts`
+
+End-to-end `Prompt.fromString` walkthrough:
+
+- Default behavior (no frontmatter)
+- Full frontmatter with `[flags.*]` and `[variables.*]`
+- Inspecting `prompt.meta.flags[name]` and `prompt.meta.variables[name]`
+- Comparing `metadata: "allow"`, `"strict"`, `"ignore"`
 
 ### `sections-usage.ts`
-Demonstrates section parsing, extraction, and loading from multi-section files:
-- Parsing mixed Markdown/XML prompt files with `parseSections`
-- Looking up sections by anchor ID with `getSectionText` (tolerates `-` vs `_` and case differences)
-- Extracting section body text with `sliceSectionContent`
-- Loading named XML sections from a file as a `Prompt` with `loadSection`
-- How anchor IDs are normalized (`normalizeAnchorId`)
 
-**Run it:**
-```bash
-bun examples/sections-usage.ts
-```
+Parsing and extracting Markdown/XML sections from a multi-section prompt
+file using `parseSections`, `getSectionText`, `sliceSectionContent`,
+`loadSection`, and `normalizeAnchorId`.
 
 ### `openai-example.ts`
-Integration example with OpenAI:
-- System and user prompt templates
-- Safe formatting with validation
-- Real OpenAI API integration
-- Error prevention patterns
 
-**Prerequisites:**
-- OpenAI package (already in devDependencies)
-- `OPENAI_API_KEY` in `.env` file
-
-**Run it:**
-```bash
-bun examples/openai-example.ts
-```
+OpenAI integration: builds a system prompt with `{switch model_tier}` and a
+user message from a file-based greeting prompt. Different model tiers map to
+different OpenAI models. The rendered messages always print; the live API call
+only happens when `OPENAI_API_KEY` is set.
 
 ### `aisdk-example.ts`
-Interactive chat example with Vercel AI SDK:
-- Streaming chat responses
-- System prompt from file
-- Version-controlled conversation setup
-- Real-time interaction
 
-**Prerequisites:**
-- AI SDK packages (already in devDependencies)
-- `OPENAI_API_KEY` in `.env` file
+The same idea via the Vercel AI SDK. Streams the assistant response when
+`OPENAI_API_KEY` is set.
 
-**Run it:**
-```bash
-bun examples/aisdk-example.ts
-```
+## Prompt files
 
-## Key Concepts Demonstrated
+The example prompts live in `examples/prompts/`:
 
-### 1. Prompt File Format
-```
----
-title = "Example Prompt"
-version = "1.0.0"
-author = "Your Name"
-description = "What this prompt does"
----
-Your prompt content with {variables} goes here.
-```
+- `greeting.txt` — plain variables, no conditionals
+- `system.txt` — `{if persona}` for an optional persona detail (boolean flag)
+- `support.txt` — full SPEC §8.2 worked example: `{switch tier}` enum +
+  `{if has_urgent}` boolean, with declared variables and custom metadata
+- `agents.txt` — multi-section file used by `sections-usage.ts`
+- `simple.txt` — a metadata-free template
 
-### 2. Safe String Formatting
-```typescript
-import { PromptString } from "textprompts";
+## Authoring guide
 
-// This validates all variables are provided
-const template = new PromptString("Hello {name}, order {id} is {status}");
-const result = template.format({ name: "Alice", id: "123", status: "shipped" });
-```
+For deeper guidance on the v2 file format — `{if}` vs `{switch}`, flag
+declaration patterns, anti-patterns, debugging tips, and migration from v1 —
+see the authoring skill:
 
-### 3. Error Prevention
-```typescript
-// PromptString raises clear errors for missing variables
-const safe = new PromptString("Hello {name}");
-safe.format({}); // Throws: Missing format variables: ["name"]
+[`docs/writing-prompts-with-textprompts/SKILL.md`](../../../docs/writing-prompts-with-textprompts/SKILL.md)
 
-// Partial formatting when needed
-const partial = safe.format({}, { skipValidation: true });
-// Returns: "Hello {name}" - placeholder preserved
-```
+## See also
 
-## Integration Patterns
-
-### Environment-Based Loading
-```typescript
-const env = process.env.NODE_ENV || "development";
-const prompt = await loadPrompt(`prompts/${env}/system.txt`);
-```
-
-### Caching for Performance
-```typescript
-const promptCache = new Map<string, Prompt>();
-
-async function getPrompt(name: string) {
-  if (!promptCache.has(name)) {
-    promptCache.set(name, await loadPrompt(`prompts/${name}.txt`));
-  }
-  return promptCache.get(name)!;
-}
-```
-
-## Best Practices Shown
-
-1. **Organize prompts by domain** - Use subdirectories for different purposes
-2. **Use semantic versioning** - Track prompt changes over time
-3. **Include descriptive metadata** - Document purpose and usage
-4. **Validate variables** - Use PromptString to catch errors early
-5. **Handle errors gracefully** - Provide fallbacks and clear messages
-
-## TypeScript Tips
-
-All examples are fully typed. Key types to know:
-
-```typescript
-import type {
-  Prompt,           // The main prompt object
-  PromptMeta,       // Metadata interface
-  PromptString,     // Safe formatting string
-  LoadPromptOptions,
-} from "textprompts";
-```
-
-## Next Steps
-
-After running these examples:
-
-1. Read the [package README](../README.md) for complete API reference
-2. Check out the [documentation](../docs/) for advanced features
-3. Look at the [integration guide](../docs/guide.md) for your AI framework
-
-## Contributing Examples
-
-To add a new example:
-
-1. Create a self-contained TypeScript file
-2. Include clear comments and JSDoc documentation
-3. Demonstrate a specific use case or integration
-4. Make it executable with `#!/usr/bin/env bun`
-5. Update this README with a description
-6. Test that it runs without external dependencies (use mocks if needed)
+- Package README: [`../README.md`](../README.md)
+- Docs: [`../docs/`](../docs/)
+- Cross-language SPEC: [`../../../docs/specs/SPEC_conditional_syntax_v2.md`](../../../docs/specs/SPEC_conditional_syntax_v2.md)

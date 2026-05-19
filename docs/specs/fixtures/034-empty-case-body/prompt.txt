@@ -1,0 +1,5 @@
+{switch tier}
+{case free}
+{case premium}
+premium
+{end}

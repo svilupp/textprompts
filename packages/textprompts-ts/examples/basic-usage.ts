@@ -1,162 +1,98 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
- * Example: Basic TextPrompts Usage
+ * Example: Basic textprompts usage (v2 API).
  *
- * This example demonstrates the core functionality of textprompts
- * including loading single prompts, multiple prompts, and using PromptString.
+ * Demonstrates the v2 public surface:
+ * - `loadPrompt` with file-based prompts
+ * - `Prompt.format({ flags, ...vars })` with named variables and flags
+ * - Reading declared `meta.flags` and `meta.variables`
  */
 
 import { join } from "node:path";
-import { loadPrompt, PromptString } from "../src/index";
+import { loadPrompt } from "../src/index";
 
 const PROMPTS_DIR = join(import.meta.dir, "prompts");
 
-async function demonstrateSinglePromptLoading() {
-  console.log("1. Single Prompt Loading");
-  console.log("-".repeat(30));
+async function loadGreeting() {
+  console.log("1. Plain variables (no conditionals)");
+  console.log("-".repeat(40));
 
-  // Load greeting prompt
-  const greetingPath = join(PROMPTS_DIR, "greeting.txt");
-  const greeting = await loadPrompt(greetingPath, { meta: "allow" });
+  const greeting = await loadPrompt(join(PROMPTS_DIR, "greeting.txt"));
 
-  console.log(`Loaded: ${greeting.meta?.title ?? "Untitled"}`);
-  console.log(`Version: ${greeting.meta?.version ?? "unknown"}`);
-  console.log(`Author: ${greeting.meta?.author ?? "unknown"}`);
-  console.log(`Description: ${greeting.meta?.description ?? "No description"}`);
+  console.log(`Title:   ${greeting.meta.title}`);
+  console.log(`Version: ${greeting.meta.version}`);
+  console.log(`Declared variables: ${Object.keys(greeting.meta.variables).join(", ")}`);
 
-  // Use the prompt
-  const message = greeting.prompt.format({
+  const message = greeting.format({
     customer_name: "Alice Johnson",
     company_name: "Tech Solutions Inc",
-    issue_type: "cloud hosting",
-    agent_name: "Sarah",
   });
 
-  console.log("\nFormatted message:");
+  console.log("\nFormatted output:");
   console.log(message);
   console.log();
 }
 
-function demonstratePromptString() {
-  console.log("3. PromptString Validation");
-  console.log("-".repeat(30));
+async function loadSystemWithPersona() {
+  console.log("2. Conditional block with `{if flag}`");
+  console.log("-".repeat(40));
 
-  // Create a template with variables
-  const template = new PromptString(
-    "Order {order_id} for {customer} is {status}. Total: ${amount}",
-  );
+  const system = await loadPrompt(join(PROMPTS_DIR, "system.txt"));
 
-  console.log("Template:", template.toString());
-  console.log("Placeholders:", Array.from(template.placeholders));
+  console.log(`Title:   ${system.meta.title}`);
+  console.log(`Declared flags: ${Object.keys(system.meta.flags).join(", ")}`);
 
-  // Successful formatting (all placeholders provided)
-  try {
-    const result = template.format({
-      order_id: "12345",
-      customer: "Alice",
-      status: "shipped",
-      amount: "99.99",
-    });
-    console.log(`✅ Success: ${result}`);
-  } catch (error) {
-    console.log(`❌ Error: ${error}`);
-  }
+  // With the persona flag ON the optional line is included.
+  const withPersona = system.format({
+    company_name: "Tech Solutions Inc",
+    tone: "friendly",
+    flags: { persona: true },
+  });
+  console.log("\nWith persona flag = true:\n");
+  console.log(withPersona);
 
-  // Failed formatting - missing variables
-  try {
-    const result = template.format({
-      order_id: "12345",
-      customer: "Bob",
-      // Missing: status, amount
-    });
-    console.log(`✅ Success: ${result}`);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(`❌ Error (expected): ${error.message}`);
-    }
-  }
-
-  // Partial formatting with skipValidation
-  try {
-    const partial = template.format(
-      {
-        order_id: "12345",
-        customer: "Bob",
-      },
-      { skipValidation: true },
-    );
-    console.log(`✅ Partial format: ${partial}`);
-    console.log("   ^ Notice {status} and {amount} remain as placeholders");
-  } catch (error) {
-    console.log(`❌ Error: ${error}`);
-  }
-
-  // Alternative format signature with args array
-  try {
-    const argsTemplate = new PromptString("Item {0}: {1} - ${2}");
-    const result = argsTemplate.format(["Widget", "In Stock", "29.99"]);
-    console.log(`✅ Array args format: ${result}`);
-  } catch (error) {
-    console.log(`❌ Error: ${error}`);
-  }
-
-  console.log();
+  // With the persona flag OFF the optional line is removed entirely
+  // (including the keyword line indentation and trailing newline).
+  const withoutPersona = system.format({
+    company_name: "Tech Solutions Inc",
+    tone: "friendly",
+    flags: { persona: false },
+  });
+  console.log("\nWith persona flag = false:\n");
+  console.log(withoutPersona);
 }
 
-async function demonstrateNoMetadataLoading() {
-  console.log("4. No Metadata Loading");
-  console.log("-".repeat(30));
+async function loadSupportWithSwitch() {
+  console.log("\n3. `{switch}` over an enum flag");
+  console.log("-".repeat(40));
 
-  const simplePath = join(PROMPTS_DIR, "simple.txt");
+  const support = await loadPrompt(join(PROMPTS_DIR, "support.txt"));
 
-  // Load with metadata ignored
-  try {
-    const simple = await loadPrompt(simplePath, { meta: "ignore" });
-    console.log(`✅ Loaded simple prompt`);
-    console.log(`   Title (from filename): ${simple.meta?.title ?? "Untitled"}`);
+  console.log(`Declared flags: ${Object.keys(support.meta.flags).join(", ")}`);
+  console.log(`Custom metadata (extras): ${JSON.stringify(support.meta.extras)}`);
 
-    // Use the prompt
-    const result = simple.prompt.format({
-      data_type: "sales data",
-      data: "Q1: $100k, Q2: $150k",
+  for (const tier of ["free", "premium", "enterprise"] as const) {
+    const rendered = support.format({
+      user_name: "Jan",
+      last_question: "How do I upgrade?",
+      flags: { tier, has_urgent: tier === "enterprise" },
     });
-    console.log(`   Result: ${result.slice(0, 50)}...`);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(`❌ Error: ${error.message}`);
-    }
+    console.log(`\n--- tier = ${tier} ---`);
+    console.log(rendered);
   }
-
-  console.log();
-}
-
-async function demonstrateErrorHandling() {
-  console.log("5. Error Handling");
-  console.log("-".repeat(30));
-
-  // Try to load non-existent file
-  try {
-    await loadPrompt(join(PROMPTS_DIR, "nonexistent.txt"));
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(`❌ File not found: ${error.message}`);
-    }
-  }
-
-  console.log();
 }
 
 async function main() {
-  console.log("TextPrompts Basic Usage Examples");
+  console.log("textprompts v2 — basic usage");
   console.log("=".repeat(40));
   console.log();
 
-  await demonstrateSinglePromptLoading();
-  demonstratePromptString();
-  await demonstrateNoMetadataLoading();
-  await demonstrateErrorHandling();
-
-  console.log("All examples completed successfully! 🎉");
+  await loadGreeting();
+  await loadSystemWithPersona();
+  await loadSupportWithSwitch();
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

@@ -1,51 +1,80 @@
-from typing import Any, Set
+"""String-compatible prompt body wrapper (v2).
+
+``PromptString`` is a :class:`str` subclass that delegates ``format()`` to the
+v2 syntax engine: lex -> parse -> validate -> render. ``{var}`` is the
+canonical placeholder syntax; positional forms (``{0}``, ``{}``) raise
+:class:`ParseError`. ``{{...}}`` is the escape for a literal ``{...}`` (the
+doubled braces collapse to single braces in the rendered output).
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Union
 
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
 
-from .placeholder_utils import extract_placeholders, validate_format_args
+if TYPE_CHECKING:  # pragma: no cover
+    from .syntax.ast import Node
 
 
 class PromptString(str):
-    """String subclass that validates ``format()`` calls."""
+    """String subclass that routes ``format()`` through the v2 engine."""
 
-    placeholders: Set[str]
+    _ast_cache: Union[tuple["Node", ...], None]
 
     def __new__(cls, value: str) -> "PromptString":
         instance = str.__new__(cls, value)
-        instance.placeholders = extract_placeholders(value)
+        # AST is parsed lazily on first ``.format()`` call so that constructing
+        # a ``PromptString`` from invalid body never raises until render time.
+        # A malformed format string raises at ``.format()`` time, not at
+        # construction, matching how ``str.format`` behaves.
+        instance._ast_cache = None
         return instance
 
-    def format(self, *args: Any, **kwargs: Any) -> str:
-        """Format with validation and optional partial formatting."""
-        skip_validation = kwargs.pop("skip_validation", False)
-        source = str(self).strip()
-        if skip_validation:
-            return self._partial_format(*args, source=source, **kwargs)
-        validate_format_args(self.placeholders, args, kwargs, skip_validation=False)
-        return str.format(source, *args, **kwargs)
+    def _get_ast(self) -> tuple["Node", ...]:
+        if self._ast_cache is not None:
+            return self._ast_cache
+        from .syntax.lexer import tokenize
+        from .syntax.parser import parse_body
 
-    def _partial_format(
-        self, *args: Any, source: str | None = None, **kwargs: Any
+        tokens = tokenize(str(self))
+        ast = tuple(parse_body(tokens))
+        self._ast_cache = ast
+        return ast
+
+    # ``str.format`` is intentionally overridden with a narrower signature:
+    # PromptString routes ``format()`` to the v2 syntax engine, which rejects
+    # positional args and reserves ``flags=`` as a keyword. The LSP violation
+    # is by design; PromptString is a typed wrapper, not a drop-in ``str``.
+    def format(  # type: ignore[override]  # ty: ignore[invalid-method-override]
+        self,
+        *args: Any,
+        flags: Union[dict[str, Any], None] = None,
+        **variables: Any,
     ) -> str:
-        """Partial formatting - replace placeholders that have values."""
-        all_kwargs = kwargs.copy()
-        for i, arg in enumerate(args):
-            all_kwargs[str(i)] = arg
+        """Render this prompt body with the given variables and flags.
 
-        result = source if source is not None else str(self)
-        for placeholder in self.placeholders:
-            if placeholder in all_kwargs:
-                pattern = f"{{{placeholder}}}"
-                if pattern in result:
-                    try:
-                        result = result.replace(pattern, str(all_kwargs[placeholder]))
-                    except (KeyError, ValueError):  # pragma: no cover - defensive
-                        pass
-        return result
+        Positional arguments are not supported (use named placeholders).
+        ``flags`` is reserved as a kwarg name and is routed to the v2 flag
+        evaluation path.
+        """
+        if args:
+            raise TypeError(
+                "PromptString.format() does not accept positional arguments. "
+                "Use named placeholders (e.g. s.format(name=...))."
+            )
+        from .models import PromptMeta
+        from .syntax.renderer import render
+        from .syntax.validator import validate_inputs
+
+        ast = self._get_ast()
+        meta = PromptMeta()
+        validate_inputs(meta, ast, variables, flags)
+        return render(ast, variables, flags)
 
     def __repr__(self) -> str:
-        return f"PromptString({str.__repr__(self)}, placeholders={self.placeholders})"
+        return f"PromptString({str.__repr__(self)})"
 
     @classmethod
     def __get_pydantic_core_schema__(

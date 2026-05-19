@@ -1,0 +1,13 @@
+---
+title = "T"
+version = "1.0"
+description = "D"
+
+[flags.foo]
+type = "boolean"
+description = "F"
+---
+{switch foo}
+{case true}
+T
+{end}

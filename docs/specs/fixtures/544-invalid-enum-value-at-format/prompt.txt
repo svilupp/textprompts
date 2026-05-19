@@ -1,0 +1,16 @@
+---
+title = "T"
+version = "1.0"
+description = "D"
+
+[flags.tier]
+type = "enum"
+values = ["free", "premium"]
+description = "Tier"
+---
+{switch tier}
+{case free}
+F
+{case premium}
+P
+{end}

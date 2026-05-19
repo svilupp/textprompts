@@ -1,9 +1,20 @@
 import type { MetadataMode } from "./config";
+import type { FlagDecl, VarDecl } from "./frontmatter-schema";
 import { PromptString } from "./prompt-string";
 
-const isFormatCallOptions = (value: unknown): value is Parameters<PromptString["format"]>[1] => {
-  return typeof value === "object" && value !== null && "skipValidation" in value;
-};
+export type FrontmatterFormat = "auto" | "toml" | "yaml";
+
+/**
+ * Loader/parser options accepted everywhere a prompt enters the system:
+ * `loadPrompt`, `loadSection`, `Prompt.fromPath`, `Prompt.fromString`,
+ * `parseFile`, `parseString`.
+ */
+export interface PromptLoadOptions {
+  /** Metadata mode (SPEC §4.6): "allow" (default), "strict", or "ignore". */
+  metadata?: MetadataMode | string | null;
+  /** Frontmatter format (SPEC §4.1): "auto" (default), "toml", or "yaml". */
+  frontmatterFormat?: FrontmatterFormat;
+}
 
 export interface PromptMeta {
   title?: string | null;
@@ -12,51 +23,71 @@ export interface PromptMeta {
   created?: string | null;
   description?: string | null;
   /**
-   * Additional frontmatter fields not part of the standard set.
-   * Preserves original types (booleans, numbers, arrays, nested objects).
-   * Populated automatically when frontmatter contains fields beyond
-   * title, description, version, author, and created.
+   * Additional frontmatter fields not part of the standard set. Preserves
+   * original types (booleans, numbers, arrays, nested objects). Always
+   * present (empty object when no custom fields are declared).
    */
-  extras?: Record<string, unknown>;
+  extras: Record<string, unknown>;
+  /**
+   * Validated flag declarations from `[flags.*]` (TOML) / `flags:` (YAML).
+   * Always present (empty object when no flags declared).
+   */
+  flags: Record<string, FlagDecl>;
+  /**
+   * Validated variable declarations from `[variables.*]` (TOML) /
+   * `variables:` (YAML). Always present (empty object when none declared).
+   */
+  variables: Record<string, VarDecl>;
 }
+
+/** Permissive input shape accepted by the `Prompt` constructor. */
+export type PromptMetaInput = Partial<PromptMeta>;
 
 export interface PromptInit {
   path: string;
-  meta: PromptMeta | null;
+  meta: PromptMetaInput | null;
   prompt: string | PromptString;
 }
 
+const normalizeMeta = (input: PromptMetaInput | null): PromptMeta => {
+  if (input === null) {
+    return { extras: {}, flags: {}, variables: {} };
+  }
+  return {
+    ...input,
+    extras: input.extras ?? {},
+    flags: input.flags ?? {},
+    variables: input.variables ?? {},
+  };
+};
+
 export class Prompt {
   readonly path: string;
-  readonly meta: PromptMeta | null;
+  readonly meta: PromptMeta;
   readonly prompt: PromptString;
 
   constructor(init: PromptInit) {
     this.path = init.path;
-    this.meta = init.meta;
-    const value = init.prompt instanceof PromptString ? init.prompt : new PromptString(init.prompt);
-    if (value.strip().length === 0) {
-      throw new Error("Prompt body is empty");
-    }
-    this.prompt = value;
+    this.meta = normalizeMeta(init.meta);
+    this.prompt =
+      init.prompt instanceof PromptString
+        ? init.prompt
+        : new PromptString(init.prompt, this.meta, init.path);
   }
 
-  static async fromPath(path: string, options?: { meta?: MetadataMode | string | null }) {
-    // Dynamic import kept opaque so bundlers don't inline node:fs into core
+  static async fromPath(path: string, options?: PromptLoadOptions): Promise<Prompt> {
+    // Dynamic import kept opaque so bundlers don't inline node:fs into core.
     const mod = "./loaders";
     const { loadPrompt } = await import(/* @vite-ignore */ mod);
-    return loadPrompt(path, options?.meta !== undefined ? { meta: options.meta } : {});
+    return loadPrompt(path, options ?? {});
   }
 
-  static fromString(
-    content: string,
-    options?: { path?: string; meta?: MetadataMode | string | null },
-  ): Prompt {
+  static fromString(content: string, options?: PromptLoadOptions & { path?: string }): Prompt {
+    // require() keeps core safe from node:fs because parser-core has no fs deps.
     const { parseString } = require("./parser-core");
-    const { resolveMetadataMode } = require("./config");
     const sourcePath = options?.path ?? "<string>";
-    const mode = resolveMetadataMode(options?.meta ?? null);
-    return parseString(content, sourcePath, mode);
+    const { path: _ignored, ...rest } = options ?? {};
+    return parseString(content, sourcePath, rest);
   }
 
   toString(): string {
@@ -67,37 +98,18 @@ export class Prompt {
     return this.prompt.valueOf();
   }
 
-  strip(): string {
-    return this.prompt.strip();
-  }
-
-  format(kwargs: Record<string, unknown>, options?: Parameters<PromptString["format"]>[1]): string;
+  /**
+   * Format the prompt with the given inputs. `flags` is a reserved key; every
+   * other top-level field is a variable substitution.
+   *
+   * @example
+   * ```ts
+   * prompt.format({ role: "expert", flags: { tier: "premium" } });
+   * ```
+   */
   format(
-    args: unknown[],
-    kwargs?: Record<string, unknown>,
-    options?: Parameters<PromptString["format"]>[2],
-  ): string;
-  format(
-    arg0?: Record<string, unknown> | unknown[],
-    arg1?: Record<string, unknown> | Parameters<PromptString["format"]>[1],
-    arg2?: Parameters<PromptString["format"]>[2],
+    inputs: { flags?: Record<string, boolean | string> } & Record<string, unknown> = {},
   ): string {
-    if (Array.isArray(arg0)) {
-      const kwargs = arg1 && !isFormatCallOptions(arg1) ? arg1 : undefined;
-      const options = isFormatCallOptions(arg1) ? arg1 : arg2;
-      return this.prompt.format(arg0, kwargs, options);
-    }
-    if (arg0 === undefined) {
-      return this.prompt.format({});
-    }
-    return this.prompt.format(arg0, arg1 as Parameters<PromptString["format"]>[1]);
-  }
-
-  get length(): number {
-    return this.prompt.length;
-  }
-
-  slice(start?: number, end?: number): string {
-    return this.prompt.slice(start, end);
+    return this.prompt.format(inputs);
   }
 }

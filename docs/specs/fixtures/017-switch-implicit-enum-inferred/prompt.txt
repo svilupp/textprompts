@@ -1,0 +1,6 @@
+{switch mode}
+{case fast}
+Fast mode.
+{case slow}
+Slow mode.
+{end}

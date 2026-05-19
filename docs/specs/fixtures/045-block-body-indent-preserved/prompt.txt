@@ -1,0 +1,6 @@
+Items:
+{if include}
+  - Alpha
+  - Beta
+{end}
+Done.

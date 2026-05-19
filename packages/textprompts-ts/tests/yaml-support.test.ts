@@ -7,7 +7,6 @@ import { fileURLToPath } from "url";
 import { loadPrompt } from "../src/loaders";
 import { savePrompt } from "../src/savers";
 import { Prompt } from "../src/models";
-import { PromptString } from "../src/prompt-string";
 import { MetadataMode } from "../src/config";
 import { InvalidMetadataError } from "../src/errors";
 import { parseYaml } from "../src/yaml";
@@ -29,7 +28,7 @@ describe("YAML front matter parsing", () => {
   };
 
   test("loads YAML fixture with ALLOW mode", async () => {
-    const prompt = await loadPrompt(fixture("with-yaml-meta.txt"), { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(fixture("with-yaml-meta.txt"), { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("YAML Assistant");
     expect(prompt.meta?.description).toBe("A helpful assistant with YAML metadata");
     expect(prompt.meta?.version).toBe("1.0.0");
@@ -38,13 +37,13 @@ describe("YAML front matter parsing", () => {
   });
 
   test("loads YAML fixture with STRICT mode", async () => {
-    const prompt = await loadPrompt(fixture("with-yaml-meta.txt"), { meta: MetadataMode.STRICT });
+    const prompt = await loadPrompt(fixture("with-yaml-meta.txt"), { metadata: MetadataMode.STRICT });
     expect(prompt.meta?.title).toBe("YAML Assistant");
     expect(prompt.meta?.version).toBe("1.0.0");
   });
 
   test("TOML fixtures still work", async () => {
-    const prompt = await loadPrompt(fixture("with-meta.txt"), { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(fixture("with-meta.txt"), { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("Assistant");
     expect(prompt.meta?.version).toBe("1.0.0");
   });
@@ -57,7 +56,7 @@ describe("YAML front matter parsing", () => {
       "---\ntitle: My Prompt\ndescription: A test\nversion: \"1.0.0\"\n---\n\nHello world!",
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.STRICT });
     expect(prompt.meta?.title).toBe("My Prompt");
     expect(prompt.meta?.description).toBe("A test");
     expect(prompt.meta?.version).toBe("1.0.0");
@@ -74,7 +73,7 @@ describe("YAML front matter parsing", () => {
       '---\ntitle: Full Prompt\ndescription: All fields\nversion: "2.0.0"\nauthor: Jane Doe\ncreated: "2024-06-15"\n---\n\nContent here.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.STRICT });
     expect(prompt.meta?.title).toBe("Full Prompt");
     expect(prompt.meta?.version).toBe("2.0.0");
     expect(prompt.meta?.author).toBe("Jane Doe");
@@ -91,7 +90,7 @@ describe("YAML front matter parsing", () => {
       '---\ntitle: Unquoted Title\ndescription: Unquoted desc\nversion: "1.0.0"\n---\n\nContent.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("Unquoted Title");
     expect(prompt.meta?.description).toBe("Unquoted desc");
 
@@ -106,7 +105,7 @@ describe("YAML front matter parsing", () => {
       "---\ntitle: Numeric\ndescription: Test\nversion: 1.0\n---\n\nContent.",
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.version).toBe("1");
 
     await cleanup();
@@ -120,7 +119,7 @@ describe("YAML front matter parsing", () => {
       '---\n# A comment\ntitle: Commented  # inline\ndescription: Has comments\nversion: "1.0.0"\n---\n\nContent.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("Commented");
 
     await cleanup();
@@ -131,7 +130,7 @@ describe("YAML front matter parsing", () => {
     const filePath = join(tempDir, "empty-header.txt");
     await writeFile(filePath, "---\n---\n\nContent here.");
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("empty-header"); // Uses filename
 
     await cleanup();
@@ -142,10 +141,10 @@ describe("YAML front matter parsing", () => {
     const filePath = join(tempDir, "minimal.txt");
     await writeFile(filePath, "---\ntitle: Only Title\n---\n\nBody.");
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.STRICT })).rejects.toThrow(
       InvalidMetadataError,
     );
-    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.STRICT })).rejects.toThrow(
       /Missing required/,
     );
 
@@ -160,24 +159,26 @@ describe("YAML front matter parsing", () => {
       '---\ntitle: ""\ndescription: ""\nversion: ""\n---\n\nBody.',
     );
 
-    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.STRICT })).rejects.toThrow(
       InvalidMetadataError,
     );
-    await expect(loadPrompt(filePath, { meta: MetadataMode.STRICT })).rejects.toThrow(
+    await expect(loadPrompt(filePath, { metadata: MetadataMode.STRICT })).rejects.toThrow(
       /Empty required/,
     );
 
     await cleanup();
   });
 
-  test("IGNORE mode skips YAML parsing", async () => {
+  test("IGNORE mode treats the whole file as body (SPEC §4.6)", async () => {
     await setup();
     const filePath = join(tempDir, "ignored.txt");
     await writeFile(filePath, "---\ntitle: Ignored\n---\n\nBody content.");
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.IGNORE });
-    expect(prompt.meta?.title).toBe("ignored"); // Uses filename
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.IGNORE });
+    expect(prompt.meta?.title).toBe("ignored"); // Uses filename stem
+    // v2 ignore mode does NOT inspect or strip frontmatter — the whole file is body.
     expect(prompt.prompt.toString()).toContain("title: Ignored");
+    expect(prompt.prompt.toString()).toContain("Body content.");
 
     await cleanup();
   });
@@ -187,7 +188,7 @@ describe("YAML front matter parsing", () => {
     const filePath = join(tempDir, "ambiguous.txt");
     await writeFile(filePath, '---\ntitle = "TOML Wins"\n---\n\nContent.');
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("TOML Wins");
 
     await cleanup();
@@ -201,7 +202,7 @@ describe("YAML front matter parsing", () => {
       '---\ntitle: YAML Only\ndescription: This is YAML\nversion: "1.0.0"\n---\n\nContent.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.STRICT });
     expect(prompt.meta?.title).toBe("YAML Only");
     expect(prompt.meta?.description).toBe("This is YAML");
 
@@ -310,7 +311,7 @@ describe("YAML saver", () => {
         author: "Tester",
         created: "2024-03-20",
       },
-      prompt: new PromptString("Hello {name}!"),
+      prompt: "Hello {name}!",
     });
 
     await savePrompt(filePath, prompt, { format: "yaml" });
@@ -335,15 +336,15 @@ describe("YAML saver", () => {
         description: "Testing round-trip",
         version: "2.0.0",
       },
-      prompt: new PromptString("Roundtrip content."),
+      prompt: "Roundtrip content.",
     });
 
     await savePrompt(filePath, prompt, { format: "yaml" });
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.STRICT });
     expect(loaded.meta?.title).toBe("Roundtrip");
     expect(loaded.meta?.description).toBe("Testing round-trip");
     expect(loaded.meta?.version).toBe("2.0.0");
-    expect(loaded.prompt.strip()).toBe("Roundtrip content.");
+    expect(loaded.prompt.toString().trim()).toBe("Roundtrip content.");
 
     await cleanup();
   });
@@ -358,11 +359,11 @@ describe("YAML saver", () => {
         description: "Still works",
         version: "1.0.0",
       },
-      prompt: new PromptString("TOML content."),
+      prompt: "TOML content.",
     });
 
     await savePrompt(filePath, prompt);
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.STRICT });
     expect(loaded.meta?.title).toBe("TOML Roundtrip");
     expect(loaded.meta?.version).toBe("1.0.0");
 
@@ -379,11 +380,11 @@ describe("YAML saver", () => {
         description: "Has #hash and {braces}",
         version: "1.0.0",
       },
-      prompt: new PromptString("Content."),
+      prompt: "Content.",
     });
 
     await savePrompt(filePath, prompt, { format: "yaml" });
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(loaded.meta?.title).toBe("Title with: colon");
     expect(loaded.meta?.description).toBe("Has #hash and {braces}");
 
@@ -400,7 +401,7 @@ describe("YAML boolean keywords", () => {
       '---\ntitle: "yes"\ndescription: "no"\nversion: "1.0.0"\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.STRICT });
     expect(prompt.meta?.title).toBe("yes");
     expect(prompt.meta?.description).toBe("no");
 
@@ -419,11 +420,11 @@ describe("TOML special characters", () => {
         description: "Normal",
         version: "1.0.0",
       },
-      prompt: new PromptString("Content."),
+      prompt: "Content.",
     });
 
     await savePrompt(filePath, prompt);
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.STRICT });
     expect(loaded.meta?.title).toBe('Title with "quotes"');
 
     await rm(tempDir, { recursive: true, force: true });
@@ -439,11 +440,11 @@ describe("TOML special characters", () => {
         description: "With backslash",
         version: "1.0.0",
       },
-      prompt: new PromptString("Content."),
+      prompt: "Content.",
     });
 
     await savePrompt(filePath, prompt);
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.STRICT });
     expect(loaded.meta?.title).toBe("Path: C:\\Users\\test");
 
     await rm(tempDir, { recursive: true, force: true });
@@ -459,11 +460,11 @@ describe("TOML special characters", () => {
         description: "Line one\nLine two",
         version: "1.0.0",
       },
-      prompt: new PromptString("Content."),
+      prompt: "Content.",
     });
 
     await savePrompt(filePath, prompt);
-    const loaded = await loadPrompt(filePath, { meta: MetadataMode.STRICT });
+    const loaded = await loadPrompt(filePath, { metadata: MetadataMode.STRICT });
     expect(loaded.meta?.description).toBe("Line one\nLine two");
 
     await rm(tempDir, { recursive: true, force: true });
@@ -479,7 +480,7 @@ describe("YAML nested object and array support", () => {
       '---\ntitle: Test\nmetadata:\n  nested: value\nversion: "1.0.0"\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("Test");
     expect(prompt.meta?.extras?.metadata).toEqual({ nested: "value" });
 
@@ -494,7 +495,7 @@ describe("YAML nested object and array support", () => {
       '---\ntitle: Test\nitems:\n  - name: item1\nversion: "1.0.0"\n---\n\nBody.',
     );
 
-    const prompt = await loadPrompt(filePath, { meta: MetadataMode.ALLOW });
+    const prompt = await loadPrompt(filePath, { metadata: MetadataMode.ALLOW });
     expect(prompt.meta?.title).toBe("Test");
     expect(prompt.meta?.extras?.items).toEqual([{ name: "item1" }]);
 

@@ -1,76 +1,63 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [2.0.0] — 2026-05-19
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### BREAKING CHANGES
 
-## [Unreleased]
+- Reserved keywords cannot be flag names, variable names, or enum case values: `if`, `else`, `end`, `switch`, `case`, `flags`.
+- `flags` is reserved across the whole API surface.
+- Removals above (`{0}`, `{}`, `skip_validation=`) raise `ParseError` / `TypeError` instead of silently working.
+- Migration guide in the Agents skill: `docs/writing-prompts-with-textprompts` (details in `references/migration-from-v1.md`).
 
-## [1.6.0] - 2026-03-29
+### Added
+
+- Conditional rendering: `{if flag}`, `{if !flag}`, `{else}`, `{switch flag}` / `{case}` — block and inline forms.
+- Typed `[flags.<name>]` and `[variables.<name>]` frontmatter; exhaustiveness + case-value checks at parse time.
+- `Prompt.from_string(...)`; `frontmatter_format="auto"|"toml"|"yaml"`.
+- Typed errors: `ParseError`, `FrontmatterError`, `SemanticError`, `FormatError` with stable codes.
 
 ### Changed
-- **BREAKING:** Default metadata mode changed from `IGNORE` to `ALLOW`. `load_prompt()` without an explicit `meta=` override now parses front matter when present instead of skipping it by default.
+
+- `Prompt.format(name=..., flags={...})` is the canonical signature.
+
+### Deprecated
+
+- `meta=` loader kwarg. Use `metadata=`.
 
 ### Removed
-- Removed `load_prompts()` function. Multi-file/directory scanning is too platform-specific and hard to maintain cross-compatibility. Users should implement their own file discovery and call `load_prompt()` per file.
 
-## [1.5.0] - 2026-03-19
+- `{0}` positional placeholders.
+- `{}` empty placeholders.
+- `skip_validation=` on `format()`. Validator always runs.
 
-### Changed
-- Section anchors now normalize to underscore IDs, and generic XML sections default to tag-based anchors
+## [1.6.0] — 2026-03-29
 
-## [1.4.0] - 2026-03-15
+Default metadata mode `IGNORE` → `ALLOW`. Removed `load_prompts()` (roll your own glob).
 
-### Added
-- Python section parsing APIs: `parse_sections()`, `generate_slug()`, `inject_anchors()`, and `render_toc()`
-- Shared cross-language section parser corpus under `testdata/sections`
+## [1.5.0] — 2026-03-19
 
-## [1.3.0] - 2026-03-01
+Section anchors normalise to underscore IDs.
 
-### Added
-- Custom frontmatter fields preserved in `prompt.meta.extras` dict (previously dropped silently)
+## [1.4.0] — 2026-03-15
 
-## [1.2.0] - 2026-02-14
+Section parsing: `parse_sections`, `generate_slug`, `inject_anchors`, `render_toc`.
 
-### Added
-- **YAML front matter support**: Prompts can now use YAML syntax (`key: value`) in addition to TOML (`key = "value"`) for front matter metadata (parse-then-fallback detection: tries TOML first (backward compatible), falls back to YAML automatically)
-- Nested object validation: YAML nested structures are rejected with clear error messages
-- `save_prompt()` now accepts a `format` keyword argument (`"toml"` or `"yaml"`) to choose output format
-- New dependency: `pyyaml>=6.0`
+## [1.3.0] — 2026-03-01
 
-### Fixed
-- Enum identity comparison in parser now uses `.value` to be resilient to module reloads
+Custom frontmatter fields kept in `meta.extras`.
 
-## [1.1.0] - 2025-10-12
+## [1.2.0] — 2026-02-14
 
-### Removed
-- Removed legacy alias `Prompt.body` - use `Prompt.prompt` instead.
+YAML frontmatter alongside TOML. `save_prompt(format="yaml")`.
 
-## [1.0.0] - 2025-10-05
+## [1.1.0] — 2025-10-12
 
-### Updated
-- Clean up examples and dependencies for v1.0.0 release
+Removed `Prompt.body`. Use `Prompt.prompt`.
 
-## [0.0.4] - 2025-07-27
+## [1.0.0] — 2025-10-05
 
-### Changed
-- Added `Prompt.from_path()` convenience constructor.
-- Cleaned up `Prompt` initialization logic and updated docs.
+First stable release.
 
-## [0.0.3] - 2025-07-22
+## [0.0.x] — 2025-07
 
-### Added
-- Metadata handling mode can be set via environment variable `TEXTPROMPTS_METADATA_MODE`.
-
-## [0.0.1] - 2025-07-06
-
-### Added
-- Initial release of textprompts
-- Core functionality for loading prompts with TOML front-matter
-- Support for file-based and directory-based prompt loading
-- Placeholder templating with `{{variable}}` syntax
-- CLI tool for working with prompts
-- Type annotations and full mypy support
-- Comprehensive test suite
-- Documentation and examples
+Initial releases: loader, TOML frontmatter, `{var}` placeholders, CLI.

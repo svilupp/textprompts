@@ -1,14 +1,13 @@
 import { readFile } from "node:fs/promises";
 
-import type { MetadataMode } from "./config";
 import { TextPromptsError } from "./errors";
-import type { Prompt } from "./models";
+import type { Prompt, PromptLoadOptions } from "./models";
 import { parseString } from "./parser-core";
 
-// Re-export so existing `import { parseString } from "./parser"` keeps working
+// Re-export so existing `import { parseString } from "./parser"` keeps working.
 export { parseString } from "./parser-core";
 
-export const parseFile = async (path: string, metadataMode: MetadataMode): Promise<Prompt> => {
+export const parseFile = async (path: string, options: PromptLoadOptions = {}): Promise<Prompt> => {
   let raw: string;
   try {
     raw = await readFile(path, { encoding: "utf8" });
@@ -17,5 +16,5 @@ export const parseFile = async (path: string, metadataMode: MetadataMode): Promi
     throw new TextPromptsError(`Cannot read ${path}: ${message}`);
   }
 
-  return parseString(raw, path, metadataMode);
+  return parseString(raw, path, options);
 };

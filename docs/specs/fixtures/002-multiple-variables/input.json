@@ -1,0 +1,6 @@
+{
+  "variables": {
+    "greeting": "Hello",
+    "name": "Alice"
+  }
+}

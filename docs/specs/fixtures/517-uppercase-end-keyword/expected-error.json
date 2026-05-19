@@ -1,0 +1,5 @@
+{
+  "code": "E_BAD_TAG",
+  "category": "parse",
+  "messageContains": "lowercase"
+}

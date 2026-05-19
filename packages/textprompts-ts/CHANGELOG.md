@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-05-19
+
+Conditional rendering. v2 reference implementation. Matches Python `textprompts` 2.0.0 on disk + error codes.
+
+### BREAKING CHANGES
+
+- Reserved keywords cannot be flag names, variable names, or enum case values: `if`, `else`, `end`, `switch`, `case`, `flags`.
+- `flags` is reserved across the whole API surface.
+- Removals below (`{0}`, `{}`, `args` overload, `skipValidation`, `meta:`) throw `ParseError` / `TypeError` instead of silently working.
+- Migration: [`docs/writing-prompts-with-textprompts/references/migration-from-v1.md`](../../docs/writing-prompts-with-textprompts/references/migration-from-v1.md).
+
+### Added
+
+- Conditional rendering: `{if flag}`, `{if !flag}`, `{else}`, `{switch flag}` / `{case}` — block and inline forms; exhaustiveness checks.
+- Typed `[flags.*]` and `[variables.*]` frontmatter; extras preserved on `prompt.meta`.
+- `frontmatterFormat: "auto" | "toml" | "yaml"` loader option.
+- AST-backed lexer + parser + renderer.
+- Typed errors with stable string `code`: `ParseError`, `FrontmatterError`, `SemanticError`, `FormatError` (all extend `TextPromptsError`).
+- Conformance corpus at `docs/specs/fixtures/` driven by `tests/conformance.test.ts`.
+- `parseFile` surfaced from the public index.
+
+### Changed
+
+- `metadata:` loader option (replaces `meta:`).
+- `prompt.meta` is a plain JSON-serializable object (no `Map`, no class instances).
+
+### Removed
+
+- `{0}` positional placeholders, `{}` empty placeholders.
+- `args` overload on `Prompt.format` / `PromptString.format`.
+- Public `PromptString` export — use `Prompt.fromString`.
+- `meta:` loader option, `skipValidation` option.
+- `extractPlaceholders`, `getPlaceholderInfo` helpers.
+
 ## [0.8.0] - 2026-03-29
 
 ### BREAKING CHANGES
@@ -74,7 +108,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite
 - Examples for OpenAI, Anthropic, and Vercel AI SDK
 
-[Unreleased]: https://github.com/svilupp/textprompts/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/svilupp/textprompts/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/svilupp/textprompts/compare/v0.8.0...v1.0.0
 [0.8.0]: https://github.com/svilupp/textprompts/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/svilupp/textprompts/releases/tag/v0.7.0
 [0.6.0]: https://github.com/svilupp/textprompts/releases/tag/v0.6.0

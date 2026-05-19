@@ -10,13 +10,17 @@ from textprompts.loaders import load_prompt
 
 def test_empty_file(fixtures: Path) -> None:
     """Test loading an empty file should fail due to empty body validation."""
-    with pytest.raises(ValueError, match="Prompt body is empty"):
+    from textprompts.errors import ParseError
+
+    with pytest.raises((ParseError, ValueError), match="empty"):
         load_prompt(fixtures / "empty.txt", meta="ignore")
 
 
 def test_whitespace_only_file(fixtures: Path) -> None:
     """Test loading a file with only whitespace should fail."""
-    with pytest.raises(ValueError, match="Prompt body is empty"):
+    from textprompts.errors import ParseError
+
+    with pytest.raises((ParseError, ValueError), match="empty"):
         load_prompt(fixtures / "whitespace_only.txt", meta="ignore")
 
 
@@ -30,7 +34,9 @@ def test_triple_dash_in_body(fixtures: Path) -> None:
 
 def test_header_only_file(fixtures: Path) -> None:
     """Test file with header but no body content should fail."""
-    with pytest.raises(ValueError, match="Prompt body is empty"):
+    from textprompts.errors import ParseError
+
+    with pytest.raises((ParseError, ValueError), match="empty"):
         load_prompt(fixtures / "header_only.txt", meta="allow")
 
 

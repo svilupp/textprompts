@@ -1,3 +1,4 @@
+from ._parser import parse_file, parse_string
 from .config import (
     MetadataMode,
     get_metadata,
@@ -7,13 +8,20 @@ from .config import (
 )
 from .errors import (
     FileMissingError,
+    FormatError,
+    FormatErrorCode,
+    FrontmatterError,
+    FrontmatterErrorCode,
     InvalidMetadataError,
     MalformedHeaderError,
     MissingMetadataError,
+    ParseError,
+    SemanticError,
+    SemanticErrorCode,
     TextPromptsError,
 )
-from .loaders import load_prompt
-from .models import Prompt, PromptMeta
+from .loaders import FrontmatterFormat, load_prompt
+from .models import FlagDecl, Prompt, PromptMeta, VariableDecl
 from .prompt_string import PromptString, SafeString
 from .savers import save_prompt
 from .sections import (
@@ -23,6 +31,7 @@ from .sections import (
     Section,
     generate_slug,
     inject_anchors,
+    normalize_anchor_id,
     parse_sections,
     render_toc,
 )
@@ -30,8 +39,13 @@ from .sections import (
 __all__ = [
     "load_prompt",
     "save_prompt",
+    "parse_file",
+    "parse_string",
+    "FrontmatterFormat",
     "Prompt",
     "PromptMeta",
+    "FlagDecl",
+    "VariableDecl",
     "PromptString",
     "SafeString",
     "Section",
@@ -48,8 +62,16 @@ __all__ = [
     "MissingMetadataError",
     "InvalidMetadataError",
     "MalformedHeaderError",
+    "ParseError",
+    "FrontmatterError",
+    "SemanticError",
+    "FormatError",
+    "FormatErrorCode",
+    "FrontmatterErrorCode",
+    "SemanticErrorCode",
     "parse_sections",
     "generate_slug",
     "inject_anchors",
+    "normalize_anchor_id",
     "render_toc",
 ]

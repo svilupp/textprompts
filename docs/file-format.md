@@ -111,7 +111,7 @@ To load prompts without metadata:
 ```python
 from textprompts import load_prompt
 
-prompt = load_prompt("simple.txt", meta="ignore")
+prompt = load_prompt("simple.txt", metadata="ignore")
 ```
 
 ## Format Rules
@@ -157,6 +157,7 @@ The parser uses a **try TOML first, fallback to YAML** strategy:
 - Leading/trailing whitespace is preserved
 - Empty lines are preserved
 - Use `{variable}` for string formatting placeholders
+- Use `{{` and `}}` to write literal braces — `{{name}}` renders as the literal text `{name}` (matches Python's `str.format`)
 
 ## Special Cases
 

@@ -1,78 +1,45 @@
 # textprompts
 
-Cross-language prompt file toolkit. Plain text prompt files with optional TOML/YAML frontmatter, validated `{name}` placeholders, Markdown/XML section parsing. Five language implementations share one on-disk format and parse to the same data shape.
+Cross-language prompt-file toolkit. Plain text + optional TOML/YAML frontmatter, `{name}` placeholders, v2 conditional rendering (`{if}` / `{switch}`), Markdown/XML section parsing. Five language ports share one on-disk format.
 
 ## Layout
 
 ```
-textprompts/
-  src/textprompts/                 Python (canonical)
-  packages/
-    textprompts-ex/                Elixir
-    textprompts-go/                Go
-    textprompts-ts/                TypeScript / Node
-    TextPrompts.jl/                Julia
-  testdata/sections/cases.json     Cross-port parity fixtures
-  docs/                            Python docs (Jekyll)
-  docs/elixir-port-scope.md        Cross-port scope notes
-  examples/                        Python examples
-  tests/                           Python tests
-  Makefile                         Top-level dev commands (Python + ex-* targets)
+src/textprompts/                 Python (canonical for sections, savers, CLI)
+packages/textprompts-ts/         TypeScript / Node — v2 reference implementation
+packages/textprompts-ex/         Elixir
+packages/textprompts-go/         Go
+packages/TextPrompts.jl/         Julia
+testdata/sections/cases.json     Section-parser fixtures (all ports)
+docs/specs/                      v2 spec + conditional-syntax fixture corpus
+docs/writing-prompts-with-textprompts/   Authoring skill
 ```
 
-## Per-package CLAUDE.md
-
-Each package keeps its own light index. Read it before touching that language.
-
-- `packages/textprompts-ex/CLAUDE.md` (Elixir)
-
-(Add one per package as they get touched.)
+Each package has its own `CLAUDE.md`. Read it before touching that port.
 
 ## Cross-language invariants
 
-These hold across every port. Breaking any of them breaks fixture parity.
+Normative source: `docs/specs/SPEC_conditional_syntax_v2.md`. Conformance corpus: `docs/specs/fixtures/`.
 
-- **File format**: optional `---...---` frontmatter (TOML first, YAML fallback), then body. `+++` delimiters are rejected on purpose.
-- **Placeholder syntax**: `{name}` where `name` matches `[a-zA-Z_][a-zA-Z0-9_]*`. Single-pass substitution: a value containing `{token}` is not re-substituted.
-- **Strict mode requires** non-empty `title`, `description`, `version`. `:ignore` strips a leading `---` block and uses filename stem as title. `:allow` is the default.
-- **Anchor IDs**: lowercase, ASCII-alphanumeric, `_` separators, no leading/trailing `_`. Empty input becomes `"section"`. Applied uniformly to XML tag names, `id=` attrs, Markdown headings, and `<a id="">` anchors.
-- **Section parser parity**: every port must round-trip `testdata/sections/cases.json` byte-for-byte. Each package has a fixture-driven test that asserts this.
-- **Public API shape per language**: `load`/`save` (or `loadPrompt`/`savePrompt`), `parse_sections`, `get_section_text`, `render_toc`, `inject_anchors`, `load_section`. Names are idiomatic per language; semantics are identical.
-
-## Canonical Python entry points
-
-The Python package is the reference. When changing behaviour, change Python first, then port. Key files:
-
-- `src/textprompts/loaders.py`         load + metadata mode dispatch
-- `src/textprompts/savers.py`          save with TOML/YAML emit
-- `src/textprompts/_parser.py`         frontmatter extract (TOML-first)
-- `src/textprompts/sections.py`        section parser (~1k LOC, canonical algorithm)
-- `src/textprompts/prompt_string.py`   `{name}` regex + format validation
-- `src/textprompts/config.py`          metadata-mode resolution
-- `src/textprompts/errors.py`          typed exceptions
-- `src/textprompts/cli.py`             CLI
+- TS is the v2 reference. Spec + fixtures update first, then Python, then the rest.
+- Section-parser parity: every port round-trips `testdata/sections/cases.json` byte-for-byte.
+- Conditional-syntax parity: every v2-adopting port passes `docs/specs/fixtures/` (success bodies byte-identical; errors by `code`).
+- Public API shape is the same across ports; names are idiomatic per language.
 
 ## Commands
 
-Python (default):
+All `make` check targets are quiet on success and dump full stdout+stderr only
+when a command exits non-zero. Prefer them over raw `bun test` / `pytest` /
+`tsc` invocations so the conversation context stays clean.
 
-- `make test` / `make lint` / `make typecheck` / `make format`
-- `make check` runs all of the above
-- `make build` / `make publish`
-
-Elixir:
-
-- `make ex-test`
-- `make ex-check` runs the full pre-release gate (format, compile, credo, tests, dialyzer)
-- `make ex-docs`
-- `make ex-test-examples`
-
-Each package also has its own native commands (`go test ./...`, `bun test`, `mix test`, etc.) - see the package CLAUDE.md.
+- Python: `make test` / `make lint` / `make typecheck` / `make check` / `make build`
+- TypeScript: `make ts-test` / `make ts-typecheck` / `make ts-lint` / `make ts-format-check` / `make ts-check`
+- Elixir: `make ex-test` / `make ex-check` / `make ex-docs`
+- Go / Julia: native (`go test ./...`, `julia --project=...`, ...). See each package's `CLAUDE.md`.
 
 ## Rules
 
-- **No emojis** in code, docs, or generated output.
-- **Fixture is ground truth**. Any change to a sections parser must keep `testdata/sections/cases.json` parity green in every port that has been touched.
-- **Add new behaviour to Python first**, then port. Update the cross-port scope doc when the surface area changes.
-- **Errors are typed structs/classes per language**, never bare strings or generic exceptions. Each port has its own `*Error` hierarchy mirroring the Python one.
-- **Telemetry/observability is per-port**. Elixir uses `:telemetry.span/3`; other ports do not currently emit. Do not leak port-specific telemetry shape into the cross-language docs.
+- No emojis in code, docs, or generated output.
+- Fixtures are ground truth. Don't break parity without updating fixtures + spec first.
+- Typed error classes per port. No bare strings, no generic exceptions.
+- Telemetry is per-port. Don't leak port-specific shape into cross-language docs.

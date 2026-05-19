@@ -58,15 +58,18 @@ print(message)  # "Hello Alice! Welcome to TextPrompts."
 TextPrompts includes a `PromptString` class that prevents common formatting errors:
 
 ```python
-from textprompts import PromptString
+from textprompts import FormatError, PromptString
 
 template = PromptString("Hello {name}, you are {age} years old")
 
-# ✅ This works
+# This works
 result = template.format(name="Alice", age=30)
 
-# ❌ This raises ValueError: Missing format variables: ['age']
-result = template.format(name="Alice")
+# Missing inputs raise FormatError
+try:
+    template.format(name="Alice")
+except FormatError as exc:
+    print(exc)
 ```
 
 ## Error Handling

@@ -13,21 +13,7 @@
 
 > **So simple, it's not even worth vibe coding yet it just makes so much sense.**
 
-Are you tired of vendors trying to sell you fancy UIs for prompt management that just make your system more confusing and harder to debug? Isn't it nice to just have your prompts **next to your code**?
-
-But then you worry: *Did my formatter change my prompt? Are those spaces at the beginning actually part of the prompt or just indentation?*
-
-**textprompts** solves this elegantly: treat your prompts as **text files** and keep your linters and formatters away from them.
-
-## Why textprompts?
-
-- ✅ **Prompts live next to your code** - no external systems to manage
-- ✅ **Git is your version control** - diff, branch, and experiment with ease
-- ✅ **No formatter headaches** - your prompts stay exactly as you wrote them
-- ✅ **Minimal markup** - just TOML or YAML front-matter when you need metadata (or no metadata if you prefer!)
-- ✅ **Zero dependencies** - well, almost (just Pydantic)
-- ✅ **Safe formatting** - catch missing variables before they cause problems
-- ✅ **Works with everything** - OpenAI, Anthropic, local models, function calls
+Tired of fancy UIs for prompt management that just make your system harder to debug? Prompts are text — keep them **next to your code**, let git do version control, and stop letting your formatter eat the whitespace.
 
 ## Cross-Language Support
 
@@ -40,6 +26,15 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 - **Elixir**: Available on Hex as `textprompts` ([package](https://hex.pm/packages/textprompts), [docs](https://hexdocs.pm/textprompts), source in `packages/textprompts-ex`)
 
 All ports parse the shared `testdata/sections/cases.json` fixtures into the same data shape, so prompt files round-trip across your stack without conversion.
+
+## Why textprompts?
+
+Prompts rot. Variables get renamed, flags drift away from the branches that use them, an Agent Skill ships with a `{customer_tier}` no one passes anymore. textprompts is built so those bugs fail loudly the moment they happen — one file holds the prompt, its variables, its feature flags, and the descriptions for all of them, validated together.
+
+- ✅ **One file, one contract** - prompt body, typed flags, variables, and their descriptions live side by side; the file *is* the spec
+- ✅ **Conditional DSL, not f-string spaghetti** - `{if}` / `{switch}` branch on declared flags; unknown flags, missing variables, and uncovered enum cases raise at `format()` time
+- ✅ **Catches drift over time** - rename a flag and every prompt that still references it breaks immediately instead of silently producing the wrong output
+- ✅ **Just text** - git diffs your changes, formatters can't touch it, no external UI to babysit
 
 ## Installation
 

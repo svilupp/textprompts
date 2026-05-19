@@ -1,0 +1,6 @@
+{switch mode}
+{case fast}
+F
+{else}
+Other
+{end}

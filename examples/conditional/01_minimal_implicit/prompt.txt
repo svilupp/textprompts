@@ -1,0 +1,6 @@
+You are a {role}.
+{if include_examples}
+Here are some examples:
+{examples}
+{end}
+Be helpful.

@@ -1,0 +1,8 @@
+---
+title = "Strict, unreferenced flag without description"
+description = "Should error"
+version = "1.0"
+[flags.unused_flag]
+type = "boolean"
+---
+Body without any flag reference.

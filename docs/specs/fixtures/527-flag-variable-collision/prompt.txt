@@ -1,0 +1,12 @@
+---
+title = "x"
+version = "1.0"
+description = "d"
+
+[flags.foo]
+description = "F"
+
+[variables.foo]
+description = "V"
+---
+hi

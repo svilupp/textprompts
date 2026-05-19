@@ -1,0 +1,15 @@
+---
+title = "Extras"
+version = "1.0"
+description = "Carries custom metadata."
+owner = "@team"
+
+[flags.premium]
+description = "Premium"
+expires = "2026-12-01"
+
+[variables.name]
+description = "Name"
+ticket = "JIRA-42"
+---
+Hi {name}.

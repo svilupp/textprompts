@@ -1,0 +1,1 @@
+You are a {role}{if is_admin} (administrator named {admin_name}){end}.

@@ -1,0 +1,1 @@
+Plan: {switch tier}{case free}free{case premium}premium{else}unknown{end}.

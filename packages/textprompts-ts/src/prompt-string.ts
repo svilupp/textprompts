@@ -1,140 +1,79 @@
-import { extractPlaceholders, validateFormatArgs } from "./placeholder-utils";
-import { ESCAPED_CLOSE, ESCAPED_OPEN, PLACEHOLDER_PATTERN } from "./constants";
+/**
+ * Internal `PromptString` wrapper (v2 — SPEC §6, Phase 4).
+ *
+ * NOT exported from `src/index.ts` or `src/core.ts`. The only supported public
+ * paths to construct a prompt are `Prompt.fromString` and `loadPrompt`.
+ *
+ * Responsibilities:
+ *   1. Hold the original source string (for `toString` / `valueOf`).
+ *   2. Hold the parsed AST so repeated `format()` calls don't re-parse.
+ *   3. Run format-time validation (variables, flags, types) and render.
+ *
+ * Empty body after preprocessing raises a `ParseError` (SPEC §2.5).
+ */
+import type { Node } from "./ast";
+import { parseBody } from "./body-parser";
+import { ParseError } from "./errors";
+import { validateInputs } from "./format-validation";
+import { tokenize } from "./lexer";
+import type { PromptMeta } from "./models";
+import { type FormatInputs, render } from "./renderer";
+import { prepareSource } from "./source";
 
-export interface FormatCallOptions {
-  skipValidation?: boolean;
-}
-
-export interface FormatOptions extends FormatCallOptions {
-  args?: unknown[];
-  kwargs?: Record<string, unknown>;
-}
-
-const countEmptyPlaceholders = (text: string): number => {
-  const temp = text.replaceAll("{{", ESCAPED_OPEN).replaceAll("}}", ESCAPED_CLOSE);
-  let count = 0;
-  let match: RegExpExecArray | null = PLACEHOLDER_PATTERN.exec(temp);
-  while (match) {
-    if (match[1] === "") {
-      count += 1;
-    }
-    match = PLACEHOLDER_PATTERN.exec(temp);
-  }
-  PLACEHOLDER_PATTERN.lastIndex = 0;
-  return count;
-};
+const EMPTY_META: PromptMeta = { extras: {}, flags: {}, variables: {} };
 
 export class PromptString {
-  readonly value: string;
-  readonly placeholders: Set<string>;
+  readonly source: string;
+  readonly meta: PromptMeta;
+  private readonly ast: Node[];
 
-  constructor(value: string) {
-    this.value = value;
-    this.placeholders = extractPlaceholders(value);
+  constructor(source: string, meta?: PromptMeta, sourcePath?: string) {
+    const prepared = prepareSource(source, { dedent: true });
+    if (prepared.trim().length === 0) {
+      throw new ParseError("prompt file is empty", {
+        code: "E_EMPTY_PROMPT",
+        ...(sourcePath !== undefined ? { path: sourcePath } : {}),
+      });
+    }
+    this.source = prepared;
+    this.meta = meta ?? EMPTY_META;
+    this.ast = parseBody(tokenize(prepared, sourcePath), sourcePath);
   }
 
-  format(kwargs: Record<string, unknown>, options?: FormatCallOptions): string;
-  format(args: unknown[], kwargs?: Record<string, unknown>, options?: FormatCallOptions): string;
+  /**
+   * Format the prompt with the given inputs. `flags` is a reserved input key:
+   * any other top-level keys are treated as variables.
+   */
   format(
-    arg0?: Record<string, unknown> | unknown[],
-    arg1?: Record<string, unknown> | FormatCallOptions,
-    arg2?: FormatCallOptions,
+    inputs: { flags?: Record<string, boolean | string> } & Record<string, unknown> = {},
   ): string {
-    let args: unknown[] = [];
-    let kwargs: Record<string, unknown> = {};
-    let skipValidation = false;
-
-    if (Array.isArray(arg0)) {
-      // format([args], kwargs, options)
-      args = arg0;
-      kwargs = arg1 && !("skipValidation" in arg1) ? (arg1 as Record<string, unknown>) : {};
-      skipValidation = arg2?.skipValidation ?? (arg1 as FormatCallOptions)?.skipValidation ?? false;
-    } else if (arg0 === undefined) {
-      // format()
-      args = [];
-      kwargs = {};
-      skipValidation = false;
-    } else {
-      // format(kwargs, options)
-      args = [];
-      kwargs = arg0;
-      skipValidation = (arg1 as FormatCallOptions)?.skipValidation ?? false;
+    // Preserve the distinction between "flags key entirely missing" and
+    // "flags: {}". `validateInputs` needs the `undefined` signal to fire
+    // E_MISSING_FLAGS_OBJECT (SPEC §5.6); a present-but-empty object falls
+    // through to per-flag E_MISSING_FLAG errors.
+    const flagsProvided = Object.hasOwn(inputs, "flags");
+    const { flags, ...variables } = inputs;
+    const fi: FormatInputs = {
+      variables: variables as Record<string, unknown>,
+      // Keep the raw value (may be undefined, a plain object, or any other
+      // mistaken type) so validation can surface E_MISSING_FLAGS_OBJECT vs
+      // E_BAD_FLAGS_TYPE distinctly.
+      flags: (flagsProvided ? flags : undefined) as unknown as Record<string, boolean | string>,
+    };
+    validateInputs(this.meta, this.ast, fi);
+    // After validation: if flags was omitted (and prompt uses no flags),
+    // default to an empty object so the renderer can index into it safely.
+    if (fi.flags === undefined || fi.flags === null) {
+      fi.flags = {} as Record<string, boolean | string>;
     }
-
-    const source = this.value.trim();
-    if (skipValidation) {
-      return this.partialFormat(args, kwargs, source);
-    }
-    validateFormatArgs(this.placeholders, args, kwargs, false);
-    const emptyPlaceholderCount = countEmptyPlaceholders(source);
-    if (emptyPlaceholderCount > args.length) {
-      throw new Error(
-        `Missing positional format variables for empty placeholders: expected ${emptyPlaceholderCount}, received ${args.length}`,
-      );
-    }
-
-    // Track position for empty placeholders
-    let emptyPlaceholderIndex = 0;
-
-    return source.replace(PLACEHOLDER_PATTERN, (_match, key: string) => {
-      if (Object.hasOwn(kwargs, key)) {
-        return String(kwargs[key]);
-      }
-      const index = Number.parseInt(key, 10);
-      if (!Number.isNaN(index) && index < args.length) {
-        return String(args[index]);
-      }
-      if (key === "" && args.length > 0) {
-        const value = String(args[emptyPlaceholderIndex] ?? _match);
-        emptyPlaceholderIndex++;
-        return value;
-      }
-      return _match;
-    });
-  }
-
-  private partialFormat(args: unknown[], kwargs: Record<string, unknown>, source: string): string {
-    const merged: Record<string, unknown> = { ...kwargs };
-    args.forEach((value, index) => {
-      merged[String(index)] = value;
-    });
-    let emptyPlaceholderIndex = 0;
-    return source.replace(PLACEHOLDER_PATTERN, (match, key: string) => {
-      if (key === "") {
-        if (emptyPlaceholderIndex >= args.length) {
-          return match;
-        }
-        const value = args[emptyPlaceholderIndex];
-        emptyPlaceholderIndex += 1;
-        return value == null ? match : String(value);
-      }
-
-      if (!Object.hasOwn(merged, key)) {
-        return match;
-      }
-
-      const value = merged[key];
-      return value == null ? match : String(value);
-    });
+    return render(this.ast, fi);
   }
 
   toString(): string {
-    return this.value;
+    return this.source;
   }
 
   valueOf(): string {
-    return this.value;
-  }
-
-  strip(): string {
-    return this.value.trim();
-  }
-
-  slice(start?: number, end?: number): string {
-    return this.value.slice(start, end);
-  }
-
-  get length(): number {
-    return this.value.length;
+    return this.source;
   }
 }

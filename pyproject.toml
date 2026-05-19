@@ -1,6 +1,6 @@
 [project]
 name = "textprompts"
-version = "1.6.0"
+version = "2.0.0"
 description = "Minimal text-based prompt-loader with TOML/YAML front-matter"
 readme = "README.md"
 license = "MIT"
@@ -33,7 +33,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy>=1.16.1",
+    "ty>=0.0.35",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
     "ruff>=0.12.2",
@@ -58,10 +58,9 @@ target-version = "py311"
 select = ["E", "F", "I", "N", "W"]
 ignore = ["E501"]  # Ignore line length
 
-[tool.mypy]
-python_version = "3.11"
-strict = true
-mypy_path = "src"
+[tool.ty.environment]
+root = ["src"]
+python-version = "3.11"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

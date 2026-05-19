@@ -2,13 +2,13 @@
 
 ## Core Functions
 
-### `load_prompt(path, *, meta=None)`
+### `load_prompt(path, *, metadata=None)`
 
 Load a single prompt file.
 
 **Parameters:**
 - `path` (str | Path): Path to the prompt file
-- `meta` (MetadataMode | str | None): Metadata handling mode - "strict", "allow", "ignore", or None (uses global config, which defaults to `ALLOW`)
+- `metadata` (MetadataMode | str | None): Metadata handling mode - "strict", "allow", "ignore", or None (uses global config, which defaults to `ALLOW`)
 
 You can also set the environment variable `TEXTPROMPTS_METADATA_MODE` before
 importing the package to override the default `ALLOW` mode.
@@ -95,33 +95,29 @@ print(meta.author)  # "Support Team"
 
 ### `PromptString`
 
-A string subclass that validates format() calls to ensure all placeholders are provided.
-
-**Attributes:**
-- `placeholders` (set[str]): Set of placeholder names found in the string
+A string subclass that routes `format()` through the v2 syntax engine and
+validates that all referenced variables and flags are provided.
 
 **Methods:**
-- `format(*args, skip_validation=False, **kwargs)`: Format the string
-  - By default, raises ValueError if any placeholder is missing
-  - With `skip_validation=True`, performs partial formatting
+- `format(*args, flags=None, **kwargs)`: Format the string
+  - Positional arguments are not supported.
+  - Missing variables or flags raise `FormatError`.
+  - Extra variables or flags are silently ignored.
 - All standard string methods are available
 
 **Example:**
 ```python
-from textprompts import PromptString
+from textprompts import FormatError, PromptString
 
 template = PromptString("Hello {name}, you are {age} years old")
-print(template.placeholders)  # {'name', 'age'}
 
-# ✅ Strict formatting (default) - all placeholders required
+# All referenced variables are required.
 result = template.format(name="Alice", age=30)
 
-# ❌ This raises ValueError
-result = template.format(name="Alice")  # Missing 'age'
-
-# ✅ Partial formatting with skip_validation
-partial = template.format(name="Alice", skip_validation=True)
-print(partial)  # "Hello Alice, you are {age} years old"
+try:
+    template.format(name="Alice")
+except FormatError as exc:
+    print(exc)  # Variable 'age' required but not provided
 ```
 
 ### Section Parsing APIs
@@ -180,7 +176,7 @@ Raised when metadata is required but not found.
 **Example:**
 ```python
 try:
-    prompt = load_prompt("no_metadata.txt", meta="strict")  # requires metadata
+    prompt = load_prompt("no_metadata.txt", metadata="strict")  # requires metadata
 except MissingMetadataError as e:
     print(f"Missing metadata: {e}")
 ```

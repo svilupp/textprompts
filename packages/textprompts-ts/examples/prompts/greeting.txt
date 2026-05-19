@@ -1,12 +1,15 @@
 ---
 title = "Customer Greeting"
-version = "1.0.0"
-description = "Friendly greeting for customer support"
+version = "2.0.0"
+description = "Friendly customer greeting (variables only, no conditional logic)"
 author = "Customer Success Team"
+
+[variables.customer_name]
+description = "Display name of the customer being greeted"
+
+[variables.company_name]
+description = "Company the greeting is on behalf of"
 ---
 Hello {customer_name}!
 
-Welcome to {company_name}. We're here to help you with {issue_type}.
-
-Best regards,
-{agent_name}
+Welcome to {company_name}. We are glad to have you here.

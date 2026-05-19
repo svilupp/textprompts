@@ -1,0 +1,6 @@
+{switch t}
+{case a}
+first
+{case a}
+second
+{end}

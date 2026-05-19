@@ -13,9 +13,13 @@ python examples/basic_usage.py
 # PromptString formatting demo
 python examples/simple_format_demo.py
 
-# Pydantic AI integration example
+# Pydantic AI integration example (uses an offline mock by default)
 python examples/pydantic_ai_example.py
 ```
+
+To force the Pydantic AI example to call a real provider, install the optional
+test dependency group and set both `OPENAI_API_KEY` and
+`TEXTPROMPTS_EXAMPLE_REAL_AI=1`.
 
 ## Example Files
 
@@ -38,7 +42,12 @@ Integration example with Pydantic AI:
 - Customer support agent system
 - Prompt templates for queries
 - Safe formatting with validation
-- Mock implementation (works without Pydantic AI installed)
+- Offline mock fallback when Pydantic AI or `OPENAI_API_KEY` is unavailable
+
+### `conditional/`
+Worked examples for the v2 conditional/switch syntax (one subdirectory per
+SPEC §8 example, each with a `prompt.txt` and a `run.py`). See
+[`conditional/README.md`](conditional/README.md).
 
 ## Key Concepts Demonstrated
 
@@ -91,13 +100,13 @@ prompt_dict = {p.meta.title: p for p in prompts if p.meta}
 
 ### 4. Error Prevention
 ```python
-# Regular strings silently leave placeholders unfilled
+# Plain str.format raises KeyError without textprompts context
 regular = "Hello {name}"
-result = regular.format()  # Returns "Hello {name}" - BAD!
+result = regular.format()
 
 # PromptString raises clear errors
 safe = PromptString("Hello {name}")
-result = safe.format()  # Raises ValueError - GOOD!
+result = safe.format()  # Raises FormatError
 ```
 
 ## Integration Patterns

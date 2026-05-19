@@ -44,19 +44,19 @@ def test_missing_fields_error_message(fixtures: Path) -> None:
     assert "Missing required metadata fields" in error_msg
     assert "description" in error_msg
     assert "version" in error_msg
-    assert "meta=MetadataMode.ALLOW" in error_msg
+    assert "metadata=MetadataMode.ALLOW" in error_msg
 
 
 def test_starts_with_dash_suggests_ignore_meta(fixtures: Path) -> None:
-    """Test that files starting with --- suggest using meta=ignore"""
+    """Test that files starting with --- suggest using metadata=ignore"""
     with pytest.raises(InvalidMetadataError) as exc_info:
         load_prompt(fixtures / "starts_with_dash.txt", meta="strict")
     error_msg = str(exc_info.value)
-    assert "meta=MetadataMode.IGNORE" in error_msg
+    assert "metadata=MetadataMode.IGNORE" in error_msg
 
 
 def test_starts_with_dash_ignore_meta_works(fixtures: Path) -> None:
-    """Test that meta=ignore works for files starting with ---"""
+    """Test that the deprecated meta=ignore alias still works for files starting with ---"""
     prompt = load_prompt(fixtures / "starts_with_dash.txt", meta="ignore")
     assert prompt.meta is not None
     assert prompt.meta.title == "starts_with_dash"
@@ -113,3 +113,35 @@ Content here""")
     repr_str = repr(prompt)
     assert "Test Title" in repr_str
     assert "1.0" in repr_str
+
+
+class TestFrontmatterFormat:
+    """Tests for the new ``frontmatter_format`` loader option (PHASE-4 / SPEC §4.1)."""
+
+    def test_toml_format_rejects_yaml_only_header(self, tmp_path: Path) -> None:
+        fp = tmp_path / "p.txt"
+        fp.write_text("---\ntitle: yaml only\n---\nbody")
+        with pytest.raises(InvalidMetadataError, match="Invalid TOML"):
+            load_prompt(fp, meta="allow", frontmatter_format="toml")
+
+    def test_yaml_format_accepts_yaml_only_header(self, tmp_path: Path) -> None:
+        fp = tmp_path / "p.txt"
+        fp.write_text("---\ntitle: yaml only\n---\nbody")
+        prompt = load_prompt(fp, meta="allow", frontmatter_format="yaml")
+        assert prompt.meta is not None
+        assert prompt.meta.title == "yaml only"
+
+    def test_auto_format_tries_both(self, tmp_path: Path) -> None:
+        fp = tmp_path / "p.txt"
+        fp.write_text("---\ntitle: yaml only\n---\nbody")
+        prompt = load_prompt(fp, meta="allow", frontmatter_format="auto")
+        assert prompt.meta is not None
+        assert prompt.meta.title == "yaml only"
+
+    def test_auto_format_default_behavior_unchanged(self, tmp_path: Path) -> None:
+        """No explicit format → "auto" — TOML-first-then-YAML still works."""
+        fp = tmp_path / "p.txt"
+        fp.write_text('---\ntitle = "toml here"\n---\nbody')
+        prompt = load_prompt(fp, meta="allow")
+        assert prompt.meta is not None
+        assert prompt.meta.title == "toml here"

@@ -1,0 +1,5 @@
+A
+  {if flag}
+  body
+  {end}
+B

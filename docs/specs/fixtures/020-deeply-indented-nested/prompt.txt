@@ -1,0 +1,5 @@
+{if outer}
+  {if inner}
+  body line
+  {end}
+{end}

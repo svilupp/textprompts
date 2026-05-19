@@ -1,0 +1,9 @@
+{if authenticated}
+Welcome.
+{switch tier}
+{case free}
+Free.
+{case premium}
+Premium.
+{end}
+{end}

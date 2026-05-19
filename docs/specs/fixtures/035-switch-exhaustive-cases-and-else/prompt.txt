@@ -1,0 +1,18 @@
+---
+title = "Exhaustive plus else"
+version = "1.0"
+description = "Switch covers every enum value AND has an else branch."
+
+[flags.tier]
+type = "enum"
+values = ["free", "premium"]
+description = "Tier"
+---
+{switch tier}
+{case free}
+F
+{case premium}
+P
+{else}
+Other
+{end}
