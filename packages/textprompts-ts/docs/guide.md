@@ -12,9 +12,10 @@ For an LLM-friendly cheat sheet aimed at agent skill loading, see the
 
 - Positional placeholders (`{0}`, `{1}`) are gone — use named placeholders.
 - Empty placeholders (`{}`) are gone.
-- The double-brace escape `{{...}}` is gone — use `\{`, `\}`, `\\`.
 - `Prompt.format(args, kwargs, options)` is gone — use `prompt.format({ flags, ...vars })`.
 - `PromptString` is no longer exported — use `Prompt.fromString` or `loadPrompt`.
+
+Escapes use double braces: `{{` -> `{`, `}}` -> `}`.
 
 ---
 
@@ -191,12 +192,13 @@ naming the missing cases.
 
 | Source | Renders as |
 |---|---|
-| `\{` | `{` |
-| `\}` | `}` |
-| `\\` | `\` |
+| `{{` | `{` |
+| `}}` | `}` |
 
-No other escape sequences. `\n`, `\t`, and friends render as two literal
-characters; use real newlines or tabs if you need them.
+So `{{name}}` renders as the literal text `{name}` (the doubled braces
+collapse — it is NOT a placeholder reference). Backslash has no special
+meaning anywhere and renders as a literal character; `\n`, `\t`, `\\` are
+two literal characters each. Use real newlines if you need newlines.
 
 ---
 

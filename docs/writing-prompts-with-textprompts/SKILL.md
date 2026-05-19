@@ -70,7 +70,7 @@ These habits will produce broken textprompts files. Drop them before writing:
 
 | Habit from elsewhere | What to do in textprompts |
 |---|---|
-| `{{ var }}` (double braces) | `{var}` (single braces only) |
+| `{{ var }}` (double braces interpolate) | `{var}` interpolates; `{{var}}` is a literal-brace escape that renders as `{var}` (see Escapes below) |
 | `{{#if x}}...{{/if}}` | `{if x}...{end}` |
 | `{% if x and y %}` or `{if x && y}` | Compose in caller code; pass a single flag. textprompts has no boolean expressions (SPEC §1.2) |
 | `{if tier == "premium"}` | `{switch tier}{case premium}...{end}` (SPEC §1.2) |
@@ -102,9 +102,9 @@ These habits will produce broken textprompts files. Drop them before writing:
 
 **Whitespace rule inside tags (SPEC §2.3):** no leading or trailing whitespace inside braces. `{ if flag }` is a parse error. This is what lets prose like `{ x | x > 0 }` render literally without being mistaken for a tag.
 
-**Escapes (SPEC §2.4):** `\{`, `\\`, `\}`. No other escape sequences. Legacy `{{...}}` double-brace escaping does **not** work.
+**Escapes (SPEC §2.4):** `{{` renders as a literal `{`, `}}` renders as a literal `}`. So `{{name}}` renders as the literal text `{name}` (it is not a placeholder). Backslash `\` has no special meaning and renders as a literal `\`. This matches Python's `str.format`.
 
-**Removed in v2 (SPEC §1.1):** positional placeholders (`{0}`), empty placeholders (`{}`), `{{ ... }}` double-brace escaping.
+**Removed in v2 (SPEC §1.1):** positional placeholders (`{0}`), empty placeholders (`{}`).
 
 ---
 

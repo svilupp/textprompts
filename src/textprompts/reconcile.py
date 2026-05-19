@@ -61,7 +61,10 @@ def reconcile(
     """
     refs = collect_required_refs(ast)
 
-    # Same name as variable AND flag in body usage → semantic error.
+    # Same name as variable AND flag anywhere in this prompt file → semantic
+    # error. Declarations are metadata, but their namespaces are still active:
+    # a declared variable cannot be implicitly promoted to a flag, and a
+    # declared flag cannot be interpolated as a variable (SPEC §5.1).
     for name in refs.variables:
         if name in refs.flags:
             raise SemanticError(
@@ -70,8 +73,22 @@ def reconcile(
                 code="E_FLAG_AND_VARIABLE_COLLISION",
                 path=source_path,
             )
+        if name in declared_flags:
+            raise SemanticError(
+                f"Name '{name}' is declared as a flag but used as a variable "
+                "in the prompt body",
+                code="E_FLAG_AND_VARIABLE_COLLISION",
+                path=source_path,
+            )
 
-    _ = declared_variables  # Reserved for future use; currently no check fires.
+    for name in refs.flags:
+        if name in declared_variables:
+            raise SemanticError(
+                f"Name '{name}' is declared as a variable but used as a flag "
+                "in the prompt body",
+                code="E_FLAG_AND_VARIABLE_COLLISION",
+                path=source_path,
+            )
 
     if getattr(mode, "value", mode) == MetadataMode.STRICT.value:
         # Every flag referenced in body must be declared.

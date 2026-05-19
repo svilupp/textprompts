@@ -17,7 +17,7 @@ The design optimizes for, in priority order:
 
 1. **Catching invisible mistakes.** A typo in a flag name, an unreachable branch, a missing variable, an undeclared enum value, or a type mismatch at format time must fail loudly with a clear error. Silent fallbacks — treating an unknown flag as `false`, a missing variable as `""`, etc. — are forbidden.
 2. **Human and model readability.** Prompts are read by reviewers in PRs, by engineers debugging behavior, and by LLMs writing or editing them. The syntax reads like prose with structural hints, not like a programming language.
-3. **Avoiding Handlebars/Jinja confusion.** The syntax deliberately avoids `#if`, `/if`, `{{...}}`, and other double-brace conventions. textprompts uses one single-brace family: `{...}`.
+3. **Avoiding Handlebars/Jinja confusion.** The syntax deliberately avoids `#if`, `/if`, and other directive-style conventions. textprompts uses one single-brace family: `{...}`. Doubled braces (`{{`, `}}`) exist only as a literal-brace escape mechanism, mirroring Python's `str.format`; they are never used as tag delimiters.
 4. **Simplicity over expressiveness.** One delimiter family, six reserved keywords (`if`, `else`, `end`, `switch`, `case`, `flags`), one clear pair of forms (inline or block, never mixed), two namespaces (flags, variables). Anything that adds expressive power at the cost of more rules is rejected.
 5. **Wrong states impossible by design.** The parser and formatter reject ambiguous or risky constructs early rather than support them and rely on author discipline.
 6. **Cross-language parity.** Once the TypeScript implementation validates the design, Python and Julia implementations must produce byte-identical output for the same prompt file and inputs, validated by a shared conformance corpus.
@@ -31,7 +31,6 @@ This is a breaking release. The following legacy behaviors are intentionally rem
 - Variable names must be explicit identifiers.
 - Reserved keywords cannot be variable or flag names.
 - `flags` is reserved by the formatting API and cannot be used as a variable name, flag name, or enum case value.
-- Legacy `{{ ... }}` double-brace escaping is not supported.
 
 The purpose is to make prompt inputs explicit and reviewable.
 
@@ -60,11 +59,12 @@ A **tag** is any token delimited by `{` and `}` that the parser interprets speci
 
 **Lexer order of operations.** When the lexer encounters `{`:
 
-1. If the content immediately following matches a control-tag pattern — `if `, `switch `, `case `, `else}`, or `end}` — it's a control tag.
-2. Otherwise, if it matches `identifier}`, it's a variable.
-3. Otherwise, it's a malformed tag and produces a clear error.
+1. If the next character is also `{`, the pair `{{` is an escape that renders as a single literal `{`. The lexer consumes both characters and emits a literal `{` into the output stream; no tag parsing occurs. Similarly, when the lexer encounters `}}` outside any tag, the pair renders as a single literal `}`. See §2.4.
+2. Otherwise, if the content immediately following matches a control-tag pattern — `if `, `switch `, `case `, `else}`, or `end}` — it's a control tag.
+3. Otherwise, if it matches `identifier}`, it's a variable.
+4. Otherwise, it's a malformed tag and produces a clear error.
 
-If `{` is followed by whitespace, a digit, another `{`, or any non-identifier-start character, the lexer attempts to produce a helpful diagnostic, especially for legacy patterns like `{0}` (positional) or `{}` (empty).
+If `{` is followed by whitespace, a digit, or any non-identifier-start character (and not by another `{`), the lexer attempts to produce a helpful diagnostic, especially for legacy patterns like `{0}` (positional) or `{}` (empty).
 
 **Identifier:** `[a-zA-Z_][a-zA-Z0-9_]*` — ASCII-only, snake_case. Dashes are not allowed.
 
@@ -95,12 +95,54 @@ Identifiers are used for variable names, flag names, and enum case values.
 
 ### 2.4 Escaping
 
-- A literal `{` in prompt body is written as `\{`.
-- A literal `\` is written as `\\`.
-- A literal `}` may be written as `\}` for symmetry, though a raw `}` outside a tag renders literally.
-- No other escape sequences are recognized. `\n`, `\t`, etc. render as the literal two-character sequences in the source.
+Literal braces in prompt body are written by doubling them, matching Python's `str.format` convention. This is the only escape mechanism in textprompts.
+
+- `{{` renders as a single literal `{`.
+- `}}` renders as a single literal `}`.
+- The doubled-brace pair is consumed and collapsed to one brace **before** any tag parsing. Consequently `{{name}}` renders as the literal text `{name}` — it is **not** a placeholder; the `{{` and `}}` each collapse to a single brace.
+- The lexer recognizes `{{` before attempting to parse `{` as a tag opener (§2.1). A `{{` sequence can never start a tag.
+- Backslash `\` is an ordinary character and renders as a literal `\`.
 - Newlines in the source file are preserved as source newlines after line-ending normalization (§11.1).
-- Legacy `{{ ... }}` double-brace escaping is not part of this syntax.
+
+**Worked example — embedding JSON or CSS:**
+
+```
+Return JSON like {{"answer": 42}}.
+```
+
+renders as:
+
+```
+Return JSON like {"answer": 42}.
+```
+
+**Worked example — literal `{name}` in output:**
+
+```
+The placeholder syntax is {{name}}.
+```
+
+renders as:
+
+```
+The placeholder syntax is {name}.
+```
+
+`name` is not interpolated; the `{{` collapses to `{` and the `}}` collapses to `}`, leaving the text `{name}` in the output.
+
+**Worked example — combining literal braces with a real placeholder:**
+
+```
+Return JSON like {{"answer": {value}}}.
+```
+
+with `value = "42"` renders as:
+
+```
+Return JSON like {"answer": 42}.
+```
+
+The outer `{{ ... }}` pairs produce the literal `{` and `}`; the inner `{value}` is a normal variable interpolation.
 
 ### 2.5 File-level conventions
 
@@ -787,9 +829,8 @@ Implementations may remove support for:
 - Positional arrays
 - Numeric placeholders
 - Empty `{}` placeholders
-- Double-brace escaping
 
-The new behavior prefers explicit named variables and an explicit `flags` object.
+The new behavior prefers explicit named variables and an explicit `flags` object. Literal braces are written with the double-brace escape (`{{`, `}}`); see §2.4.
 
 ### 6.5 Accessing metadata and custom fields
 
@@ -1137,7 +1178,7 @@ The `docs/specs/fixtures/` directory is the source of truth for cross-language b
 
 ### 9.3 Versioning
 
-This is a major-version feature for implementations currently supporting positional placeholders, empty placeholders, or double-brace escaping. Each implementation declares which spec version it supports.
+This is a major-version feature for implementations currently supporting positional placeholders or empty placeholders. Each implementation declares which spec version it supports.
 
 ---
 

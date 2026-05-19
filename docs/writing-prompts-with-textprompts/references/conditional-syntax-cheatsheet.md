@@ -31,12 +31,14 @@ One-page normative reference for the textprompts conditional syntax. Lookup-only
 
 ## Escape rules (SPEC §2.4)
 
-- Literal `{` → `\{`.
-- Literal `\` → `\\`.
-- Literal `}` → `\}` (symmetry); a raw `}` outside a tag renders literally.
-- No other escape sequences. `\n`, `\t`, etc. render as the literal two-character source.
+- `{{` → literal `{`.
+- `}}` → literal `}`.
+- `{{name}}` → literal `{name}` (it is **not** a placeholder; doubled braces collapse to single).
+- Backslash `\` has no special meaning; it renders as a literal `\`.
+- No other escape sequences.
+- A raw `}` outside a tag renders literally.
 - Source newlines preserved after line-ending normalization (§11.1).
-- Legacy `{{ ... }}` double-brace escaping is **not** supported.
+- Matches Python's `str.format`.
 
 ## Structural rules (SPEC §3.1) — verbatim
 

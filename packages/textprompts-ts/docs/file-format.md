@@ -8,9 +8,11 @@ this page condenses the parts a TypeScript user needs.
 
 - Positional placeholders (`{0}`, `{1}`, …) are gone. Use named placeholders.
 - Empty placeholders (`{}`) are gone.
-- The `{{...}}` double-brace escape is gone. Escape with backslashes: `\{`, `\}`, `\\`.
 - New: `{if flag}`, `{else}`, `{end}`, `{switch flag}`, `{case value}`, `{if !flag}`.
 - New: typed flags namespace declared in `[flags.*]` frontmatter.
+
+Escapes use double braces: `{{` renders as a literal `{` and `}}` as a literal
+`}`. Backslash has no special meaning.
 
 See [Migrating from v1](../README.md#migrating-from-v1) for diff-style examples.
 
@@ -217,12 +219,13 @@ cases present, so exhaustiveness is trivially satisfied.
 
 | Source | Renders as |
 |---|---|
-| `\{` | `{` |
-| `\}` | `}` |
-| `\\` | `\` |
+| `{{` | `{` |
+| `}}` | `}` |
 
-No other escape sequences exist. `\n` and `\t` render literally as two
-characters; use real newlines if you need newlines.
+So `{{name}}` renders as the literal text `{name}` (the doubled braces
+collapse — this is NOT a placeholder reference). Backslash has no special
+meaning and renders literally; `\n`, `\t`, `\\` are all two literal
+characters. Use real newlines if you need newlines.
 
 ### Whitespace, BOM, line endings
 

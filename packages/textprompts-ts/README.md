@@ -10,6 +10,20 @@ But then you worry: *Did my formatter change my prompt? Are those spaces at the 
 
 **textprompts** solves this elegantly: treat your prompts as **text files** and keep your linters and formatters away from them. v2 adds typed flags, `{if}` and `{switch}` conditionals, and AST-backed validation, while keeping the file-on-disk simplicity.
 
+## One-page overview
+
+<p align="center">
+  <img src="./docs/assets/one-pager-overview.png" alt="textprompts one-page cheatsheet: variables, metadata as guardrails, conditionals, format(), strict mode" width="560">
+</p>
+
+The full story on one page:
+
+- **Variables** — `{name}` substitutes; `{{name}}` escapes and renders the literal text `{name}` (same convention as Python's `str.format`).
+- **Metadata = guardrails + context for newcomers.** Frontmatter declares `title`, `version`, `description`, `owner`, `last_reviewed`, and each flag's type (`boolean` or `enum` with declared `values`). Newcomers see what changed, why, and who owns it — right next to the prompt. `format()` type-checks every call against this schema and throws `FormatError` if anything is missing or the wrong type.
+- **Conditionals** — gate optional features with `{if has_memory}…{end}`, roll out tier variants with `{switch tier}{case …}{end}`. No string concatenation in app code.
+- **`format()` is fully type-checked.** Variables sit at the top level of the call; flags go under a reserved `flags` key; missing inputs fail fast with a stable error code.
+- **Going to prod? Turn strict on globally.** Per call: `loadPrompt(path, { metadata: "strict" })`. Process-wide: `setMetadata(MetadataMode.STRICT)`. Or via env: `TEXTPROMPTS_METADATA_MODE=strict`. Strict enforces non-empty title/description/version, every body flag declared, every flag described, and exhaustive enum switches — at load time, before a single prompt is rendered.
+
 ## Authoring guide
 
 For deeper guidance on writing v2 prompts — `{if}` vs `{switch}`, flag patterns, anti-patterns, debugging, and v1 → v2 migration — see [`docs/writing-prompts-with-textprompts/SKILL.md`](../../docs/writing-prompts-with-textprompts/SKILL.md). The skill is also installable into Claude / Codex agents as `writing-prompts-with-textprompts`.
@@ -141,7 +155,7 @@ The `core` entry point has zero `node:*` imports. It exposes `Prompt`, `parseStr
 {if flag}...{else}...{end}  — with else branch
 {if !flag}...{end}          — negation
 {switch flag}{case x}...{case y}...{else}...{end}
-\{ \} \\                    — escapes (no double-brace {{...}})
+{{ }}                       — escapes: {{ -> {, }} -> }
 ```
 
 Inline form keeps everything on one line:
@@ -227,13 +241,6 @@ The new shape: one object, with optional reserved `flags` key, and every other t
 ```
 
 `PromptString` is internal in v2; it is not exported from `textprompts` or `textprompts/core`.
-
-### Brace escapes
-
-```diff
-- Set the variable {{name}} to {value}.
-+ Set the variable \{name\} to {value}.
-```
 
 ### Loader option name
 

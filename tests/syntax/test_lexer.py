@@ -86,19 +86,39 @@ def test_indented_block_keyword_alone_on_line() -> None:
 # --- Escapes (SPEC §2.4) --------------------------------------------------
 
 
-def test_escape_brace_and_backslash() -> None:
-    toks = tokenize(r"a \{b\} \\ c")
+def test_double_brace_escape() -> None:
+    toks = tokenize("a {{b}} c")
     assert kinds(toks) == ["TEXT"]
-    assert toks[0].value == r"a {b} \ c"
+    assert toks[0].value == "a {b} c"
 
 
-def test_unknown_escape_passes_through() -> None:
+def test_double_brace_escape_around_identifier() -> None:
+    # `{{name}}` must NOT lex as a placeholder; doubled braces collapse to
+    # single literal braces around the inner text.
+    toks = tokenize("{{name}}")
+    assert kinds(toks) == ["TEXT"]
+    assert toks[0].value == "{name}"
+
+
+def test_backslash_is_literal_text() -> None:
+    # The body grammar has no escape character; a backslash is emitted as a
+    # literal alongside the following character.
     toks = tokenize(r"a \n b")
     assert kinds(toks) == ["TEXT"]
     assert toks[0].value == r"a \n b"
 
 
-# --- Legacy / invalid placeholders (SPEC §1.1, §2.3) ----------------------
+def test_backslash_before_brace_is_literal() -> None:
+    # A backslash before ``{`` is plain text. ``{name}`` is still parsed as a
+    # placeholder; the escape for a literal brace is ``{{`` / ``}}``.
+    toks = tokenize("a \\{name} b")
+    assert kinds(toks) == ["TEXT", "VAR", "TEXT"]
+    assert toks[0].value == "a \\"
+    assert toks[1].value == "name"
+    assert toks[2].value == " b"
+
+
+# --- Invalid placeholders (SPEC §1.1, §2.3) -------------------------------
 
 
 def test_empty_placeholder_rejected() -> None:
@@ -113,13 +133,6 @@ def test_positional_placeholder_rejected() -> None:
         tokenize("hello {0} world")
     assert exc.value.code == "E_BAD_TAG"
     assert "Positional" in str(exc.value)
-
-
-def test_legacy_double_brace_is_unterminated_tag() -> None:
-    # `{{name}}` -> opener `{` followed by `{` triggers E_BAD_TAG (unterminated)
-    with pytest.raises(ParseError) as exc:
-        tokenize("hello {{name}}")
-    assert exc.value.code == "E_BAD_TAG"
 
 
 def test_inside_brace_whitespace_rejected_leading() -> None:

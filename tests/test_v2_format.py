@@ -7,7 +7,7 @@ Covers:
 * Positional ``Prompt.format(...)`` raises ``TypeError``.
 * ``flags=`` is silently ignored on flagless prompts.
 * ``PromptString.format`` and ``Prompt.format`` agree byte-for-byte.
-* Legacy patterns (``{0}``, ``{}``, ``{{...}}``) raise ``ParseError``.
+* Legacy patterns (``{0}``, ``{}``) raise ``ParseError``.
 * Smoke test: SPEC §8.2 example loads and renders correctly.
 """
 
@@ -147,7 +147,7 @@ def test_prompt_and_promptstring_format_agree(
 
 
 # ---------------------------------------------------------------------------
-# Legacy v1 patterns rejected.
+# Invalid placeholder forms.
 # ---------------------------------------------------------------------------
 
 
@@ -156,14 +156,26 @@ def test_prompt_and_promptstring_format_agree(
     [
         "Hello {0}",
         "Hello {}",
-        "{{literal}} and {real}",
         "{name:>10}",
     ],
 )
-def test_legacy_v1_patterns_raise_parse_error(body: str) -> None:
-    """v1 placeholders raise ParseError when the body is parsed."""
+def test_invalid_placeholder_forms_raise_parse_error(body: str) -> None:
+    """Positional, empty, and format-spec placeholders raise ParseError."""
     with pytest.raises(ParseError):
         Prompt.from_string(body)
+
+
+# ---------------------------------------------------------------------------
+# Double-brace escape.
+# ---------------------------------------------------------------------------
+
+
+def test_double_brace_escape_renders_literally() -> None:
+    """`{{literal}}` renders as the literal text `{literal}` — doubled
+    braces collapse to single braces and the inner text is not a placeholder.
+    """
+    p = Prompt.from_string("{{literal}} and {real}")
+    assert p.format(real="x") == "{literal} and x"
 
 
 # ---------------------------------------------------------------------------

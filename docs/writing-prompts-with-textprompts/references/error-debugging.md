@@ -11,7 +11,7 @@ Phases, in order:
 
 See [SPEC_conditional_syntax_v2.md §7](../../specs/SPEC_conditional_syntax_v2.md) for the authoritative error taxonomy.
 
-> **Note on availability.** `FrontmatterSchemaError`, `ConditionalSyntaxError`, `ConditionalSemanticError`, and `FormatValidationError` ship with **textprompts v2.0**. Before v2.0, the closest pre-existing errors are `InvalidMetadataError` (for frontmatter) and `MalformedHeaderError` (for malformed `---` markers). All four new exceptions extend `TextPromptsError`, the common base in `src/textprompts/errors.py`.
+> **Note on availability.** `FrontmatterError`, `ParseError`, `SemanticError`, and `FormatError` ship with **textprompts v2.0**. Before v2.0, the closest pre-existing errors are `InvalidMetadataError` (for frontmatter) and `MalformedHeaderError` (for malformed `---` markers). All four new exceptions extend `TextPromptsError`, the common base in `src/textprompts/errors.py`.
 
 ---
 
@@ -23,10 +23,10 @@ See [SPEC_conditional_syntax_v2.md §7](../../specs/SPEC_conditional_syntax_v2.m
 | `MissingMetadataError` | load | Strict mode and the file has no frontmatter, or an empty frontmatter block. (SPEC §4.6) | `load_prompt("plain.txt", metadata="strict")` on a body-only file | Add a `---` frontmatter block with non-empty `title`, `description`, and `version`, or switch to `metadata="allow"`. |
 | `InvalidMetadataError` | load | TOML or YAML parser rejected the frontmatter bytes. Under `metadata="allow"` this fires only if the format was unambiguous; under explicit format selection any parse failure raises. (SPEC §7.1, §4.1) | Unbalanced `[` in TOML: `[flags.tier` with no closing bracket | Fix the syntax, or use `metadata="ignore"` to treat the entire file as body. |
 | `MalformedHeaderError` | load | The `---` delimiter pair is malformed — e.g. opening `---` with no closing `---` before EOF, or `+++` used in place of `---`. | File starts with `---` but never closes | Close the frontmatter block with a matching `---` line. Use `---` exclusively; `+++` is intentionally rejected. |
-| `FrontmatterSchemaError` (v2.0) | load | Frontmatter parsed but violates the flag/variable schema: reserved keyword as flag name; `values` set on a boolean flag; duplicate value in an enum's `values` list; or, in strict mode, a referenced flag missing `description`. (SPEC §4.3.2, §7.1) | `[flags.if]` (reserved keyword) or `[flags.tier]` with `type = "boolean"` and `values = [...]` | Rename the flag to a non-reserved identifier; drop `values` from boolean flags; dedupe enum values; add a non-empty `description` to every referenced flag under strict mode. |
-| `ConditionalSyntaxError` (v2.0) | parse | Lexer or parser rejected a tag: mismatched braces, `{if}` with no flag name, `{end}` outside any block, mixed inline/block form for one construct, positional `{0}`, empty `{}`, legacy `{{...}}` double-brace escape, whitespace inside braces like `{ if flag }`. (SPEC §1.1, §2.3, §7.2) | `{ if active }` (whitespace) or `{0}` (positional) | Remove whitespace inside braces; use named identifiers only; close every `{if}` / `{switch}` with `{end}`; drop `{{...}}` — there is no escape syntax in v2. |
-| `ConditionalSemanticError` (v2.0) | parse-finalize | Body uses constructs that disagree with frontmatter or each other: boolean flag used in `{switch}`, enum flag used in `{if}`, `{switch}` without exhaustive cases and no `{else}`, or the same identifier declared as both flag and variable. (SPEC §4.7, §5.1, §5.3, §7.3) | `[flags.is_admin]` declared `type = "boolean"` but body has `{switch is_admin}` | Pick one shape per flag (boolean for `{if}`, enum for `{switch}`); add the missing `{case ...}` branches or an `{else}`; never share an identifier across the flag and variable namespaces. |
-| `FormatValidationError` (v2.0) | format | `prompt.format(...)` was called but inputs are wrong: a required body variable was not passed; a required flag was not passed; `flags=` was omitted entirely while the prompt uses flags; a flag value is not in the declared enum; a flag value is the wrong type. Extras are **silently ignored** and never raise (SPEC §5.5, §5.6, §5.7). | `prompt.format(role="bot")` when the body also references `{tone}` | Pass every body-referenced variable and flag explicitly. If a value is genuinely optional, pass an empty string or `None`/`null` at the call site so the decision is visible. |
+| `FrontmatterError` (v2.0) | load | Frontmatter parsed but violates the flag/variable schema: reserved keyword as flag name; `values` set on a boolean flag; duplicate value in an enum's `values` list; or, in strict mode, a referenced flag missing `description`. (SPEC §4.3.2, §7.1) | `[flags.if]` (reserved keyword) or `[flags.tier]` with `type = "boolean"` and `values = [...]` | Rename the flag to a non-reserved identifier; drop `values` from boolean flags; dedupe enum values; add a non-empty `description` to every referenced flag under strict mode. |
+| `ParseError` (v2.0) | parse | Lexer or parser rejected a tag: mismatched braces, `{if}` with no flag name, `{end}` outside any block, mixed inline/block form for one construct, positional `{0}`, empty `{}`, whitespace inside braces like `{ if flag }`. (SPEC §1.1, §2.3, §7.2) | `{ if active }` (whitespace) or `{0}` (positional) | Remove whitespace inside braces; use named identifiers only; close every `{if}` / `{switch}` with `{end}`. |
+| `SemanticError` (v2.0) | parse-finalize | Body uses constructs that disagree with frontmatter or each other: boolean flag used in `{switch}`, enum flag used in `{if}`, `{switch}` without exhaustive cases and no `{else}`, or the same identifier declared as both flag and variable. (SPEC §4.7, §5.1, §5.3, §7.3) | `[flags.is_admin]` declared `type = "boolean"` but body has `{switch is_admin}` | Pick one shape per flag (boolean for `{if}`, enum for `{switch}`); add the missing `{case ...}` branches or an `{else}`; never share an identifier across the flag and variable namespaces. |
+| `FormatError` (v2.0) | format | `prompt.format(...)` was called but inputs are wrong: a required body variable was not passed; a required flag was not passed; `flags=` was omitted entirely while the prompt uses flags; a flag value is not in the declared enum; a flag value is the wrong type. Extras are **silently ignored** and never raise (SPEC §5.5, §5.6, §5.7). | `prompt.format(role="bot")` when the body also references `{tone}` | Pass every body-referenced variable and flag explicitly. If a value is genuinely optional, pass an empty string or `None`/`null` at the call site so the decision is visible. |
 
 ---
 
@@ -83,7 +83,7 @@ You are a {role}.
 
 (no closing `---`)
 
-### `FrontmatterSchemaError` (v2.0)
+### `FrontmatterError` (v2.0)
 
 `reserved.txt`:
 
@@ -97,7 +97,7 @@ Body.
 
 ```python
 load_prompt("reserved.txt")
-# FrontmatterSchemaError: `if` is a reserved keyword and cannot be a flag name
+# FrontmatterError: `if` is a reserved keyword and cannot be a flag name
 ```
 
 `bool_with_values.txt`:
@@ -113,10 +113,10 @@ Body.
 
 ```python
 load_prompt("bool_with_values.txt")
-# FrontmatterSchemaError: boolean flag `is_admin` must not declare `values`
+# FrontmatterError: boolean flag `is_admin` must not declare `values`
 ```
 
-### `ConditionalSyntaxError` (v2.0)
+### `ParseError` (v2.0)
 
 ```
 { if active }
@@ -125,7 +125,7 @@ hello
 ```
 
 ```python
-# ConditionalSyntaxError: whitespace not allowed inside braces at line 1
+# ParseError: whitespace not allowed inside braces at line 1
 ```
 
 ```
@@ -133,7 +133,7 @@ You are user {0}.
 ```
 
 ```python
-# ConditionalSyntaxError: positional placeholder {0} is not supported (use a named identifier)
+# ParseError: positional placeholder {0} is not supported (use a named identifier)
 ```
 
 ```
@@ -142,10 +142,10 @@ hello
 ```
 
 ```python
-# ConditionalSyntaxError: unclosed {if active} at line 1 (missing {end})
+# ParseError: unclosed {if active} at line 1 (missing {end})
 ```
 
-### `ConditionalSemanticError` (v2.0)
+### `SemanticError` (v2.0)
 
 `bool_in_switch.txt`:
 
@@ -162,7 +162,7 @@ type = "boolean"
 
 ```python
 load_prompt("bool_in_switch.txt")
-# ConditionalSemanticError: flag `is_admin` is boolean but used in {switch}; use {if}
+# SemanticError: flag `is_admin` is boolean but used in {switch}; use {if}
 ```
 
 `flag_and_var.txt`:
@@ -179,10 +179,10 @@ Tone is {tone}.
 
 ```python
 load_prompt("flag_and_var.txt")
-# ConditionalSemanticError: `tone` declared as flag but body uses it as variable {tone}
+# SemanticError: `tone` declared as flag but body uses it as variable {tone}
 ```
 
-### `FormatValidationError` (v2.0)
+### `FormatError` (v2.0)
 
 `needs_inputs.txt`:
 
@@ -197,13 +197,13 @@ Be thorough.
 p = load_prompt("needs_inputs.txt")
 
 p.format(role="bot")
-# FormatValidationError: variable `tone` required but not provided
+# FormatError: variable `tone` required but not provided
 
 p.format(role="bot", tone="dry")
-# FormatValidationError: prompt requires `flags` parameter but none was passed; expected flags: [verbose]
+# FormatError: prompt requires `flags` parameter but none was passed; expected flags: [verbose]
 
 p.format(role="bot", tone="dry", flags={"verbose": "yes"})
-# FormatValidationError: flag `verbose` got string, expected boolean
+# FormatError: flag `verbose` got string, expected boolean
 ```
 
 Extras are not errors:
@@ -219,7 +219,7 @@ p.format(role="bot", tone="dry", unused_extra=42, flags={"verbose": True})
 
 Every textprompts exception inherits from `TextPromptsError` (`src/textprompts/errors.py`). When debugging, walk the trace from the bottom up and look for these signals:
 
-1. **Which phase is named?** The exception class itself encodes the phase — `MissingMetadataError` / `InvalidMetadataError` / `MalformedHeaderError` / `FrontmatterSchemaError` are load-phase, `ConditionalSyntaxError` is parse, `ConditionalSemanticError` is parse-finalize, `FormatValidationError` is format. If you see a `FormatValidationError` you can stop reading at `prompt.format(...)` in your call site — the file already parsed cleanly.
+1. **Which phase is named?** The exception class itself encodes the phase — `MissingMetadataError` / `InvalidMetadataError` / `MalformedHeaderError` / `FrontmatterError` are load-phase, `ParseError` is parse, `SemanticError` is parse-finalize, `FormatError` is format. If you see a `FormatError` you can stop reading at `prompt.format(...)` in your call site — the file already parsed cleanly.
 2. **Which file?** Load- and parse-phase errors include the source path. If the path is wrong, the error is `FileMissingError` and nothing else has run yet.
 3. **Which identifier?** Schema, syntax, semantic, and format errors all name the offending flag, variable, tag, or field in the message. Search the prompt body for that exact identifier first.
 4. **Which line/column?** Where available (lexer- and parser-emitted errors), the message includes a 1-based line and column. These point at the *tag*, not the surrounding prose.

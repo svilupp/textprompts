@@ -1,9 +1,10 @@
 """String-compatible prompt body wrapper (v2).
 
 ``PromptString`` is a :class:`str` subclass that delegates ``format()`` to the
-v2 syntax engine: lex -> parse -> validate -> render. There is no second
-placeholder grammar; ``{var}`` is the canonical syntax and legacy patterns
-(``{0}``, ``{}``, ``{{...}}`` escape) raise :class:`ParseError`.
+v2 syntax engine: lex -> parse -> validate -> render. ``{var}`` is the
+canonical placeholder syntax; positional forms (``{0}``, ``{}``) raise
+:class:`ParseError`. ``{{...}}`` is the escape for a literal ``{...}`` (the
+doubled braces collapse to single braces in the rendered output).
 """
 
 from __future__ import annotations
@@ -26,8 +27,8 @@ class PromptString(str):
         instance = str.__new__(cls, value)
         # AST is parsed lazily on first ``.format()`` call so that constructing
         # a ``PromptString`` from invalid body never raises until render time.
-        # This matches v1 behavior where a malformed format string raised at
-        # ``.format()`` time, not at construction.
+        # A malformed format string raises at ``.format()`` time, not at
+        # construction, matching how ``str.format`` behaves.
         instance._ast_cache = None
         return instance
 

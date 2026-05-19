@@ -5,9 +5,8 @@ a `prompt.txt` copied byte-for-byte from
 [`docs/specs/SPEC_conditional_syntax_v2.md`](../../docs/specs/SPEC_conditional_syntax_v2.md)
 §8, plus a `run.py` that demonstrates at least two flag combinations.
 
-**Status:** v2 only. The engine is not yet implemented in Python; these files
-are reference content until PHASE-3..6 of the v2 rollout land. They double as
-the canonical fixtures for the Python port's conformance run.
+**Status:** v2 only. These scripts run against the Python v2 engine and mirror
+the SPEC §8 examples used by the cross-port conformance corpus.
 
 For authoring guidance see
 [`../../docs/writing-prompts-with-textprompts/SKILL.md`](../../docs/writing-prompts-with-textprompts/SKILL.md).
@@ -24,8 +23,6 @@ For authoring guidance see
 | 6 | [`06_strict_mode/`](06_strict_mode/) | [§8.6](../../docs/specs/SPEC_conditional_syntax_v2.md#86-strict-mode-file) | Loads cleanly under `metadata="strict"`: standard metadata present, every referenced flag described. |
 
 ## Running
-
-Once the v2 engine ships in Python (PHASE-3..6):
 
 ```bash
 python examples/conditional/01_minimal_implicit/run.py

@@ -6,12 +6,14 @@ stream of tokens. The body parser turns tokens into the AST.
 
 Lexer order on ``{`` per SPEC §2.1:
 
-1. Control tag prefix (``if ``, ``switch ``, ``case ``, ``else}``, ``end}``).
-2. Bare ``identifier}`` -> variable.
-3. Else -> :class:`~textprompts.errors.ParseError` with a helpful diagnostic.
+1. Double-brace escape ``{{`` -> literal ``{`` (and ``}}`` -> literal ``}``).
+2. Control tag prefix (``if ``, ``switch ``, ``case ``, ``else}``, ``end}``).
+3. Bare ``identifier}`` -> variable.
+4. Else -> :class:`~textprompts.errors.ParseError` with a helpful diagnostic.
 
-Escapes (§2.4) are resolved here: ``\\{``, ``\\}``, ``\\\\`` -> literal char.
-Any other ``\\X`` sequence renders as the two literal characters.
+Escape syntax (§2.4): ``{{`` collapses to a literal ``{`` and ``}}`` collapses
+to a literal ``}``. Therefore ``{{name}}`` renders as the literal string
+``{name}`` and is NOT a placeholder.
 """
 
 from __future__ import annotations
@@ -410,20 +412,29 @@ def tokenize(body: str) -> list[Token]:
     while state.pos < len(state.src):
         ch = state.src[state.pos]
 
-        if ch == "\\":
+        if ch == "{":
+            # Double-brace escape `{{` -> literal `{`. Must be recognised
+            # BEFORE attempting to parse `{` as a tag opener.
             nxt = state.src[state.pos + 1] if state.pos + 1 < len(state.src) else ""
-            if nxt in ("{", "}", "\\"):
-                state.append_char(nxt, state.line, state.column)
+            if nxt == "{":
+                state.append_char("{", state.line, state.column)
                 state.advance(2)
                 continue
-            # Any other `\X`: emit the backslash literally and continue.
-            state.append_char(ch, state.line, state.column)
-            state.advance(1)
-            continue
-
-        if ch == "{":
             state.flush_text()
             _lex_tag(state)
+            continue
+
+        if ch == "}":
+            # Double-brace escape `}}` -> literal `}`. A bare `}` outside of
+            # any tag is emitted literally (the lexer never starts tag
+            # parsing on `}`, so there is no risk of unmatched close).
+            nxt = state.src[state.pos + 1] if state.pos + 1 < len(state.src) else ""
+            if nxt == "}":
+                state.append_char("}", state.line, state.column)
+                state.advance(2)
+                continue
+            state.append_char(ch, state.line, state.column)
+            state.advance(1)
             continue
 
         state.append_char(ch, state.line, state.column)

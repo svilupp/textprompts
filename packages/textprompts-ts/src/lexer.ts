@@ -6,12 +6,15 @@
  * body-parser turns tokens into the AST.
  *
  * Lexer order on `{` per SPEC §2.1:
- *   1. Control tag prefix (`if `, `switch `, `case `, `else}`, `end}`)
- *   2. Bare `identifier}` -> variable
- *   3. Else -> {@link ParseError} with a helpful diagnostic.
+ *   1. `{{` -> literal `{` in output (double-brace escape, checked first)
+ *   2. Control tag prefix (`if `, `switch `, `case `, `else}`, `end}`)
+ *   3. Bare `identifier}` -> variable
+ *   4. Else -> {@link ParseError} with a helpful diagnostic.
  *
- * Escapes (§2.4) are resolved here: `\{`, `\\`, `\}` -> `{`, `\`, `}`. Any
- * other `\X` sequence renders literally as two characters.
+ * Escapes (§2.4): `{{` -> `{` and `}}` -> `}` (familiar from Python
+ * `str.format`). Backslash has no special meaning and renders literally.
+ * `{{name}}` therefore renders as the literal text `{name}`, NOT as a
+ * placeholder.
  */
 
 import { ParseError, type ParseErrorOptions } from "./errors";
@@ -412,22 +415,29 @@ export const tokenize = (body: string, sourcePath?: string): Token[] => {
   while (state.pos < state.src.length) {
     const ch = state.src[state.pos];
 
-    if (ch === "\\") {
-      // Escape sequences: \{ \} \\ -> literal char. Anything else: two chars.
-      const next = state.src[state.pos + 1];
-      if (next === "{" || next === "}" || next === "\\") {
-        appendChar(state, next, state.line, state.column);
+    if (ch === "{") {
+      // Double-brace escape: `{{` -> literal `{`. Checked BEFORE attempting
+      // to parse `{` as a tag opener, so `{{name}}` lexes as text `{name}`.
+      if (state.src[state.pos + 1] === "{") {
+        appendChar(state, "{", state.line, state.column);
+        advance(state, 2);
+        continue;
+      }
+      flushText(state);
+      lexTag(state);
+      continue;
+    }
+
+    if (ch === "}") {
+      // Double-brace escape: `}}` -> literal `}`. A stray `}` outside a tag
+      // is otherwise just literal text (the tag-parser owns matched `}`).
+      if (state.src[state.pos + 1] === "}") {
+        appendChar(state, "}", state.line, state.column);
         advance(state, 2);
         continue;
       }
       appendChar(state, ch, state.line, state.column);
       advance(state, 1);
-      continue;
-    }
-
-    if (ch === "{") {
-      flushText(state);
-      lexTag(state);
       continue;
     }
 

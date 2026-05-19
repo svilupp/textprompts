@@ -2,7 +2,7 @@
 
 Common mistakes that look reasonable, what the parser does about them, and what to write instead. Each entry cross-links to the relevant section of `docs/specs/SPEC_conditional_syntax_v2.md`.
 
-> Error-message wording below is the SPEC's intended diagnostic (SPEC §7). Cross-language conformance matches on error category and key message tokens, not exact prose (SPEC §11.4), so an implementation may vary the wording. The error class (`ConditionalSyntaxError`, `FrontmatterSchemaError`, `ConditionalSemanticError`, `FormatValidationError`) is stable.
+> Error-message wording below is the SPEC's intended diagnostic (SPEC §7). Cross-language conformance matches on error category and key message tokens, not exact prose (SPEC §11.4), so an implementation may vary the wording. The error class (`ParseError`, `FrontmatterError`, `SemanticError`, `FormatError`) is stable.
 
 ---
 
@@ -65,7 +65,7 @@ Previous question: {last_question}
 
 **Why it's wrong.** `{if}` accepts exactly one identifier, optionally prefixed by `!`, and nothing else (SPEC §2.2, SPEC §2.3). Operators like `&&`, `||`, `!=` are not part of the grammar. SPEC §1.2 explicitly excludes boolean expressions in conditionals and instructs callers to compose flags in code.
 
-**Error.** `ConditionalSyntaxError`. The lexer reads `has_history && is_premium` as a malformed flag name because the identifier rule rejects everything after the first invalid character. Expected diagnostic shape: *"invalid identifier in `{if}`: `has_history && is_premium`. `{if}` accepts a single flag name; compose boolean expressions in caller code."* (See SPEC §7.2 "bare keyword tags missing required arguments" and SPEC §1.2 for the rationale.) Exact wording is not pinned by the SPEC.
+**Error.** `ParseError`. The lexer reads `has_history && is_premium` as a malformed flag name because the identifier rule rejects everything after the first invalid character. Expected diagnostic shape: *"invalid identifier in `{if}`: `has_history && is_premium`. `{if}` accepts a single flag name; compose boolean expressions in caller code."* (See SPEC §7.2 "bare keyword tags missing required arguments" and SPEC §1.2 for the rationale.) Exact wording is not pinned by the SPEC.
 
 **What to write instead.** Compose in caller code; pass the result as one flag.
 
@@ -98,7 +98,7 @@ You have priority support.
 
 **Why it's wrong.** `{if}` takes a single boolean flag identifier (SPEC §2.2). Value comparisons are explicitly out of scope (SPEC §1.2). The construct designed for value branching is `{switch}` (SPEC §3, SPEC §5.3).
 
-**Error.** `ConditionalSyntaxError`. The `==` and `"premium"` tokens are not valid in an `{if}` opener; the lexer reports an invalid identifier. Expected diagnostic shape: *"invalid identifier in `{if}`: `tier == \"premium\"`. Use `{switch tier}` with `{case premium}` for value branching."* See SPEC §7.2.
+**Error.** `ParseError`. The `==` and `"premium"` tokens are not valid in an `{if}` opener; the lexer reports an invalid identifier. Expected diagnostic shape: *"invalid identifier in `{if}`: `tier == \"premium\"`. Use `{switch tier}` with `{case premium}` for value branching."* See SPEC §7.2.
 
 **What to write instead.** Use `{switch}` against the enum flag.
 
@@ -178,7 +178,7 @@ prompt.format(flags={"has_history": False})
 
 **Why it's wrong.** This is the single most-violated rule in the SPEC: **every flag and variable referenced anywhere in the prompt body must be passed at format time, regardless of which branch fires** (SPEC §5.2). Inactive branches can become active later when a flag flips, and the design exists precisely to catch missing wiring before that happens (SPEC §13 rationale: "Why require variables in inactive branches?"). Allowing a "silent fallback" — treating missing variables as `""` — is forbidden (SPEC §1).
 
-**Error.** `FormatValidationError`. Expected diagnostic shape: *"variable `last_question` required but not provided"* (SPEC §5.6, §7.4). The error fires even though `has_history = False` and the branch will not render.
+**Error.** `FormatError`. Expected diagnostic shape: *"variable `last_question` required but not provided"* (SPEC §5.6, §7.4). The error fires even though `has_history = False` and the branch will not render.
 
 **What to write instead.** Always pass every body reference. If the variable is genuinely optional from the caller's perspective, pass an explicit empty string or `None`-equivalent — that decision then lives visibly at the call site (SPEC §5.2 rationale).
 
@@ -210,7 +210,7 @@ body {end}
 
 **Why it's wrong.** Each conditional must be either entirely inline (opener, body, separators, closer all on one physical line) or entirely block (every control keyword tag alone on its own line). Mixing the two is forbidden (SPEC §3.2).
 
-**Error.** `ConditionalSyntaxError`. Expected diagnostic shape: *"mixed inline/block form: `{if flag}` opens inline (other content on the line) but its `{end}` is on a later line. Keep the entire construct on one line or put every keyword tag alone on its own line."* See SPEC §7.2 ("mixed inline/block form for one construct").
+**Error.** `ParseError`. Expected diagnostic shape: *"mixed inline/block form: `{if flag}` opens inline (other content on the line) but its `{end}` is on a later line. Keep the entire construct on one line or put every keyword tag alone on its own line."* See SPEC §7.2 ("mixed inline/block form for one construct").
 
 **What to write instead.** Pick a form per-construct (form is judged independently for each construct on the same line, SPEC §3.2). For multi-line bodies, use block form throughout.
 
@@ -251,8 +251,8 @@ description = "Whether to render the my-flag branch"
 
 **Error.**
 
-- Body usage `{if my-flag}`: `ConditionalSyntaxError`. Expected diagnostic shape: *"invalid identifier `my-flag`: dashes are not allowed in textprompts identifiers. Use snake_case (`my_flag`)."* See SPEC §7.2 ("variable or flag name uses a dash").
-- Frontmatter declaration `[flags.my-flag]`: `FrontmatterSchemaError`. Expected diagnostic shape: *"flag name `my-flag` is not a valid identifier: dashes are not allowed."* See SPEC §4.3.2 ("flag name is not a valid identifier") and §7.1 ("invalid identifier (e.g. dashes, digits at start, unicode)").
+- Body usage `{if my-flag}`: `ParseError`. Expected diagnostic shape: *"invalid identifier `my-flag`: dashes are not allowed in textprompts identifiers. Use snake_case (`my_flag`)."* See SPEC §7.2 ("variable or flag name uses a dash").
+- Frontmatter declaration `[flags.my-flag]`: `FrontmatterError`. Expected diagnostic shape: *"flag name `my-flag` is not a valid identifier: dashes are not allowed."* See SPEC §4.3.2 ("flag name is not a valid identifier") and §7.1 ("invalid identifier (e.g. dashes, digits at start, unicode)").
 
 **What to write instead.** Use snake_case throughout.
 
@@ -295,9 +295,9 @@ description = "Whether to use case-sensitive matching"
 
 **Error.**
 
-- Frontmatter declaration: `FrontmatterSchemaError`. Expected diagnostic shape: *"`flags` is reserved and cannot be used as a variable name."* See SPEC §4.3.2 ("flag name is a reserved keyword"), §7.1 ("reserved keyword as flag name", "reserved keyword as variable name").
-- Body usage `{flags}`: `ConditionalSyntaxError`. Expected diagnostic shape: *"`flags` is a reserved keyword and cannot be used as a variable name."* See SPEC §7.2.
-- Passing `flags` as a top-level variable at format time: `FormatValidationError`. Expected diagnostic shape: *"`flags` is reserved by the format API and cannot be used as a variable name."* See SPEC §7.4.
+- Frontmatter declaration: `FrontmatterError`. Expected diagnostic shape: *"`flags` is reserved and cannot be used as a variable name."* See SPEC §4.3.2 ("flag name is a reserved keyword"), §7.1 ("reserved keyword as flag name", "reserved keyword as variable name").
+- Body usage `{flags}`: `ParseError`. Expected diagnostic shape: *"`flags` is a reserved keyword and cannot be used as a variable name."* See SPEC §7.2.
+- Passing `flags` as a top-level variable at format time: `FormatError`. Expected diagnostic shape: *"`flags` is reserved by the format API and cannot be used as a variable name."* See SPEC §7.4.
 
 **What to write instead.** Pick a non-reserved name. The reserved set is small (`if`, `else`, `end`, `switch`, `case`, `flags`); anything else is fair game.
 
@@ -330,7 +330,7 @@ description = "User is on the premium subscription tier"
 **Error.** Two distinct failure modes:
 
 1. **The `default` field itself.** `default` is not a recognized flag-declaration field (SPEC §4.3.1 lists `type`, `values`, `description`). It is, however, preserved as custom metadata under `prompt.meta.flags["premium_tier"].extras["default"]` (SPEC §4.3.1, §5.8), so it does **not** produce a parse error — but it has no effect on rendering. This is the silent failure mode: authors think they set a default, the parser keeps the field as opaque metadata, the formatter ignores it, and the next caller hits the next error.
-2. **The caller omits the flag.** `FormatValidationError`. Expected diagnostic shape: *"flag `premium_tier` required but not provided"* (SPEC §5.6, §7.4). Or, if no `flags` parameter is passed at all: *"prompt requires `flags` parameter but none was passed; expected flags: [premium_tier]"* (SPEC §5.6).
+2. **The caller omits the flag.** `FormatError`. Expected diagnostic shape: *"flag `premium_tier` required but not provided"* (SPEC §5.6, §7.4). Or, if no `flags` parameter is passed at all: *"prompt requires `flags` parameter but none was passed; expected flags: [premium_tier]"* (SPEC §5.6).
 
 **What to write instead.** Set the default in caller code, where it is reviewable alongside the rest of the runtime decision.
 
@@ -362,11 +362,11 @@ See SPEC §1.2, §4.3.1, §5.6, §5.8, §7.4.
 | Anti-pattern | Error class | Where SPEC pins it |
 |---|---|---|
 | Deep nesting | None (style only) | §3.1, §12 |
-| Boolean expressions in `{if}` | `ConditionalSyntaxError` | §1.2, §2.2, §7.2 |
-| Comparisons in `{if}` | `ConditionalSyntaxError` | §1.2, §3, §5.3 |
+| Boolean expressions in `{if}` | `ParseError` | §1.2, §2.2, §7.2 |
+| Comparisons in `{if}` | `ParseError` | §1.2, §3, §5.3 |
 | Comments in prompt body | None (silent leakage) | §1.2, §4.3, §5.8 |
-| Stripping `{var}` from inactive branch | `FormatValidationError` | §5.2, §5.6, §7.4 |
-| Mixed inline/block form | `ConditionalSyntaxError` | §3.2, §7.2 |
-| Dashes in identifiers | `ConditionalSyntaxError` / `FrontmatterSchemaError` | §2.1, §4.3.2, §7.1, §7.2 |
-| Reserved keyword (e.g. `flags`) as name | `FrontmatterSchemaError` / `ConditionalSyntaxError` / `FormatValidationError` | §2.1, §5.1, §7.1, §7.2, §7.4 |
-| Defaulting flag values in the file | Silent + `FormatValidationError` on caller omission | §1.2, §4.3.1, §5.6, §5.8, §7.4 |
+| Stripping `{var}` from inactive branch | `FormatError` | §5.2, §5.6, §7.4 |
+| Mixed inline/block form | `ParseError` | §3.2, §7.2 |
+| Dashes in identifiers | `ParseError` / `FrontmatterError` | §2.1, §4.3.2, §7.1, §7.2 |
+| Reserved keyword (e.g. `flags`) as name | `FrontmatterError` / `ParseError` / `FormatError` | §2.1, §5.1, §7.1, §7.2, §7.4 |
+| Defaulting flag values in the file | Silent + `FormatError` on caller omission | §1.2, §4.3.1, §5.6, §5.8, §7.4 |

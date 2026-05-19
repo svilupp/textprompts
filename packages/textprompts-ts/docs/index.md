@@ -11,12 +11,14 @@ If you are coming from v1, four things to know up front:
 
 - **Positional placeholders are gone.** `{0}`, `{1}`, … no longer parse.
 - **Empty placeholders are gone.** `{}` no longer parses.
-- **The double-brace escape is gone.** Use backslash escapes (`\{`, `\}`, `\\`) for
-  literal braces.
 - **`Prompt.format(args, kwargs, options)` is gone.** The only signature is
   `prompt.format({ flags, ...vars })`.
 - **`PromptString` is no longer a public export.** Use `Prompt.fromString` for
   in-memory strings, or `loadPrompt` for files.
+
+Escapes use double braces: `{{` collapses to a literal `{` and `}}` to a
+literal `}`, so `{{name}}` renders as literal `{name}`. Backslash has no
+special meaning.
 
 See the [migration section in the README](../README.md#migrating-from-v1) for
 diff-style examples and the

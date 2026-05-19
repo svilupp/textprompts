@@ -105,6 +105,32 @@ class TestNameCollision:
             load_prompt(fp, meta="allow")
         assert exc.value.code == "E_FLAG_AND_VARIABLE_COLLISION"
 
+    def test_declared_variable_used_as_body_flag(self, tmp_path: Path) -> None:
+        fp = _write(
+            tmp_path,
+            """---
+[variables.foo]
+description = "Foo variable"
+---
+{if foo}body{end}""",
+        )
+        with pytest.raises(SemanticError) as exc:
+            load_prompt(fp, metadata="allow")
+        assert exc.value.code == "E_FLAG_AND_VARIABLE_COLLISION"
+
+    def test_declared_flag_used_as_body_variable(self, tmp_path: Path) -> None:
+        fp = _write(
+            tmp_path,
+            """---
+[flags.foo]
+description = "Foo flag"
+---
+Value: {foo}""",
+        )
+        with pytest.raises(SemanticError) as exc:
+            load_prompt(fp, metadata="allow")
+        assert exc.value.code == "E_FLAG_AND_VARIABLE_COLLISION"
+
 
 class TestImplicitMode:
     def test_undeclared_body_flag_ok_in_allow(self, tmp_path: Path) -> None:

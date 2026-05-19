@@ -68,3 +68,20 @@ def test_separator_two_blank_preserves_one() -> None:
     """Two blank lines after ``---``: one is the separator, one is body."""
     prompt = Prompt.from_string("---\n" + _META + "\n---\n\n\nBody", metadata="allow")
     assert str(prompt.prompt) == "\nBody"
+
+
+def test_frontmatter_delimiter_must_be_line() -> None:
+    """A leading ``---`` substring is body text unless it is a delimiter line."""
+    prompt = Prompt.from_string("---not frontmatter\nBody", metadata="allow")
+    assert str(prompt.prompt) == "---not frontmatter\nBody"
+
+
+def test_frontmatter_delimiter_inside_header_value_is_not_closing() -> None:
+    prompt = Prompt.from_string(
+        '---\ntitle = "a---b"\n---\nBody',
+        metadata="allow",
+    )
+
+    assert prompt.meta is not None
+    assert prompt.meta.title == "a---b"
+    assert str(prompt.prompt) == "Body"

@@ -20,10 +20,9 @@ def main():
     try:
         result = regular_template.format(name="Alice", status="shipped")
         print(f"   Regular string result: '{result}'")
-        print("   Notice the unfilled {order_id} placeholder!")
     except KeyError as e:
         print(f"   KeyError: {e}")
-        print("   Cryptic error message!")
+        print("   No prompt-specific context about what went wrong.")
 
     print()
 

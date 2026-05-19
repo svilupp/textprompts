@@ -44,19 +44,19 @@ def test_missing_fields_error_message(fixtures: Path) -> None:
     assert "Missing required metadata fields" in error_msg
     assert "description" in error_msg
     assert "version" in error_msg
-    assert "meta=MetadataMode.ALLOW" in error_msg
+    assert "metadata=MetadataMode.ALLOW" in error_msg
 
 
 def test_starts_with_dash_suggests_ignore_meta(fixtures: Path) -> None:
-    """Test that files starting with --- suggest using meta=ignore"""
+    """Test that files starting with --- suggest using metadata=ignore"""
     with pytest.raises(InvalidMetadataError) as exc_info:
         load_prompt(fixtures / "starts_with_dash.txt", meta="strict")
     error_msg = str(exc_info.value)
-    assert "meta=MetadataMode.IGNORE" in error_msg
+    assert "metadata=MetadataMode.IGNORE" in error_msg
 
 
 def test_starts_with_dash_ignore_meta_works(fixtures: Path) -> None:
-    """Test that meta=ignore works for files starting with ---"""
+    """Test that the deprecated meta=ignore alias still works for files starting with ---"""
     prompt = load_prompt(fixtures / "starts_with_dash.txt", meta="ignore")
     assert prompt.meta is not None
     assert prompt.meta.title == "starts_with_dash"

@@ -80,19 +80,24 @@ describe("lexer — control tags", () => {
 });
 
 describe("lexer — escapes (§2.4)", () => {
-  test("\\{ renders as literal { in text", () => {
-    expect(tok("a\\{b}c")).toEqual([{ kind: "Text", value: "a{b}c", line: 1, column: 1 }]);
+  test("{{ and }} collapse to literal { and } in text", () => {
+    expect(tok("a{{b}}c")).toEqual([{ kind: "Text", value: "a{b}c", line: 1, column: 1 }]);
   });
 
-  test("\\\\ renders as literal backslash", () => {
-    expect(tok("a\\\\b")).toEqual([{ kind: "Text", value: "a\\b", line: 1, column: 1 }]);
+  test("backslash has no special meaning and renders literally", () => {
+    // Source `a\b` (one backslash between two letters): one Text token,
+    // value still `a\b` — the backslash is plain text.
+    expect(tok("a\\b")).toEqual([{ kind: "Text", value: "a\\b", line: 1, column: 1 }]);
   });
 
-  test("\\} renders as literal }", () => {
-    expect(tok("\\}")).toEqual([{ kind: "Text", value: "}", line: 1, column: 1 }]);
+  test("{{name}} renders as literal {name}, NOT a placeholder", () => {
+    const t = tok("{{name}}");
+    expect(t).toEqual([{ kind: "Text", value: "{name}", line: 1, column: 1 }]);
+    // Key behavior: no Placeholder/Variable token is emitted.
+    expect(t.some((x) => x.kind === "Variable")).toBe(false);
   });
 
-  test("\\n is literal two characters, not a newline", () => {
+  test("any backslash sequence stays literal (no \\n -> newline)", () => {
     expect(tok("a\\nb")).toEqual([{ kind: "Text", value: "a\\nb", line: 1, column: 1 }]);
   });
 });

@@ -40,18 +40,19 @@ typecheck: ## Run type checking with ty
 
 test: ## Run tests
 	@echo "$(BLUE)Running tests...$(RESET)"
-	uv run pytest tests/ -v
+	uv run python -m pytest tests/ -v
 	@echo "$(GREEN)✓ All tests passed$(RESET)"
 
 test-cov: ## Run tests with coverage
 	@echo "$(BLUE)Running tests with coverage...$(RESET)"
-	uv run pytest tests/ --cov=textprompts --cov-report=term-missing --cov-report=html
+	uv run python -m pytest tests/ --cov=textprompts --cov-report=term-missing --cov-report=html
 	@echo "$(GREEN)✓ Tests with coverage completed$(RESET)"
 
 test-examples: ## Test offline example scripts
 	@echo "$(BLUE)Testing offline example scripts...$(RESET)"
 	uv run python examples/simple_format_demo.py > /dev/null
 	uv run python examples/basic_usage.py > /dev/null
+	uv run python examples/pydantic_ai_example.py > /dev/null
 	@echo "$(GREEN)✓ Offline examples work$(RESET)"
 
 # Runs examples that require provider credentials
@@ -61,7 +62,7 @@ test-examples-ai: ## Test AI SDK example scripts (requires OPENAI_API_KEY)
 	@if [ -z "$$OPENAI_API_KEY" ]; then \
 		echo "$(YELLOW)Skipping AI examples: OPENAI_API_KEY is not set$(RESET)"; \
 	else \
-		uv run python examples/pydantic_ai_example.py > /dev/null; \
+		TEXTPROMPTS_EXAMPLE_REAL_AI=1 uv run --group test python examples/pydantic_ai_example.py > /dev/null; \
 		echo "$(GREEN)✓ AI examples work$(RESET)"; \
 	fi
 

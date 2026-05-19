@@ -1,8 +1,10 @@
 """Tests for the v2 ``PromptString`` wrapper.
 
 ``PromptString`` is a thin ``str`` subclass whose ``.format()`` delegates to
-the v2 syntax engine (lex/parse/validate/render). v1 patterns (positional
-``{0}``, empty ``{}``, ``{{...}}`` escape, ``skip_validation``) are removed.
+the v2 syntax engine (lex/parse/validate/render). Positional ``{0}``, empty
+``{}``, and ``skip_validation`` are not part of the v2 grammar. ``{{...}}``
+is the double-brace escape: doubled braces collapse to single literal braces
+in the rendered output.
 """
 
 from __future__ import annotations
@@ -103,13 +105,12 @@ def test_legacy_format_specifier_rejected() -> None:
         s.format(text="hi")
 
 
-def test_double_brace_is_literal_not_escape() -> None:
-    """`{{literal}}` was a v1 escape for `{literal}`. In v2 it is two
-    consecutive `{` chars followed by a variable token; the lexer rejects it.
+def test_double_brace_is_literal_escape() -> None:
+    """`{{literal}}` renders as the literal text `{literal}`. Doubled
+    braces collapse to single braces; the inner text is not a placeholder.
     """
     s = PromptString("{{literal}} but {real}")
-    with pytest.raises(ParseError):
-        s.format(real="actual")
+    assert s.format(real="actual") == "{literal} but actual"
 
 
 def test_flags_kwarg_is_reserved() -> None:

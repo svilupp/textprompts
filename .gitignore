@@ -218,3 +218,9 @@ CLAUDE.local.md
 
 # Local Go tooling
 packages/textprompts-go/.tooling/
+
+# Local planning docs (not for release)
+PLAN.md
+PLAN_*.md
+**/PLAN.md
+**/PLAN_*.md

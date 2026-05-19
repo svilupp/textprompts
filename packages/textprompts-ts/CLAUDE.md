@@ -78,8 +78,10 @@ packages/textprompts-ts/
   re-exported from `index.ts`.
 - **Loader options are `metadata` and `frontmatterFormat`** on `PromptLoadOptions`.
   The legacy `meta:` option, `skipValidation`, positional `{0}` placeholders,
-  empty `{}` placeholders, and `{{...}}` escapes were removed in v2 — escape with
-  `\{` / `\}` / `\\`.
+  and empty `{}` placeholders were removed in v2. Escapes use double braces:
+  `{{` collapses to a literal `{` and `}}` to a literal `}` (so `{{name}}` is
+  literal text `{name}`, not a placeholder). Backslash has no special meaning
+  and renders literally.
 - **`format(inputs)` takes a single object**: `flags` is reserved (typed
   `Record<string, boolean | string>`); all other top-level keys are variables.
 - **Errors carry a stable string `code`** (e.g. `E_UNDECLARED_FLAG`,

@@ -1,6 +1,4 @@
 """SPEC §8.1: Minimal -- no frontmatter (implicit mode). Requires textprompts>=2.0.
-
-v2 only. Engine not yet implemented in Python; reference content until PHASE-3..6 land.
 """
 
 from pathlib import Path

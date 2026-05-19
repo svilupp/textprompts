@@ -40,20 +40,36 @@ def _split_front_matter(text: str) -> tuple[Optional[str], str]:
     """
     Returns (header, body). Header may be None.
 
-    Strict parsing: only considers "---" at the very beginning of the file
-    (no leading whitespace) as valid front matter delimiter.
+    Strict parsing: only considers a line containing exactly "---" at the very
+    beginning of the file (no leading whitespace) as a valid front matter
+    delimiter.
     """
-    # Must start exactly with "---" (no leading whitespace)
-    if not text.startswith(DELIM):
+    # Must start with an exact "---" delimiter line.
+    if not (text == DELIM or text.startswith(f"{DELIM}\n")):
         return None, text
+    if text == DELIM:
+        raise MalformedHeaderError("Missing closing delimiter '---' for front matter")
 
-    # Find second delimiter after the first
-    second_delim = text.find(DELIM, len(DELIM))
+    # Find the next exact "---" delimiter line. A "---" substring inside TOML or
+    # YAML content (for example title = "a---b") is regular header text.
+    search_from = len(f"{DELIM}\n") - 1
+    second_delim = -1
+    while True:
+        marker = text.find(f"\n{DELIM}", search_from)
+        if marker == -1:
+            break
+        candidate = marker + 1
+        after = candidate + len(DELIM)
+        if after == len(text) or text[after] == "\n":
+            second_delim = candidate
+            break
+        search_from = after
     if second_delim == -1:
         raise MalformedHeaderError("Missing closing delimiter '---' for front matter")
 
     # Extract header and body
-    header = text[len(DELIM) : second_delim].strip()
+    header_start = len(f"{DELIM}\n")
+    header = text[header_start:second_delim].strip()
     # SPEC §4.1: consume the newline that terminates the closing '---' line,
     # then optionally consume EXACTLY ONE blank-separator line. Additional
     # blank lines beyond that are body content and must be preserved.
@@ -157,7 +173,7 @@ def _parse_header(
         if not isinstance(result, dict):
             raise InvalidMetadataError(
                 f"Front matter must be a mapping, got {type(result).__name__}. "
-                f"Use meta=MetadataMode.IGNORE to skip metadata parsing."
+                f"Use metadata=MetadataMode.IGNORE to skip metadata parsing."
             )
         return _normalize_yaml_values(result)
 
@@ -167,7 +183,7 @@ def _parse_header(
         except tomllib.TOMLDecodeError as toml_err:
             raise InvalidMetadataError(
                 f"Invalid TOML in front matter: {toml_err}. "
-                f"Use meta=MetadataMode.IGNORE to skip metadata parsing."
+                f"Use metadata=MetadataMode.IGNORE to skip metadata parsing."
             ) from toml_err
 
     if frontmatter_format == "yaml":
@@ -176,7 +192,7 @@ def _parse_header(
         except _YamlParseError as yaml_err:
             raise InvalidMetadataError(
                 f"Invalid YAML in front matter: {yaml_err}. "
-                f"Use meta=MetadataMode.IGNORE to skip metadata parsing."
+                f"Use metadata=MetadataMode.IGNORE to skip metadata parsing."
             ) from yaml_err
 
     # "auto" — TOML first, YAML fallback.
@@ -190,7 +206,7 @@ def _parse_header(
             # (preserves v1 backwards compatibility).
             raise InvalidMetadataError(
                 f"Invalid TOML in front matter: {toml_err}. "
-                f"Use meta=MetadataMode.IGNORE to skip metadata parsing."
+                f"Use metadata=MetadataMode.IGNORE to skip metadata parsing."
             ) from toml_err
 
 
@@ -269,7 +285,7 @@ def parse_file(
         if normalized.startswith(DELIM):
             raise InvalidMetadataError(
                 f"{e}. If this file has no metadata and starts with '---', "
-                f"use meta=MetadataMode.IGNORE to skip metadata parsing."
+                f"use metadata=MetadataMode.IGNORE to skip metadata parsing."
             ) from e
         raise  # pragma: no cover - reraised to preserve stack
 
@@ -288,7 +304,7 @@ def parse_file(
                         f"Missing required metadata fields: "
                         f"{', '.join(sorted(missing_fields))}. "
                         f"STRICT mode requires 'title', 'description', and "
-                        f"'version' fields. Use meta=MetadataMode.ALLOW for "
+                        f"'version' fields. Use metadata=MetadataMode.ALLOW for "
                         f"less strict validation."
                     )
 
@@ -303,7 +319,7 @@ def parse_file(
                         f"{', '.join(sorted(empty_fields))}. "
                         f"STRICT mode requires non-empty 'title', "
                         f"'description', and 'version' fields. Use "
-                        f"meta=MetadataMode.ALLOW for less strict validation."
+                        f"metadata=MetadataMode.ALLOW for less strict validation."
                     )
 
             meta = _ensure_prompt_meta(data)
@@ -326,7 +342,7 @@ def parse_file(
             raise MissingMetadataError(
                 f"No metadata found in {path}. STRICT mode requires metadata "
                 f"with title, description, and version fields. Use "
-                f"meta=MetadataMode.ALLOW or meta=MetadataMode.IGNORE for "
+                f"metadata=MetadataMode.ALLOW or metadata=MetadataMode.IGNORE for "
                 f"less strict validation."
             )
     else:
@@ -335,7 +351,7 @@ def parse_file(
             raise MissingMetadataError(
                 f"No metadata found in {path}. STRICT mode requires metadata "
                 f"with title, description, and version fields. Use "
-                f"meta=MetadataMode.ALLOW or meta=MetadataMode.IGNORE for "
+                f"metadata=MetadataMode.ALLOW or metadata=MetadataMode.IGNORE for "
                 f"less strict validation."
             )
         meta = PromptMeta()

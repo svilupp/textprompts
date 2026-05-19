@@ -69,9 +69,7 @@ def demonstrate_ignore_mode(test_dir):
     """Demonstrate IGNORE mode - simple file loading."""
     print("2. IGNORE Mode - Simple File Loading")
     print("=" * 50)
-    print(
-        "✨ Perfect for: Treating prompts as plain text and skipping metadata parsing\n"
-    )
+    print("Good for: Treating prompts as plain text and skipping metadata parsing\n")
 
     # Set global mode to IGNORE explicitly and suppress warnings for the demo
     textprompts.skip_metadata(skip_warning=True)
@@ -82,12 +80,12 @@ def demonstrate_ignore_mode(test_dir):
         file_path = os.path.join(test_dir, filename)
         try:
             prompt = textprompts.load_prompt(file_path)
-            print(f"✅ {filename}:")
+            print(f"OK {filename}:")
             print(f"   Title: {prompt.meta.title} (from filename)")
             print(f"   Content preview: {str(prompt.prompt)[:60]}...")
             print()
         except Exception as e:
-            print(f"❌ {filename}: {type(e).__name__}: {e}")
+            print(f"ERROR {filename}: {type(e).__name__}: {e}")
             print()
 
 
@@ -95,9 +93,7 @@ def demonstrate_allow_mode(test_dir):
     """Demonstrate ALLOW mode - flexible metadata loading."""
     print("1. ALLOW Mode (Default) - Flexible Metadata Loading")
     print("=" * 50)
-    print(
-        "✨ Perfect for: Loading metadata when available, not strict about completeness\n"
-    )
+    print("Good for: Loading metadata when available, not strict about completeness\n")
 
     # Set global mode to ALLOW
     textprompts.set_metadata("allow")
@@ -108,14 +104,14 @@ def demonstrate_allow_mode(test_dir):
         file_path = os.path.join(test_dir, filename)
         try:
             prompt = textprompts.load_prompt(file_path)
-            print(f"✅ {filename}:")
+            print(f"OK {filename}:")
             print(f"   Title: {prompt.meta.title}")
             print(f"   Description: {prompt.meta.description}")
             print(f"   Version: {prompt.meta.version}")
             print(f"   Author: {prompt.meta.author}")
             print()
         except Exception as e:
-            print(f"❌ {filename}: {type(e).__name__}: {e}")
+            print(f"ERROR {filename}: {type(e).__name__}: {e}")
             print()
 
 
@@ -124,7 +120,7 @@ def demonstrate_strict_mode(test_dir):
     print("3. STRICT Mode - Production-Safe Loading")
     print("=" * 50)
     print(
-        "✨ Perfect for: Production deployments, ensuring all prompts have complete metadata\n"
+        "Good for: Production deployments, ensuring all prompts have complete metadata\n"
     )
 
     # Set global mode to STRICT
@@ -136,13 +132,13 @@ def demonstrate_strict_mode(test_dir):
         file_path = os.path.join(test_dir, filename)
         try:
             prompt = textprompts.load_prompt(file_path)
-            print(f"✅ {filename}: VALID")
+            print(f"OK {filename}: VALID")
             print(f"   Title: {prompt.meta.title}")
             print(f"   Description: {prompt.meta.description}")
             print(f"   Version: {prompt.meta.version}")
             print()
         except Exception as e:
-            print(f"❌ {filename}: {type(e).__name__}")
+            print(f"ERROR {filename}: {type(e).__name__}")
             print(f"   Error: {str(e)[:100]}...")
             print()
 
@@ -152,7 +148,7 @@ def demonstrate_per_prompt_override(test_dir):
     print("4. Per-Prompt Override - Mix Different Modes")
     print("=" * 50)
     print(
-        "✨ Perfect for: Using different modes for different files in the same application\n"
+        "Good for: Using different modes for different files in the same application\n"
     )
 
     # Set global to one mode, then override per prompt
@@ -168,21 +164,21 @@ def demonstrate_per_prompt_override(test_dir):
     modes = ["allow", "ignore", "strict"]
 
     for mode in modes:
-        print(f"Loading complete.txt with meta='{mode}':")
+        print(f"Loading complete.txt with metadata='{mode}':")
         try:
-            prompt = textprompts.load_prompt(complete_path, meta=mode)
-            print(f"   ✅ Success - Title: {prompt.meta.title}")
+            prompt = textprompts.load_prompt(complete_path, metadata=mode)
+            print(f"   Success - Title: {prompt.meta.title}")
         except Exception as e:
-            print(f"   ❌ {type(e).__name__}: {e}")
+            print(f"   {type(e).__name__}: {e}")
         print()
 
     for mode in modes:
-        print(f"Loading simple.txt with meta='{mode}':")
+        print(f"Loading simple.txt with metadata='{mode}':")
         try:
-            prompt = textprompts.load_prompt(simple_path, meta=mode)
-            print(f"   ✅ Success - Title: {prompt.meta.title}")
+            prompt = textprompts.load_prompt(simple_path, metadata=mode)
+            print(f"   Success - Title: {prompt.meta.title}")
         except Exception as e:
-            print(f"   ❌ {type(e).__name__}: {e}")
+            print(f"   {type(e).__name__}: {e}")
         print()
 
 
@@ -191,25 +187,25 @@ def demonstrate_use_cases(test_dir):
     print("5. Real-World Use Cases")
     print("=" * 50)
 
-    print("📝 IGNORE Mode Use Cases:")
-    print("   • Quick prototyping and experimentation")
-    print("   • Simple prompt management without metadata overhead")
-    print("   • Converting existing text files to prompts")
-    print("   • Educational examples and tutorials")
+    print("IGNORE Mode Use Cases:")
+    print("   - Quick prototyping and experimentation")
+    print("   - Simple prompt management without metadata overhead")
+    print("   - Converting existing text files to prompts")
+    print("   - Educational examples and tutorials")
     print()
 
-    print("🔄 ALLOW Mode Use Cases:")
-    print("   • Development environments with mixed prompt types")
-    print("   • Gradual migration from simple to structured prompts")
-    print("   • Third-party prompt collections with varying metadata")
-    print("   • Flexible prompt libraries")
+    print("ALLOW Mode Use Cases:")
+    print("   - Development environments with mixed prompt types")
+    print("   - Gradual migration from simple to structured prompts")
+    print("   - Third-party prompt collections with varying metadata")
+    print("   - Flexible prompt libraries")
     print()
 
-    print("🔒 STRICT Mode Use Cases:")
-    print("   • Production deployments requiring complete documentation")
-    print("   • Regulated environments needing full traceability")
-    print("   • Team workflows with mandatory metadata standards")
-    print("   • Quality assurance and compliance checking")
+    print("STRICT Mode Use Cases:")
+    print("   - Production deployments requiring complete documentation")
+    print("   - Regulated environments needing full traceability")
+    print("   - Team workflows with mandatory metadata standards")
+    print("   - Quality assurance and compliance checking")
     print()
 
     # Show a practical example
@@ -222,22 +218,22 @@ def demonstrate_use_cases(test_dir):
 
     try:
         dev_prompts = [
-            textprompts.load_prompt(str(p), meta="allow")
+            textprompts.load_prompt(str(p), metadata="allow")
             for p in sorted(Path(test_dir).glob("*.txt"))
         ]
-        print(f"✅ Development: Loaded {len(dev_prompts)} prompts with ALLOW mode")
+        print(f"Development: Loaded {len(dev_prompts)} prompts with ALLOW mode")
     except Exception as e:
-        print(f"❌ Development: {e}")
+        print(f"Development failed: {e}")
 
     # Production: Use STRICT mode for safety
     try:
         prod_prompts = [
-            textprompts.load_prompt(str(p), meta="strict")
+            textprompts.load_prompt(str(p), metadata="strict")
             for p in sorted(Path(test_dir).glob("*.txt"))
         ]
-        print(f"✅ Production: {len(prod_prompts)} prompts passed STRICT validation")
+        print(f"Production: {len(prod_prompts)} prompts passed STRICT validation")
     except Exception as e:
-        print(f"❌ Production: Failed STRICT validation - {type(e).__name__}")
+        print(f"Production failed STRICT validation: {type(e).__name__}")
 
     print()
 
@@ -259,15 +255,15 @@ def main():
         demonstrate_per_prompt_override(test_dir)
         demonstrate_use_cases(test_dir)
 
-        print("🎉 All metadata mode demonstrations completed!")
+        print("All metadata mode demonstrations completed.")
         print()
-        print("💡 Quick Reference:")
+        print("Quick Reference:")
         print(
             "   textprompts.set_metadata('allow')   # Default: load metadata when available"
         )
         print("   textprompts.set_metadata('ignore')  # Simple: no metadata parsing")
         print("   textprompts.set_metadata('strict')  # Production-safe validation")
-        print("   load_prompt('file.txt', meta='...')  # Per-prompt override")
+        print("   load_prompt('file.txt', metadata='...')  # Per-prompt override")
 
     finally:
         # Cleanup

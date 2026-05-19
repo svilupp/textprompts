@@ -2,16 +2,19 @@
 
 Rendered source → output pairs for every conditional form, plus a few
 end-to-end integration recipes. Every example uses the v2 API
-(`prompt.format({ flags, ...vars })`); none use positional placeholders,
-double-brace escapes, or `PromptString`.
+(`prompt.format({ flags, ...vars })`); none use positional placeholders or
+`PromptString`.
 
 For runnable scripts, see [`../examples/`](../examples/).
 
 ## v2 breaking changes
 
-- Positional placeholders, empty placeholders, and `{{...}}` escapes are gone.
+- Positional and empty placeholders are gone.
 - `Prompt.format(args, kwargs, options)` overloads are gone.
 - `PromptString` is no longer a public export — use `Prompt.fromString`.
+
+Escapes use double braces: `{{` -> `{`, `}}` -> `}`, so `{{name}}` is
+literal text `{name}`, not a placeholder.
 
 See [Migrating from v1](../README.md#migrating-from-v1) for diffs.
 
@@ -322,7 +325,7 @@ two-space indent. The body line `  body line` keeps its leading two spaces.
 Source:
 
 ```
-JSON spec: \{"name": "{value}"\}
+JSON spec: {{"name": "{value}"}}
 ```
 
 With `value = "Alice"`:
@@ -331,8 +334,10 @@ With `value = "Alice"`:
 JSON spec: {"name": "Alice"}
 ```
 
-The backslash escapes (`\{`, `\}`, `\\`) are the only escapes the lexer
-recognizes.
+`{{` collapses to a literal `{` and `}}` to a literal `}`, so `{{name}}`
+renders as the literal text `{name}` (NOT a placeholder reference). These
+are the only escapes the lexer recognizes; backslash has no special meaning
+and renders literally.
 
 ---
 
