@@ -113,3 +113,35 @@ Content here""")
     repr_str = repr(prompt)
     assert "Test Title" in repr_str
     assert "1.0" in repr_str
+
+
+class TestFrontmatterFormat:
+    """Tests for the new ``frontmatter_format`` loader option (PHASE-4 / SPEC §4.1)."""
+
+    def test_toml_format_rejects_yaml_only_header(self, tmp_path: Path) -> None:
+        fp = tmp_path / "p.txt"
+        fp.write_text("---\ntitle: yaml only\n---\nbody")
+        with pytest.raises(InvalidMetadataError, match="Invalid TOML"):
+            load_prompt(fp, meta="allow", frontmatter_format="toml")
+
+    def test_yaml_format_accepts_yaml_only_header(self, tmp_path: Path) -> None:
+        fp = tmp_path / "p.txt"
+        fp.write_text("---\ntitle: yaml only\n---\nbody")
+        prompt = load_prompt(fp, meta="allow", frontmatter_format="yaml")
+        assert prompt.meta is not None
+        assert prompt.meta.title == "yaml only"
+
+    def test_auto_format_tries_both(self, tmp_path: Path) -> None:
+        fp = tmp_path / "p.txt"
+        fp.write_text("---\ntitle: yaml only\n---\nbody")
+        prompt = load_prompt(fp, meta="allow", frontmatter_format="auto")
+        assert prompt.meta is not None
+        assert prompt.meta.title == "yaml only"
+
+    def test_auto_format_default_behavior_unchanged(self, tmp_path: Path) -> None:
+        """No explicit format → "auto" — TOML-first-then-YAML still works."""
+        fp = tmp_path / "p.txt"
+        fp.write_text('---\ntitle = "toml here"\n---\nbody')
+        prompt = load_prompt(fp, meta="allow")
+        assert prompt.meta is not None
+        assert prompt.meta.title == "toml here"

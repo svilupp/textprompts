@@ -99,7 +99,9 @@ Test content""")
             with patch("sys.argv", ["textprompts", str(test_file)]):
                 main()
 
-            mock_load.assert_called_once_with(test_file, meta="ignore")
+            mock_load.assert_called_once_with(
+                test_file, metadata="ignore", frontmatter_format="auto"
+            )
 
     def test_main_with_empty_metadata(self, tmp_path: Path, capsys: Any) -> None:
         """Test that main() handles empty metadata correctly for JSON output."""

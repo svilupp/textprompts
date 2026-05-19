@@ -662,7 +662,13 @@ def _unique_generated_anchor(base: str, used: set[str]) -> str:
         suffix += 1
 
 
-def _normalize_anchor_id(value: str) -> str:
+def normalize_anchor_id(value: str) -> str:
+    """Normalize a string into the canonical anchor-id form.
+
+    Lowercase ASCII alphanumerics are preserved; other characters collapse to a
+    single ``_`` separator. Leading and trailing underscores are stripped and an
+    empty result becomes ``"section"``. See cross-language invariants.
+    """
     out: list[str] = []
     last_was_underscore = False
     for char in value.lower():
@@ -678,6 +684,10 @@ def _normalize_anchor_id(value: str) -> str:
 
     normalized = "".join(out)
     return normalized or "section"
+
+
+# Internal alias retained for existing call sites.
+_normalize_anchor_id = normalize_anchor_id
 
 
 def _register_anchor(

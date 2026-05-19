@@ -54,14 +54,14 @@ class TestExtrasBasicCustomFields:
         )
         prompt = load_prompt(fp, meta="allow")
         assert prompt.meta is not None
-        assert prompt.meta.extras is None
+        assert prompt.meta.extras == {}
 
     def test_extras_absent_when_no_frontmatter(self, tmp_path: Path) -> None:
         fp = tmp_path / "test.txt"
         fp.write_text("Just body content")
         prompt = load_prompt(fp, meta="allow")
         assert prompt.meta is not None
-        assert prompt.meta.extras is None
+        assert prompt.meta.extras == {}
 
 
 class TestExtrasArrays:
