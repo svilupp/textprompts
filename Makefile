@@ -1,4 +1,4 @@
-.PHONY: help install install-dev lint format typecheck test test-cov clean build publish docs docs-serve all check ex-test ex-check ex-docs ex-test-examples test-examples-ai
+.PHONY: help install install-dev lint format typecheck test test-cov clean build publish docs docs-serve all check ex-test ex-check ex-docs ex-test-examples test-examples-ai ts-test ts-typecheck ts-lint ts-format-check ts-check
 .DEFAULT_GOAL := help
 
 # Colors for terminal output
@@ -7,6 +7,18 @@ GREEN := \033[32m
 YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
+
+# Run a command quietly: suppress stdout+stderr on exit code 0,
+# print the full captured output and propagate the exit code on failure.
+# Usage: $(call quiet, some command here)
+define quiet
+@out=$$(mktemp); \
+if $(strip $(1)) > $$out 2>&1; then \
+	rm -f $$out; \
+else \
+	rc=$$?; cat $$out; rm -f $$out; exit $$rc; \
+fi
+endef
 
 help: ## Show this help message
 	@echo "$(BLUE)TextPrompts Development Commands$(RESET)"
@@ -24,7 +36,7 @@ install-dev: ## Install package with all development dependencies
 
 lint: ## Run linting checks
 	@echo "$(BLUE)Running linting checks...$(RESET)"
-	uv run ruff check .
+	$(call quiet, uv run ruff check .)
 	@echo "$(GREEN)✓ Linting passed$(RESET)"
 
 format: ## Format code with ruff
@@ -35,24 +47,24 @@ format: ## Format code with ruff
 
 typecheck: ## Run type checking with ty
 	@echo "$(BLUE)Running type checks...$(RESET)"
-	uv run ty check src
+	$(call quiet, uv run ty check src)
 	@echo "$(GREEN)✓ Type checking passed$(RESET)"
 
 test: ## Run tests
 	@echo "$(BLUE)Running tests...$(RESET)"
-	uv run python -m pytest tests/ -v
+	$(call quiet, uv run python -m pytest tests/)
 	@echo "$(GREEN)✓ All tests passed$(RESET)"
 
 test-cov: ## Run tests with coverage
 	@echo "$(BLUE)Running tests with coverage...$(RESET)"
-	uv run python -m pytest tests/ --cov=textprompts --cov-report=term-missing --cov-report=html
+	$(call quiet, uv run python -m pytest tests/ --cov=textprompts --cov-report=term-missing --cov-report=html)
 	@echo "$(GREEN)✓ Tests with coverage completed$(RESET)"
 
 test-examples: ## Test offline example scripts
 	@echo "$(BLUE)Testing offline example scripts...$(RESET)"
-	uv run python examples/simple_format_demo.py > /dev/null
-	uv run python examples/basic_usage.py > /dev/null
-	uv run python examples/pydantic_ai_example.py > /dev/null
+	$(call quiet, uv run python examples/simple_format_demo.py)
+	$(call quiet, uv run python examples/basic_usage.py)
+	$(call quiet, uv run python examples/pydantic_ai_example.py)
 	@echo "$(GREEN)✓ Offline examples work$(RESET)"
 
 # Runs examples that require provider credentials
@@ -62,8 +74,13 @@ test-examples-ai: ## Test AI SDK example scripts (requires OPENAI_API_KEY)
 	@if [ -z "$$OPENAI_API_KEY" ]; then \
 		echo "$(YELLOW)Skipping AI examples: OPENAI_API_KEY is not set$(RESET)"; \
 	else \
-		TEXTPROMPTS_EXAMPLE_REAL_AI=1 uv run --group test python examples/pydantic_ai_example.py > /dev/null; \
-		echo "$(GREEN)✓ AI examples work$(RESET)"; \
+		out=$$(mktemp); \
+		if TEXTPROMPTS_EXAMPLE_REAL_AI=1 uv run --group test python examples/pydantic_ai_example.py > $$out 2>&1; then \
+			rm -f $$out; \
+			echo "$(GREEN)✓ AI examples work$(RESET)"; \
+		else \
+			rc=$$?; cat $$out; rm -f $$out; exit $$rc; \
+		fi; \
 	fi
 
 clean: ## Clean build artifacts and cache
@@ -134,6 +151,29 @@ ex-docs: ## Build Elixir docs
 	@echo "$(BLUE)Building Elixir docs...$(RESET)"
 	cd packages/textprompts-ex && mix docs
 	@echo "$(GREEN)✓ Elixir docs built$(RESET)"
+
+ts-typecheck: ## Run TypeScript type checks
+	@echo "$(BLUE)Running TS type checks...$(RESET)"
+	$(call quiet, cd packages/textprompts-ts && npm run typecheck)
+	@echo "$(GREEN)✓ TS type checking passed$(RESET)"
+
+ts-format-check: ## Check TypeScript formatting (Biome)
+	@echo "$(BLUE)Checking TS formatting...$(RESET)"
+	$(call quiet, cd packages/textprompts-ts && npm run format:check)
+	@echo "$(GREEN)✓ TS formatting OK$(RESET)"
+
+ts-lint: ## Run TypeScript lint (Biome + oxlint)
+	@echo "$(BLUE)Running TS lint...$(RESET)"
+	$(call quiet, cd packages/textprompts-ts && npm run lint:check)
+	@echo "$(GREEN)✓ TS lint passed$(RESET)"
+
+ts-test: ## Run TypeScript tests (bun)
+	@echo "$(BLUE)Running TS tests...$(RESET)"
+	$(call quiet, cd packages/textprompts-ts && bun test)
+	@echo "$(GREEN)✓ TS tests passed$(RESET)"
+
+ts-check: ts-typecheck ts-format-check ts-lint ts-test ## Run all TypeScript checks (PR gate)
+	@echo "$(GREEN)✓ All TS checks passed!$(RESET)"
 
 ex-test-examples: ## Run all Elixir example scripts
 	@echo "$(BLUE)Running Elixir example scripts...$(RESET)"
