@@ -104,12 +104,28 @@ packages/textprompts-ts/
 
 ## Commands
 
+Prefer the root-Makefile `ts-*` wrappers (from the repo root) when running
+checks during a session — they suppress stdout+stderr on exit 0 and dump the
+full output only on failure, keeping the conversation context clean. Drop down
+to the raw `bun run …` form when you need streaming output (e.g. debugging a
+flaky test, watching `tsup` build progress).
+
+Quiet wrappers (from repo root):
+
+- `make ts-test` — `bun test`
+- `make ts-typecheck` — `tsc --noEmit`
+- `make ts-format-check` — `biome format .`
+- `make ts-lint` — `biome lint` + oxlint
+- `make ts-check` — typecheck + format:check + lint + tests (PR gate)
+
+Raw scripts (streaming output, run from this package):
+
 - `bun test` — full test suite (Bun runtime)
 - `bun run typecheck` — `tsc --noEmit`
 - `bun run format` / `format:check` — Biome formatter (enforced via `format:check`)
 - `bun run lint` / `lint:check` — Biome lint + oxlint
 - `bun run build` — `tsup` dual ESM/CJS build to `dist/`
-- `bun run check` — typecheck + format:check + lint:check + tests (PR gate)
+- `bun run check` — typecheck + format:check + lint:check + tests (PR gate, streaming)
 
 ## Cross-language fixtures and spec
 

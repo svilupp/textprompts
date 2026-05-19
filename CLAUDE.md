@@ -28,9 +28,14 @@ Normative source: `docs/specs/SPEC_conditional_syntax_v2.md`. Conformance corpus
 
 ## Commands
 
+All `make` check targets are quiet on success and dump full stdout+stderr only
+when a command exits non-zero. Prefer them over raw `bun test` / `pytest` /
+`tsc` invocations so the conversation context stays clean.
+
 - Python: `make test` / `make lint` / `make typecheck` / `make check` / `make build`
+- TypeScript: `make ts-test` / `make ts-typecheck` / `make ts-lint` / `make ts-format-check` / `make ts-check`
 - Elixir: `make ex-test` / `make ex-check` / `make ex-docs`
-- Other ports: native (`bun test`, `go test ./...`, `mix test`, ...). See each package's `CLAUDE.md`.
+- Go / Julia: native (`go test ./...`, `julia --project=...`, ...). See each package's `CLAUDE.md`.
 
 ## Rules
 
