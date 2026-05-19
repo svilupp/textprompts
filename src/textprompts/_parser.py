@@ -1,13 +1,18 @@
 from datetime import date
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import yaml  # type: ignore[import-untyped]
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .syntax.ast import Node
 
 try:
     import tomllib
 except ImportError:  # pragma: no cover - Python <3.11 fallback
-    import tomli as tomllib  # type: ignore[import-not-found, no-redef]
+    # ``tomli`` is only installed on Python <3.11; ty resolves modules against
+    # the project's 3.11+ venv where the package is absent.
+    import tomli as tomllib  # type: ignore[import-not-found, no-redef]  # ty: ignore[unresolved-import]
 
 from .config import MetadataMode, warn_on_ignored_metadata
 from .errors import (
@@ -397,7 +402,7 @@ def _parse_and_reconcile_body(
     declared_variables: dict[str, VariableDecl],
     mode: MetadataMode,
     source_path: str | None,
-) -> tuple[tuple, dict[str, FlagDecl]]:
+) -> tuple[tuple["Node", ...], dict[str, FlagDecl]]:
     """Tokenize + parse the body once and run the load-time reconciliation.
 
     Returns ``(ast, implicit_flags)`` where ``ast`` is the parsed body as a

@@ -134,13 +134,13 @@ def _serialize_toml_meta(meta: PromptMeta) -> str:
             )
         lines.append(line)
 
-    for name, decl in meta.flags.items():
+    for flag_name, flag_decl in meta.flags.items():
         lines.append("")
-        lines.extend(_toml_flag_lines(name, decl))
+        lines.extend(_toml_flag_lines(flag_name, flag_decl))
 
-    for name, decl in meta.variables.items():
+    for var_name, var_decl in meta.variables.items():
         lines.append("")
-        lines.extend(_toml_variable_lines(name, decl))
+        lines.extend(_toml_variable_lines(var_name, var_decl))
 
     lines.append("---")
     return "\n".join(lines)
@@ -169,26 +169,26 @@ def _serialize_yaml_meta(meta: PromptMeta) -> str:
 
     if meta.flags:
         flags_obj: dict[str, Any] = {}
-        for name, decl in meta.flags.items():
-            entry: dict[str, Any] = {"type": decl.kind}
-            if decl.kind == "enum":
-                entry["values"] = list(decl.values or ())
-            if decl.description is not None:
-                entry["description"] = decl.description
-            for k, v in decl.extras.items():
+        for flag_name, flag_decl in meta.flags.items():
+            entry: dict[str, Any] = {"type": flag_decl.kind}
+            if flag_decl.kind == "enum":
+                entry["values"] = list(flag_decl.values or ())
+            if flag_decl.description is not None:
+                entry["description"] = flag_decl.description
+            for k, v in flag_decl.extras.items():
                 entry[k] = v
-            flags_obj[name] = entry
+            flags_obj[flag_name] = entry
         root["flags"] = flags_obj
 
     if meta.variables:
         vars_obj: dict[str, Any] = {}
-        for name, decl in meta.variables.items():
-            entry = {}
-            if decl.description is not None:
-                entry["description"] = decl.description
-            for k, v in decl.extras.items():
-                entry[k] = v
-            vars_obj[name] = entry
+        for var_name, var_decl in meta.variables.items():
+            var_entry: dict[str, Any] = {}
+            if var_decl.description is not None:
+                var_entry["description"] = var_decl.description
+            for k, v in var_decl.extras.items():
+                var_entry[k] = v
+            vars_obj[var_name] = var_entry
         root["variables"] = vars_obj
 
     body = yaml_lib.dump(root, default_flow_style=False, sort_keys=False).rstrip("\n")

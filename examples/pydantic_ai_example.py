@@ -50,7 +50,7 @@ def example_1_direct_formatting():
 
     # Setup
     prompt_dir = create_prompts()
-    system_prompt = load_prompt(prompt_dir / "system.txt", meta="allow")
+    system_prompt = load_prompt(prompt_dir / "system.txt", metadata="allow")
     customer = CustomerInfo(name="Alice", company="ACME Corp", tier="Premium")
 
     # Format the system prompt directly
@@ -87,7 +87,7 @@ def example_2_single_decorator():
 
     # Setup
     prompt_dir = create_prompts()
-    system_prompt = load_prompt(prompt_dir / "system.txt", meta="allow")
+    system_prompt = load_prompt(prompt_dir / "system.txt", metadata="allow")
     customer = CustomerInfo(name="Bob", company="TechCorp", tier="Standard")
 
     # Create agent with no system prompt in constructor

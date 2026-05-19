@@ -11,7 +11,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from textprompts import PromptString, load_prompt, save_prompt
+from textprompts import FormatError, PromptString, load_prompt, save_prompt
 
 
 def create_example_prompts():
@@ -116,7 +116,7 @@ def demonstrate_single_prompt_loading(prompt_dir):
 
     # Load greeting prompt
     greeting_path = os.path.join(prompt_dir, "customer", "greeting.txt")
-    greeting = load_prompt(greeting_path, meta="allow")
+    greeting = load_prompt(greeting_path, metadata="allow")
 
     print(f"Loaded: {greeting.meta.title}")
     print(f"Version: {greeting.meta.version}")
@@ -143,16 +143,16 @@ def demonstrate_multiple_prompt_loading(prompt_dir):
 
     # Load all prompts recursively (allow metadata parsing for files that have it)
     prompts = [
-        load_prompt(str(p), meta="allow")
+        load_prompt(str(p), metadata="allow")
         for p in sorted(Path(prompt_dir).rglob("*.txt"))
     ]
 
     print(f"Loaded {len(prompts)} prompts:")
     for prompt in prompts:
         if prompt.meta.version:
-            print(f"  • {prompt.meta.title} (v{prompt.meta.version})")
+            print(f"  - {prompt.meta.title} (v{prompt.meta.version})")
         else:
-            print(f"  • {prompt.meta.title} (from filename)")
+            print(f"  - {prompt.meta.title} (from filename)")
 
     # Create a lookup by title (all prompts now have metadata)
     prompt_lookup = {p.meta.title: p for p in prompts}
@@ -181,58 +181,40 @@ def demonstrate_safestring():
     print("3. PromptString Validation")
     print("-" * 30)
 
-    # Create a template with variables
     template = PromptString(
         "Order {order_id} for {customer} is {status}. Total: ${amount}"
     )
 
     print("Template:", template)
-    print("Placeholders:", template.placeholders)
 
-    # Successful formatting (all placeholders provided)
     try:
         result = template.format(
             order_id="12345", customer="Alice", status="shipped", amount="99.99"
         )
-        print(f"✅ Success: {result}")
-    except ValueError as e:
-        print(f"❌ Error: {e}")
+        print(f"Success: {result}")
+    except FormatError as e:
+        print(f"Error: {e}")
 
-    # Failed formatting - missing variables (default behavior)
     try:
         result = template.format(
             order_id="12345",
             customer="Bob",
-            # Missing: status, amount
         )
-        print(f"✅ Success: {result}")
-    except ValueError as e:
-        print(f"❌ Error (expected): {e}")
+        print(f"Success: {result}")
+    except FormatError as e:
+        print(f"Error (expected): {e}")
 
-    # Partial formatting with skip_validation=True
-    try:
-        partial = template.format(
-            order_id="12345",
-            customer="Bob",
-            skip_validation=True,  # Only replace available placeholders
-        )
-        print(f"✅ Partial format: {partial}")
-        print("   ^ Notice {status} and {amount} remain as placeholders")
-    except ValueError as e:
-        print(f"❌ Error: {e}")
-
-    # Test with extra variables (should work)
     try:
         result = template.format(
             order_id="67890",
             customer="Charlie",
             status="processing",
             amount="149.99",
-            extra_field="ignored",  # Extra fields are OK
+            extra_field="ignored",
         )
-        print(f"✅ Success with extra fields: {result}")
-    except ValueError as e:
-        print(f"❌ Error: {e}")
+        print(f"Success with extra fields: {result}")
+    except FormatError as e:
+        print(f"Error: {e}")
     print()
 
 
@@ -243,26 +225,23 @@ def demonstrate_no_metadata_loading(prompt_dir):
 
     simple_path = os.path.join(prompt_dir, "simple.txt")
 
-    # This will work with meta="ignore"
     try:
-        simple = load_prompt(simple_path, meta="ignore")
-        print(f"✅ Loaded simple prompt: {simple.path.name}")
+        simple = load_prompt(simple_path, metadata="ignore")
+        print(f"Loaded simple prompt: {simple.path.name}")
         print(f"   Title (from filename): {simple.meta.title}")
         print(f"   Version: {simple.meta.version}")
 
-        # Use the prompt
         result = simple.prompt.format(purpose="quick testing", variables="placeholder")
         print(f"   Result: {result}")
 
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
 
-    # This will fail with strict mode, so we set it explicitly for this load
     try:
-        simple = load_prompt(simple_path, meta="strict")
-        print("✅ Loaded simple prompt with strict mode")
+        simple = load_prompt(simple_path, metadata="strict")
+        print("Loaded simple prompt with strict mode")
     except Exception as e:
-        print(f"❌ Expected error with strict mode: {type(e).__name__}")
+        print(f"Expected error with strict mode: {type(e).__name__}")
     print()
 
 
@@ -275,10 +254,10 @@ def demonstrate_save_prompt(prompt_dir):
     simple_path = os.path.join(prompt_dir, "generated_simple.txt")
     save_prompt(simple_path, "You are a helpful assistant for {task}.")
 
-    print(f"✅ Saved simple prompt to: {simple_path}")
+    print(f"Saved simple prompt to: {simple_path}")
 
     # Load it back and show the template
-    loaded = load_prompt(simple_path, meta="allow")
+    loaded = load_prompt(simple_path, metadata="allow")
     print(f"   Template created with title: '{loaded.meta.title}'")
     print(f"   Template created with description: '{loaded.meta.description}'")
     print(f"   Template created with version: '{loaded.meta.version}'")
@@ -305,10 +284,10 @@ def demonstrate_save_prompt(prompt_dir):
     full_path = os.path.join(prompt_dir, "generated_full.txt")
     save_prompt(full_path, full_prompt)
 
-    print(f"✅ Saved full prompt to: {full_path}")
+    print(f"Saved full prompt to: {full_path}")
 
     # Load it back
-    loaded_full = load_prompt(full_path, meta="allow")
+    loaded_full = load_prompt(full_path, metadata="allow")
     print(f"   Full prompt title: '{loaded_full.meta.title}'")
     print(f"   Full prompt author: '{loaded_full.meta.author}'")
     print()
@@ -321,13 +300,12 @@ def demonstrate_error_handling(prompt_dir):
 
     from textprompts import FileMissingError, TextPromptsError
 
-    # Try to load non-existent file
     try:
         load_prompt(os.path.join(prompt_dir, "nonexistent.txt"))
     except FileMissingError as e:
-        print(f"❌ File not found: {e}")
+        print(f"File not found: {e}")
     except TextPromptsError as e:
-        print(f"❌ TextPrompts error: {e}")
+        print(f"TextPrompts error: {e}")
     print()
 
 
@@ -348,7 +326,7 @@ def main():
         demonstrate_save_prompt(prompt_dir)
         demonstrate_error_handling(prompt_dir)
 
-        print("All examples completed successfully! 🎉")
+        print("All examples completed successfully!")
 
     finally:
         # Cleanup

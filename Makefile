@@ -33,9 +33,9 @@ format: ## Format code with ruff
 	uv run ruff check --fix .
 	@echo "$(GREEN)✓ Code formatted$(RESET)"
 
-typecheck: ## Run type checking with mypy
+typecheck: ## Run type checking with ty
 	@echo "$(BLUE)Running type checks...$(RESET)"
-	uv run mypy src
+	uv run ty check src
 	@echo "$(GREEN)✓ Type checking passed$(RESET)"
 
 test: ## Run tests
@@ -71,7 +71,7 @@ clean: ## Clean build artifacts and cache
 	rm -rf dist/
 	rm -rf *.egg-info/
 	rm -rf .pytest_cache/
-	rm -rf .mypy_cache/
+	rm -rf .ty_cache/
 	rm -rf .ruff_cache/
 	rm -rf htmlcov/
 	find . -type d -name __pycache__ -exec rm -rf {} +
