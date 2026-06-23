@@ -28,8 +28,8 @@ jobs:
           version: "latest"
       
       - name: Install dependencies
-        run: uv sync --dev
-      
+        run: uv sync --dev --frozen
+
       - name: Run ruff
         run: uv run ruff check . --output-format=github
       
@@ -62,8 +62,8 @@ jobs:
           version: "latest"
       
       - name: Install dependencies
-        run: uv sync --dev
-      
+        run: uv sync --dev --frozen
+
       - name: Run tests with coverage
         run: |
           uv run pytest tests/ -v --cov=textprompts --cov-report=xml --cov-report=term-missing
