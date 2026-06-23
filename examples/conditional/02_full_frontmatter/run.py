@@ -1,5 +1,4 @@
-"""SPEC §8.2: Full frontmatter with custom metadata. Requires textprompts>=2.0.
-"""
+"""SPEC §8.2: Full frontmatter with custom metadata. Requires textprompts>=2.0."""
 
 from pathlib import Path
 

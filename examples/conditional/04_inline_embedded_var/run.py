@@ -1,5 +1,4 @@
-"""SPEC §8.4: Inline with embedded variable (variable required regardless). Requires textprompts>=2.0.
-"""
+"""SPEC §8.4: Inline with embedded variable (variable required regardless). Requires textprompts>=2.0."""
 
 from pathlib import Path
 
