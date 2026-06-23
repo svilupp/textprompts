@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 from ._parser import parse_file, parse_string
 from .config import (
     MetadataMode,
@@ -36,7 +38,10 @@ from .sections import (
     render_toc,
 )
 
+__version__ = version("textprompts")
+
 __all__ = [
+    "__version__",
     "load_prompt",
     "save_prompt",
     "parse_file",
