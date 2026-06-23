@@ -47,7 +47,7 @@ class PromptString(str):
     # PromptString routes ``format()`` to the v2 syntax engine, which rejects
     # positional args and reserves ``flags=`` as a keyword. The LSP violation
     # is by design; PromptString is a typed wrapper, not a drop-in ``str``.
-    def format(  # type: ignore[override]  # ty: ignore[invalid-method-override]
+    def format(  # type: ignore[override]
         self,
         *args: Any,
         flags: Union[dict[str, Any], None] = None,
