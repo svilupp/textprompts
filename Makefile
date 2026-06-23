@@ -1,4 +1,4 @@
-.PHONY: help install install-dev lint format typecheck test test-cov clean build publish docs docs-serve all check ex-test ex-check ex-docs ex-test-examples test-examples-ai ts-test ts-typecheck ts-lint ts-format-check ts-check
+.PHONY: help install install-dev lint format format-check typecheck test test-cov clean build publish docs docs-serve all check ex-test ex-check ex-docs ex-test-examples test-examples-ai ts-test ts-typecheck ts-lint ts-format-check ts-check
 .DEFAULT_GOAL := help
 
 # Colors for terminal output
@@ -44,6 +44,11 @@ format: ## Format code with ruff
 	uv run ruff format .
 	uv run ruff check --fix .
 	@echo "$(GREEN)✓ Code formatted$(RESET)"
+
+format-check: ## Check formatting without mutating (quiet unless it fails)
+	@echo "$(BLUE)Checking formatting...$(RESET)"
+	$(call quiet, uv run ruff format --check .)
+	@echo "$(GREEN)✓ Formatting OK$(RESET)"
 
 typecheck: ## Run type checking with ty
 	@echo "$(BLUE)Running type checks...$(RESET)"
@@ -126,7 +131,7 @@ docs-build: ## Build documentation
 	cd docs && bundle exec jekyll build
 	@echo "$(GREEN)✓ Documentation built$(RESET)"
 
-check: lint typecheck test test-examples ## Run all checks (lint, typecheck, test, examples)
+check: lint format-check typecheck test test-examples ## Run all checks (lint, format, typecheck, test, examples)
 	@echo "$(GREEN)✓ All checks passed!$(RESET)"
 
 all: clean install-dev check build ## Full development setup and check

@@ -1,5 +1,4 @@
-"""SPEC §8.1: Minimal -- no frontmatter (implicit mode). Requires textprompts>=2.0.
-"""
+"""SPEC §8.1: Minimal -- no frontmatter (implicit mode). Requires textprompts>=2.0."""
 
 from pathlib import Path
 

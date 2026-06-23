@@ -1,5 +1,4 @@
-"""SPEC §8.3: Inline form. Requires textprompts>=2.0.
-"""
+"""SPEC §8.3: Inline form. Requires textprompts>=2.0."""
 
 from pathlib import Path
 

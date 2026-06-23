@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.1.0] — 2026-06-23
+
+### Added
+
+- `textprompts.__version__` now exposes the installed package version.
+
 ## [2.0.0] — 2026-05-19
 
 ### BREAKING CHANGES

@@ -1,5 +1,4 @@
-"""SPEC §8.5: Nested blocks with indentation. Requires textprompts>=2.0.
-"""
+"""SPEC §8.5: Nested blocks with indentation. Requires textprompts>=2.0."""
 
 from pathlib import Path
 
